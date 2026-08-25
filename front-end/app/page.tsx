@@ -262,7 +262,7 @@ export default function HomePage() {
           SECTION 2 — Teacher Spotlight
           ============================================================ */}
       <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
-        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-12 items-center border border-[var(--color-border)]">
+        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-12 items-center">
           {/* Teacher photo */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
@@ -275,7 +275,7 @@ export default function HomePage() {
               src="/images/teacher-image.png"
               alt="الأستاذ سمير محمد أبو المجد"
               fill
-              className="object-cover rounded-2xl"
+              className="object-cover rounded-2xl border border-[var(--color-primary)]"
               sizes="(max-width: 768px) 100vw, 400px"
             />
             <span className="absolute top-4 right-4 bg-surface text-text-main text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
