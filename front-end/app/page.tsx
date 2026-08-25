@@ -262,7 +262,7 @@ export default function HomePage() {
           SECTION 2 — Teacher Spotlight
           ============================================================ */}
       <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
-        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-12 items-center">
+        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-12 items-center border border-[var(--color-border)]">
           {/* Teacher photo */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
