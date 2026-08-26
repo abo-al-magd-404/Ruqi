@@ -96,18 +96,19 @@ const HOW_IT_WORKS_STEPS = [
 const PLATFORM_STATS = [
   {
     icon: Gift,
-    value: 4800,
-    suffix: "+",
-    label: "الواجبات والتطبيقات المحلولة",
+
+    label: "واجبات و تطبيقات على كل درس",
   },
-  { icon: Video, value: 1200, suffix: "+", label: "الدروس المسجلة والمباشرة" },
+  { icon: Video,
+
+      label: "دروس مسجلة و مباشرة" },
   {
     icon: ShieldCheck,
-    value: 950,
-    suffix: "+",
-    label: "الاختبارات الدورية المنجزة",
+    label: "اختبارات و دورات ",
   },
-  { icon: Medal, value: 12500, suffix: "+", label: "طالب متفوق وفعال حاليًا" },
+  { icon: Medal,
+
+     label: "لائح متفوقين  و طلاب نشطين" },
 ];
 const experienceStartYears = 2019;
 const experienceYears = new Date().getFullYear() - experienceStartYears;
@@ -162,7 +163,7 @@ function AnimatedCounter({
   suffix = "",
   duration = 1.5,
 }: {
-  value: number;
+  value?: number;
   suffix?: string;
   duration?: number;
 }) {
@@ -171,7 +172,7 @@ function AnimatedCounter({
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    if (!isInView) return;
+    if (!isInView || value === undefined) return;
 
     let animationFrameId: number;
     const startTime = performance.now();
@@ -179,7 +180,6 @@ function AnimatedCounter({
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / (duration * 1000), 1);
-      // Ease-out effect: fast at the start, settles gently near the end
       const eased = 1 - Math.pow(1 - progress, 3);
 
       setDisplayValue(Math.floor(eased * value));
@@ -187,13 +187,15 @@ function AnimatedCounter({
       if (progress < 1) {
         animationFrameId = requestAnimationFrame(tick);
       } else {
-        setDisplayValue(value); // ensure it lands exactly on the final number
+        setDisplayValue(value);
       }
     };
 
     animationFrameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animationFrameId);
   }, [isInView, value, duration]);
+
+  if (value === undefined) return null;
 
   return (
     <p ref={ref} className="text-3xl font-bold text-text-main mb-2">
@@ -204,17 +206,21 @@ function AnimatedCounter({
 }
 
 export default function HomePage() {
+  const [heroReady, setHeroReady] = useState(false);
+
   return (
     <>
       {/* ============================================================
           SECTION 1 — Hero
           ============================================================ */}
-      <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20">
+      <section className="relative min-h-svh flex flex-col items-center justify-between px-4 sm:px-6 lg:px-8 py-15">
+        <div className="flex-[0]"></div>
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
           variants={staggerContainer}
+          onAnimationComplete={() => setHeroReady(true)}
           className="mx-auto max-w-3xl flex flex-col items-center gap-6 text-center"
         >
           <motion.span
@@ -258,14 +264,30 @@ export default function HomePage() {
             </Link>
           </motion.div>
         </motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={heroReady ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center gap-2 text-primary animate-bounce pointer-events-none border border-solid border-primary p-2 rounded-2xl mb-2"
+        >
+          <svg 
+            className="w-6 h-6" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </motion.div>
       </section>
 
       {/* ============================================================
           SECTION 2 — Teacher Spotlight
           ============================================================ */}
-      <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
-        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-12 items-center">
-          {/* Teacher photo */}
+      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
+        <div className="mx-auto max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          {/* Teacher Text */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -277,7 +299,7 @@ export default function HomePage() {
               src="/images/teacher-image.png"
               alt="الأستاذ سمير محمد أبو المجد"
               fill
-              className="object-cover rounded-2xl border border-[var(--color-primary)]"
+              className="object-cover rounded-2xl border border-primary"
               sizes="(max-width: 768px) 100vw, 400px"
             />
             <span className="absolute top-4 right-4 bg-surface text-text-main text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
@@ -294,7 +316,7 @@ export default function HomePage() {
             className="text-center md:text-right"
           >
             <p className="text-primary text-sm font-semibold mb-2">
-              الهيئة الأكاديمية لزُقِيّ
+              الهيئة الأكاديمية ل رُقِيّ
             </p>
             <h2 className="text-3xl font-bold text-text-main mb-3">
               الأستاذ سمير محمد أبو المجد
@@ -311,11 +333,11 @@ export default function HomePage() {
               البسيط إلى مستويات الإتقان العالية والبلاغة الفصحى.
             </p>
 
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-3 text-right">
               {TEACHER_HIGHLIGHTS.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 justify-center md:justify-start text-sm text-text-main"
+                  className="flex items-start gap-3 text-sm text-text-main"
                 >
                   <CheckCircle2
                     size={18}
@@ -332,7 +354,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 3 — Platform Features
           ============================================================ */}
-      <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20">
+      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 py-20">
         <div className="mx-auto max-w-6xl w-full text-center">
           <motion.div
             initial="hidden"
@@ -379,7 +401,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 4 — How It Works
           ============================================================ */}
-      <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
+      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
         <div className="mx-auto max-w-6xl w-full text-center">
           <motion.div
             initial="hidden"
@@ -423,7 +445,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 5 — Platform Stats
           ============================================================ */}
-      <section className="min-h-screen flex items-center px-4 sm:px-6 lg:px-8 py-20">
+      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 ">
         <div className="mx-auto max-w-6xl w-full text-center">
           <motion.div
             initial="hidden"
@@ -432,10 +454,10 @@ export default function HomePage() {
             variants={fadeUp}
           >
             <SectionDivider />
-            <h2 className="text-3xl font-bold text-text-main mb-3">
+            <h2 className="text-3xl lg:text-4xl font-bold text-text-main mb-3">
               أرقام وإنجازات نفخر بها
             </h2>
-            <p className="text-text-muted max-w-xl mx-auto mb-12">
+            <p className="text-base lg:text-lg text-text-muted max-w-xl mx-auto mb-12">
               جهود حقيقية لتنمية المجتمع التعليمي وصناعة غد لغوي مشرق
             </p>
           </motion.div>
@@ -445,19 +467,19 @@ export default function HomePage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={staggerContainer}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
           >
-            {PLATFORM_STATS.map(({ icon: Icon, value, suffix, label }) => (
+            {PLATFORM_STATS.map(({ icon: Icon,  label }) => (
               <motion.div
                 key={label}
                 variants={fadeUp}
-                className="ruqi-card p-6"
+                className="ruqi-card p-6 lg:p-8"
               >
-                <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-light text-primary mx-auto mb-3">
-                  <Icon size={18} />
+                <span className="flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-primary-light text-primary mx-auto mb-4">
+                  <Icon size={24} />
                 </span>
-                <AnimatedCounter value={value} suffix={suffix} />
-                <p className="text-sm text-text-muted">{label}</p>
+                {/* <AnimatedCounter value={value} suffix={suffix} /> */}
+                <p className="text-sm font-bold lg:text-base text-text-muted">{label}</p>
               </motion.div>
             ))}
           </motion.div>

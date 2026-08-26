@@ -52,7 +52,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${arefRuqaa.variable}`}>
       <body className="min-h-screen flex flex-col bg-background text-text-main font-cairo antialiased selection:bg-primary selection:text-white">
         <Navbar />
-        <main className="overflow-x-hidden flex-1 min-h-svh py-20">{children}</main>
+        <main className="overflow-x-hidden flex-1 min-h-svh pt-10">{children}</main>
         <Footer />
       </body>
     </html>

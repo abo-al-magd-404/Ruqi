@@ -1,7 +1,99 @@
-export default function EducationalContent() {
+'use client'; 
+
+import { useState, useEffect } from 'react';
+
+interface EducationStage {
+  id: string | number;
+  title: string;
+  imageUrl: string;
+}
+
+export default function ContentPage() {
+  const [stages, setStages] = useState<EducationStage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStages = async () => {
+      try {
+        const response = await fetch('');
+        const data = await response.json();
+        setStages(data);
+      } catch (error) {
+        setStages([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStages();
+  }, []);
+
+  const hasContent = stages.length > 0;
+
   return (
-    <div className="w-full h-screen flex flex-col flex-1 items-center justify-center">
-      <h1>صفحة المحتوي</h1>{" "}
+    <div className="w-full min-h-svh bg-background flex flex-col items-center overflow-x-hidden">
+      <main className="flex flex-col items-start pt-8 md:pt-[4%] pb-16 md:pb-[4%] px-4 sm:px-2 pt-[15%] lg:px-0 gap-8 md:gap-12 w-full max-w-[1200px]">
+        
+        <div className="flex flex-col items-start gap-4 w-full">
+          <div className="flex flex-row items-center gap-2 flex-wrap">
+            <span className="font-bold text-[12px] md:text-[14px] text-text-muted">المحتوى التعليمي</span>
+            <span className="text-[12px] md:text-[14px] text-text-muted">&gt;</span>
+            <span className="font-bold text-[12px] md:text-[14px] text-primary">المراحل التعليمية</span>
+          </div>
+          
+          <div className="flex flex-col items-start gap-3 w-full mt-2 md:mt-4">
+            <div className="flex flex-row items-center gap-3">
+              <div className="w-[40px] md:w-[60px] h-[1px] bg-primary"></div>
+              <div className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] border-2 border-primary rotate-45"></div>
+              <div className="w-[40px] md:w-[60px] h-[1px] bg-primary"></div>
+            </div>
+            <h1 className="font-extrabold text-[28px] md:text-[36px] text-text-main leading-snug md:leading-[67px]">
+              المراحل التعليمية المتاحة
+            </h1>
+            <p className="font-medium text-[14px] md:text-[16px] text-text-muted leading-relaxed md:leading-[30px] max-w-[657px]">
+              خطط ومسارات دراسية رصينة ومصممة بعناية لمواكبة تطلعاتكم الأكاديمية والارتقاء بهويتكم اللغوية
+            </p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center w-full py-16 md:py-24">
+            <div className="w-8 h-8 md:w-10 md:h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : hasContent ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 w-full">
+            {stages.map((stage) => (
+              <div key={stage.id} className="flex flex-col w-full h-[340px] md:h-[380px] bg-text-main rounded-card shadow-lg overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300">
+                <div 
+                  className="w-full flex-grow bg-surface-secondary bg-cover bg-center" 
+                  style={{ backgroundImage: `url('${stage.imageUrl}')` }}
+                ></div>
+                <div className="h-[45px] md:h-[50px] w-full flex justify-center items-center shrink-0">
+                  <span className="font-extrabold text-[18px] md:text-[20px] text-primary truncate px-4">{stage.title}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center w-full py-16 md:py-24 px-4 sm:px-6 md:px-5 bg-surface border border-border rounded-card text-center">
+            <svg 
+              className="w-16 h-16 md:w-24 md:h-24 text-primary opacity-40 mb-4 md:mb-6" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <h3 className="font-extrabold text-[20px] md:text-[24px] text-text-main mb-2 md:mb-3">
+              عذراً، لا يوجد محتوى متاح حالياً
+            </h3>
+            <p className="font-medium text-[14px] md:text-[16px] text-text-muted max-w-[450px]">
+              نعمل بشغف على إعداد وتجهيز المراحل والمواد التعليمية لنضعها بين أيديكم قريباً. يرجى العودة لاحقاً لاستكشاف المزيد.
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
