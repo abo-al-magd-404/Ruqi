@@ -109,11 +109,13 @@ const PLATFORM_STATS = [
   },
   { icon: Medal, value: 12500, suffix: "+", label: "طالب متفوق وفعال حاليًا" },
 ];
+const experienceStartYears = 2019;
+const experienceYears = new Date().getFullYear() - experienceStartYears;
 
 const TEACHER_HIGHLIGHTS = [
-  "حاصل على الدكتوراه في اللغويات المقارنة والأدب العربي",
-  'صاحب منهجية "المحاكاة البلاغية" لتبسيط النحو والصرف',
-  "خرّج أكثر من ١٠ آلاف طالب متفوق على مستوى العالم العربي",
+  `خبرة أكثر من ${experienceYears} سنوات في تدريس اللغة العربية`,
+  "درّس لأكثر من ٣٠٠٠ طالب",
+  "حاصل على ليسانس في اللغة العربية والعلوم الإسلامية من جامعة القاهرة",
 ];
 
 // ============================================================
@@ -304,9 +306,8 @@ export default function HomePage() {
             <hr className="border-border w-24 mx-auto md:mx-0 mb-6" />
 
             <p className="text-text-muted leading-relaxed mb-6">
-              خبرة تمتد لأكثر من ربع قرن في توجيه الطلاب نحو القمة اللغوية
-              والأكاديمية. ساهم الأستاذ سمير في صياغة مناهج زُقِيّ الحصرية
-              وتصميم المنهجيات التعليمية المتميزة التي تنقل الطالب من التأسيس
+              خبرة تمتد لأكثر من{` ${experienceYears} `}سنوات في توجيه الطلاب نحو القمة اللغوية والأكاديمية. ساهم
+              الأستاذ سمير في صياغة مناهج رُقِيّ الحصرية وتصميم المنهجيات التعليمية المتميزة التي تنقل الطالب من التأسيس
               البسيط إلى مستويات الإتقان العالية والبلاغة الفصحى.
             </p>
 
@@ -354,7 +355,7 @@ export default function HomePage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={staggerContainer}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"
+            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-10"
           >
             {PLATFORM_FEATURES.map(({ icon: Icon, title, description }) => (
               <motion.div
@@ -400,7 +401,7 @@ export default function HomePage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={staggerContainer}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {HOW_IT_WORKS_STEPS.map((step) => (
               <motion.div
