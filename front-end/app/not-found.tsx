@@ -4,9 +4,8 @@ export default function NotFound() {
   return (
     <section
       aria-label="صفحة غير موجودة"
-      className="relative flex h-[calc(100vh-160px)] items-center justify-center overflow-hidden px-5"
+      className="relative flex h-screen items-center justify-center overflow-hidden px-5"
     >
-      {/* Decorative Background */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center"

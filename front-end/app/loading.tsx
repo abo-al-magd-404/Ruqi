@@ -2,9 +2,8 @@ export default function Loading() {
   return (
     <section
       aria-label="جاري التحميل"
-      className="relative flex h-[calc(100vh-160px)] items-center justify-center overflow-hidden px-5"
+      className="relative flex h-screen items-center justify-center overflow-hidden px-5"
     >
-      {/* Decorative Background */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -16,19 +15,15 @@ export default function Loading() {
         </div>
       </div>
 
-      {/* Loading Card */}
       <div className="relative z-10 flex h-75.5 w-100 flex-col items-center justify-center rounded-card border border-border bg-surface shadow-[0_12px_35px_rgba(45,41,38,0.07)]">
-        {/* Logo */}
         <span className="font-aref text-[64px] font-bold leading-none text-text-main">
           رُقِيّ
         </span>
 
-        {/* Loading Message */}
         <p className="mt-5 font-cairo text-sm font-medium text-primary">
           جاري تهيئة بيئة التعلم
         </p>
 
-        {/* Loading Animation */}
         <div
           aria-label="جاري التحميل"
           role="status"

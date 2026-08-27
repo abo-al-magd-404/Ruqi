@@ -20,13 +20,6 @@ import {
   Medal,
 } from "lucide-react";
 
-// ============================================================
-// Static content
-// Extracted as arrays instead of repeating near-identical JSX
-// blocks. This keeps the page a single file (by design) while
-// avoiding manual duplication across 6+ similar cards.
-// ============================================================
-
 const PLATFORM_FEATURES = [
   {
     icon: Calendar,
@@ -51,7 +44,7 @@ const PLATFORM_FEATURES = [
   {
     icon: Target,
     title: "تقييم شامل",
-    description: "آراء الخبراء ونصائح تساعدك في تسريع تقدمك",
+    description: "متابعة شاملة ونصائح تساعدك في تسريع تقدمك",
   },
   {
     icon: Trophy,
@@ -89,7 +82,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     number: "٦",
     title: "نافس الطلاب",
-    description: "ارتقِ في سلم الترتيب العالمي",
+    description: "ارتقِ في سلم الترتيب علي مستوي المنصة",
   },
 ];
 
@@ -99,31 +92,29 @@ const PLATFORM_STATS = [
 
     label: "واجبات و تطبيقات على كل درس",
   },
-  { icon: Video,
+  {
+    icon: Video,
 
-      label: "دروس مسجلة و مباشرة" },
+    label: "دروس مسجلة و مباشرة",
+  },
   {
     icon: ShieldCheck,
     label: "اختبارات و دورات ",
   },
-  { icon: Medal,
+  {
+    icon: Medal,
 
-     label: "لائح متفوقين  و طلاب نشطين" },
+    label: "لائحة متفوقين  و طلاب نشطين",
+  },
 ];
-const experienceStartYears = 2019;
+const experienceStartYears = 2018;
 const experienceYears = new Date().getFullYear() - experienceStartYears;
 
 const TEACHER_HIGHLIGHTS = [
   `خبرة أكثر من ${experienceYears} سنوات في تدريس اللغة العربية`,
   "درّس لأكثر من ٣٠٠٠ طالب",
-  "حاصل على ليسانس في اللغة العربية والعلوم الإسلامية من جامعة القاهرة",
+  "حاصل على ليسانس في اللغة العربية والعلوم الإسلامية من كلية دار العلوم بجامعة القاهرة",
 ];
-
-// ============================================================
-// Animation variants (Framer Motion)
-// Centralized so every section reuses the same fade/slide feel
-// instead of redefining transition values per element.
-// ============================================================
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -135,12 +126,6 @@ const staggerContainer: Variants = {
   visible: { transition: { staggerChildren: 0.1 } },
 };
 
-// ============================================================
-// Small local building block — the "star with lines" divider
-// used above every section title. Not exported: this file is
-// intentionally kept as a single page, per project decision.
-// ============================================================
-
 function SectionDivider() {
   return (
     <div className="flex items-center justify-center gap-3 mb-4">
@@ -150,13 +135,6 @@ function SectionDivider() {
     </div>
   );
 }
-
-// ============================================================
-// Animated counter — counts up from 0 to `value` once the
-// element scrolls into view. Kept local to this file (not a
-// separate component export) per the project's decision to
-// treat the homepage as a single, mostly-presentational file.
-// ============================================================
 
 function AnimatedCounter({
   value,
@@ -211,10 +189,10 @@ export default function HomePage() {
   return (
     <>
       {/* ============================================================
-          SECTION 1 — Hero
+          SECTION 1 — Landing Section
           ============================================================ */}
-      <section className="relative min-h-svh flex flex-col items-center justify-between px-4 sm:px-6 lg:px-8 py-15">
-        <div className="flex-[0]"></div>
+      <section className="relative h-screen flex flex-col items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex-0"></div>
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -249,7 +227,9 @@ export default function HomePage() {
             className="text-text-muted leading-relaxed max-w-xl"
           >
             أول منصة تعليمية عربية مخصصة لرعاية الموهبة العلمية وصقل الهوية
-            اللغوية، عبر مناهج تفاعلية فريدة ومتابعة أكاديمية متميزة.
+            اللغوية،
+            <br />
+            عبر مناهج تفاعلية فريدة ومتابعة أكاديمية متميزة.
           </motion.p>
 
           <motion.div
@@ -260,7 +240,7 @@ export default function HomePage() {
               مشاهدة المحتوى التعليمي
             </Link>
             <Link href="/account" className="btn-outline px-8 py-3">
-              ابدأ رحلتك الآن
+              ابدأ رحلتك الآن ←
             </Link>
           </motion.div>
         </motion.div>
@@ -270,14 +250,19 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center gap-2 text-primary animate-bounce pointer-events-none border border-solid border-primary p-2 rounded-2xl mb-2"
         >
-          <svg 
-            className="w-6 h-6" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24" 
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
           </svg>
         </motion.div>
       </section>
@@ -285,7 +270,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 2 — Teacher Spotlight
           ============================================================ */}
-      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
+      <section className="min-h-screen flex justify-center items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
         <div className="mx-auto max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Teacher Text */}
           <motion.div
@@ -303,7 +288,7 @@ export default function HomePage() {
               sizes="(max-width: 768px) 100vw, 400px"
             />
             <span className="absolute top-4 right-4 bg-surface text-text-main text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
-              معلم الجيل والأكاديمي الأبرز
+              مُعَلِّمُ الْجِيلِ وَالْأَكَادِيمِيُّ الْأَبْرَزُ
             </span>
           </motion.div>
 
@@ -328,9 +313,12 @@ export default function HomePage() {
             <hr className="border-border w-24 mx-auto md:mx-0 mb-6" />
 
             <p className="text-text-muted leading-relaxed mb-6">
-              خبرة تمتد لأكثر من{` ${experienceYears} `}سنوات في توجيه الطلاب نحو القمة اللغوية والأكاديمية. ساهم
-              الأستاذ سمير في صياغة مناهج رُقِيّ الحصرية وتصميم المنهجيات التعليمية المتميزة التي تنقل الطالب من التأسيس
-              البسيط إلى مستويات الإتقان العالية والبلاغة الفصحى.
+              خبرة تمتد لأكثر من{` ${experienceYears} `}سنوات في توجيه الطلاب
+              نحو القمة اللغوية والأكاديمية.
+              <br />
+              ساهم الأستاذ سمير في صياغة مناهج رُقِيّ الحصرية وتصميم المنهجيات
+              التعليمية المتميزة التي تنقل الطالب من التأسيس البسيط إلى مستويات
+              الإتقان العالية والبلاغة الفصحى.
             </p>
 
             <ul className="flex flex-col gap-3 text-right">
@@ -354,7 +342,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 3 — Platform Features
           ============================================================ */}
-      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 py-20">
+      <section className="min-h-screen flex justify-center items-center px-4 sm:px-6 lg:px-8 py-20">
         <div className="mx-auto max-w-6xl w-full text-center">
           <motion.div
             initial="hidden"
@@ -401,7 +389,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 4 — How It Works
           ============================================================ */}
-      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
+      <section className="min-h-screen flex justify-center items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
         <div className="mx-auto max-w-6xl w-full text-center">
           <motion.div
             initial="hidden"
@@ -445,7 +433,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 5 — Platform Stats
           ============================================================ */}
-      <section className="min-h-svh flex items-center px-4 sm:px-6 lg:px-8 ">
+      <section className="min-h-screen flex justify-center items-center px-4 sm:px-6 lg:px-8 ">
         <div className="mx-auto max-w-6xl w-full text-center">
           <motion.div
             initial="hidden"
@@ -455,7 +443,7 @@ export default function HomePage() {
           >
             <SectionDivider />
             <h2 className="text-3xl lg:text-4xl font-bold text-text-main mb-3">
-              أرقام وإنجازات نفخر بها
+              إنجازات نفخر بها
             </h2>
             <p className="text-base lg:text-lg text-text-muted max-w-xl mx-auto mb-12">
               جهود حقيقية لتنمية المجتمع التعليمي وصناعة غد لغوي مشرق
@@ -469,7 +457,7 @@ export default function HomePage() {
             variants={staggerContainer}
             className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
           >
-            {PLATFORM_STATS.map(({ icon: Icon,  label }) => (
+            {PLATFORM_STATS.map(({ icon: Icon, label }) => (
               <motion.div
                 key={label}
                 variants={fadeUp}
@@ -478,8 +466,9 @@ export default function HomePage() {
                 <span className="flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-primary-light text-primary mx-auto mb-4">
                   <Icon size={24} />
                 </span>
-                {/* <AnimatedCounter value={value} suffix={suffix} /> */}
-                <p className="text-sm font-bold lg:text-base text-text-muted">{label}</p>
+                <p className="text-sm font-bold lg:text-base text-text-muted">
+                  {label}
+                </p>
               </motion.div>
             ))}
           </motion.div>
