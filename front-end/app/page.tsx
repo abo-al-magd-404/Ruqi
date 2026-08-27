@@ -270,7 +270,7 @@ export default function HomePage() {
       {/* ============================================================
           SECTION 2 — Teacher Spotlight
           ============================================================ */}
-      <section className="min-h-screen flex justify-center items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface">
+      <section className="min-h-screen flex justify-center items-center px-4 sm:px-6 lg:px-8 py-20 bg-surface overflow-hidden">
         <div className="mx-auto max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Teacher Text */}
           <motion.div
