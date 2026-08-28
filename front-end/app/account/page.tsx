@@ -50,7 +50,7 @@ export default function AccountPage() {
             </div>
 
             <Link
-              href="/signup"
+              href="/register"
               className="mt-auto w-full flex justify-center items-center h-13 bg-primary rounded-xl font-semibold text-[15px] text-[#1E1A17] shadow-[0_12px_32px_-4px_rgba(212,175,55,0.1)] hover:bg-primary-hover transition-colors duration-200"
             >
               سجل كطالب جديد
