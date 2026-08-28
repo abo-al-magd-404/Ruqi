@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
-  { label: "المحتوى التعليمي", href: "/educational-content" },
+  { label: "المحتوى التعليمي", href: "/register" },
   { label: "المتفوقين", href: "/leaderboard" },
   { label: "الحساب", href: "/account" },
   { label: "الدعم", href: "/support" },
