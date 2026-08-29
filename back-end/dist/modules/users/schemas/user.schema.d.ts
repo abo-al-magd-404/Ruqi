@@ -3,7 +3,7 @@ import { UserRole } from '../../../common/enums/user-role.enum.js';
 import { UserStatus } from '../../../common/enums/user-status.enum.js';
 export type UserDocument = HydratedDocument<User>;
 export declare class User {
-    studentId: string;
+    userId: string;
     email: string;
     password: string;
     name: string;
@@ -27,7 +27,7 @@ export declare const UserSchema: import("mongoose").Schema<User, import("mongoos
 }, "id"> & import("mongoose").HydratedDocumentOverrides<{
     id: string;
 }>, {
-    studentId?: import("mongoose").SchemaDefinitionProperty<string, User, import("mongoose").Document<unknown, {}, User, {
+    userId?: import("mongoose").SchemaDefinitionProperty<string, User, import("mongoose").Document<unknown, {}, User, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<User & {
         _id: Types.ObjectId;

@@ -7,21 +7,24 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { BadRequestException, Injectable, NotFoundException, } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException, } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service.js';
 import { MailService } from '../../common/mail/mail.service.js';
 import { generateOtp } from '../../common/utils/otp.util.js';
 import { UserStatus } from '../../common/enums/user-status.enum.js';
+import { AppJwtService } from '../../common/jwt/app-jwt.service.js';
 let AuthService = class AuthService {
     usersService;
     mailService;
     configService;
-    constructor(usersService, mailService, configService) {
+    appJwtService;
+    constructor(usersService, mailService, configService, appJwtService) {
         this.usersService = usersService;
         this.mailService = mailService;
         this.configService = configService;
+        this.appJwtService = appJwtService;
     }
     async register(registerDto) {
         const user = await this.usersService.createStudent({
@@ -182,7 +185,7 @@ let AuthService = class AuthService {
         return {
             user: {
                 id: activatedUser._id,
-                studentId: activatedUser.studentId,
+                studentId: activatedUser.userId,
                 name: activatedUser.name,
                 email: activatedUser.email,
                 role: activatedUser.role,
@@ -191,12 +194,76 @@ let AuthService = class AuthService {
             message: 'Email verified successfully',
         };
     }
+    async login(loginDto) {
+        const user = await this.usersService.findByEmail(loginDto.email);
+        if (!user) {
+            throw new UnauthorizedException('Invalid email or password');
+        }
+        if (user.status !== UserStatus.ACTIVE) {
+            throw new UnauthorizedException('Please verify your email first');
+        }
+        const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Invalid email or password');
+        }
+        const payload = {
+            sub: user._id.toString(),
+            role: user.role,
+        };
+        const accessToken = await this.appJwtService.generateAccessToken({
+            sub: user._id.toString(),
+            role: user.role,
+        });
+        const refreshToken = await this.appJwtService.generateRefreshToken(payload);
+        return {
+            user: {
+                id: user._id.toString(),
+                studentId: user.userId,
+                name: user.name,
+                email: user.email,
+                phoneNumber: user.phoneNumber,
+                address: user.address,
+                educationalStage: user.educationalStage,
+                role: user.role,
+                status: user.status,
+            },
+            accessToken,
+            refreshToken,
+        };
+    }
+    async refresh(refreshToken) {
+        if (!refreshToken) {
+            throw new UnauthorizedException('Refresh token not found');
+        }
+        let payload;
+        try {
+            payload = await this.appJwtService.verifyRefreshToken(refreshToken);
+        }
+        catch {
+            throw new UnauthorizedException('Invalid or expired refresh token');
+        }
+        const user = await this.usersService.findById(payload.sub);
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+        if (user.status !== UserStatus.ACTIVE) {
+            throw new UnauthorizedException('User account is not active');
+        }
+        const accessToken = await this.appJwtService.generateAccessToken({
+            sub: user._id.toString(),
+            role: user.role,
+        });
+        return {
+            accessToken,
+        };
+    }
 };
 AuthService = __decorate([
     Injectable(),
     __metadata("design:paramtypes", [UsersService,
         MailService,
-        ConfigService])
+        ConfigService,
+        AppJwtService])
 ], AuthService);
 export { AuthService };
 //# sourceMappingURL=auth.service.js.map

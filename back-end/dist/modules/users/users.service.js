@@ -17,7 +17,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './schemas/user.schema.js';
 import { UserRole } from '../../common/enums/user-role.enum.js';
 import { UserStatus } from '../../common/enums/user-status.enum.js';
-import { generateStudentId } from '../../common/utils/student-id.util.js';
+import { generateUserId } from '../../common/utils/user-id.util.js';
 let UsersService = class UsersService {
     userModel;
     constructor(userModel) {
@@ -30,9 +30,9 @@ let UsersService = class UsersService {
             throw new ConflictException('Email is already registered');
         }
         const hashedPassword = await bcrypt.hash(data.password, 12);
-        const studentId = generateStudentId();
+        const userId = generateUserId();
         const user = new this.userModel({
-            studentId,
+            userId,
             email,
             password: hashedPassword,
             name: data.name.trim(),
@@ -73,6 +73,13 @@ let UsersService = class UsersService {
     }
     async findById(userId) {
         return this.userModel.findById(userId);
+    }
+    async findByEmail(email) {
+        return this.userModel
+            .findOne({
+            email: email.toLowerCase().trim(),
+        })
+            .exec();
     }
 };
 UsersService = __decorate([

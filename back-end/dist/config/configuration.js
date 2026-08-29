@@ -6,11 +6,27 @@ export default () => ({
     jwt: {
         access: {
             secret: process.env.JWT_ACCESS_SECRET,
-            expiresIn: process.env.JWT_ACCESS_EXPIRES_IN,
+            expiresIn: parseInt(process.env.JWT_ACCESS_EXPIRES_IN ?? '900', 10),
         },
         refresh: {
             secret: process.env.JWT_REFRESH_SECRET,
-            expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+            expiresIn: parseInt(process.env.JWT_REFRESH_EXPIRES_IN ?? '2592000', 10),
+        },
+    },
+    seed: {
+        admin: {
+            name: process.env.SEED_ADMIN_NAME,
+            email: process.env.SEED_ADMIN_EMAIL,
+            password: process.env.SEED_ADMIN_PASSWORD,
+            phoneNumber: process.env.SEED_ADMIN_PHONE,
+            address: process.env.SEED_ADMIN_ADDRESS,
+        },
+        teacher: {
+            name: process.env.SEED_TEACHER_NAME,
+            email: process.env.SEED_TEACHER_EMAIL,
+            password: process.env.SEED_TEACHER_PASSWORD,
+            phoneNumber: process.env.SEED_TEACHER_PHONE,
+            address: process.env.SEED_TEACHER_ADDRESS,
         },
     },
     mail: {

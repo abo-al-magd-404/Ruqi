@@ -12,7 +12,7 @@ import { Types } from 'mongoose';
 import { UserRole } from '../../../common/enums/user-role.enum.js';
 import { UserStatus } from '../../../common/enums/user-status.enum.js';
 let User = class User {
-    studentId;
+    userId;
     email;
     password;
     name;
@@ -31,7 +31,7 @@ __decorate([
         trim: true,
     }),
     __metadata("design:type", String)
-], User.prototype, "studentId", void 0);
+], User.prototype, "userId", void 0);
 __decorate([
     Prop({
         type: String,

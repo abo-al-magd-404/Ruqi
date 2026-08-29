@@ -18,4 +18,5 @@ export declare class UsersService {
     }): Promise<void>;
     activateUser(userId: string): Promise<UserDocument>;
     findById(userId: string): Promise<UserDocument | null>;
+    findByEmail(email: string): Promise<UserDocument | null>;
 }

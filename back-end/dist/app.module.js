@@ -8,12 +8,15 @@ import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import configuration from './config/configuration.js';
 import { envValidationSchema } from './config/validation.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { AppJwtModule } from './common/jwt/jwt.module.js';
+import { DatabaseModule } from './database/database.module.js';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
+import { RolesGuard } from './common/guards/roles.guard.js';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 let AppModule = class AppModule {
 };
@@ -33,9 +36,20 @@ AppModule = __decorate([
             }),
             UsersModule,
             AuthModule,
+            AppJwtModule,
+            DatabaseModule,
         ],
-        controllers: [AppController],
-        providers: [AppService],
+        controllers: [],
+        providers: [
+            {
+                provide: APP_GUARD,
+                useClass: JwtAuthGuard,
+            },
+            {
+                provide: APP_GUARD,
+                useClass: RolesGuard,
+            },
+        ],
     })
 ], AppModule);
 export { AppModule };

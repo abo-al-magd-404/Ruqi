@@ -5,19 +5,23 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { Module } from '@nestjs/common';
-import { UsersModule } from '../users/users.module.js';
-import { MailModule } from '../../common/mail/mail.module.js';
-import { AuthController } from './auth.controller.js';
-import { AuthService } from './auth.service.js';
-import { AppJwtModule } from '../../common/jwt/jwt.module.js';
-let AuthModule = class AuthModule {
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { AppJwtService } from './app-jwt.service.js';
+import { JwtStrategy } from './jwt.strategy.js';
+let AppJwtModule = class AppJwtModule {
 };
-AuthModule = __decorate([
+AppJwtModule = __decorate([
     Module({
-        imports: [UsersModule, MailModule, AppJwtModule],
-        controllers: [AuthController],
-        providers: [AuthService],
+        imports: [
+            JwtModule,
+            PassportModule.register({
+                defaultStrategy: 'jwt',
+            }),
+        ],
+        providers: [AppJwtService, JwtStrategy],
+        exports: [AppJwtService, PassportModule],
     })
-], AuthModule);
-export { AuthModule };
-//# sourceMappingURL=auth.module.js.map
+], AppJwtModule);
+export { AppJwtModule };
+//# sourceMappingURL=jwt.module.js.map
