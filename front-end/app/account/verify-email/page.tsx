@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyEmail } from "@/lib/api";
 
-const OTP_EXPIRY_SECONDS = 300;
+const OTP_EXPIRY_SECONDS = 600;
 
 export default function VerifyOTP() {
   const router = useRouter();
