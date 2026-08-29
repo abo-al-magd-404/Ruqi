@@ -2,18 +2,18 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
 import * as bcrypt from 'bcrypt';
-
 import { UsersService } from '../users/users.service.js';
 import { MailService } from '../../common/mail/mail.service.js';
 import { generateOtp } from '../../common/utils/otp.util.js';
-
 import { RegisterDto } from './dto/register.dto.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { UserStatus } from '../../common/enums/user-status.enum.js';
+import { LoginDto } from './dto/login.dto.js';
+import { AppJwtService, JwtPayload } from '../../common/jwt/app-jwt.service.js';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +21,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    private readonly appJwtService: AppJwtService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -41,13 +42,11 @@ export class AuthService {
     const expiresAt = new Date(
       now.getTime() + this.parseDuration(otpExpiresIn),
     );
-
     await this.usersService.setEmailVerification(user._id.toString(), {
       otpHash,
       expiresAt,
       lastSentAt: now,
     });
-
     await this.mailService.sendMail({
       to: user.email,
       subject: 'RUQI Email Verification',
@@ -197,13 +196,80 @@ export class AuthService {
     return {
       user: {
         id: activatedUser._id,
-        studentId: activatedUser.studentId,
+        studentId: activatedUser.userId,
         name: activatedUser.name,
         email: activatedUser.email,
         role: activatedUser.role,
         status: activatedUser.status,
       },
       message: 'Email verified successfully',
+    };
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.usersService.findByEmail(loginDto.email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Please verify your email first');
+    }
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const payload: JwtPayload = {
+      sub: user._id.toString(),
+      role: user.role,
+    };
+    const accessToken = await this.appJwtService.generateAccessToken({
+      sub: user._id.toString(),
+      role: user.role,
+    });
+    const refreshToken = await this.appJwtService.generateRefreshToken(payload);
+    return {
+      user: {
+        id: user._id.toString(),
+        studentId: user.userId,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        educationalStage: user.educationalStage,
+        role: user.role,
+        status: user.status,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+    let payload: JwtPayload;
+    try {
+      payload = await this.appJwtService.verifyRefreshToken(refreshToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+    const user = await this.usersService.findById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('User account is not active');
+    }
+    const accessToken = await this.appJwtService.generateAccessToken({
+      sub: user._id.toString(),
+      role: user.role,
+    });
+    return {
+      accessToken,
     };
   }
 }

@@ -15,7 +15,7 @@ export class User {
     unique: true,
     trim: true,
   })
-  studentId: string;
+  userId: string;
 
   @Prop({
     type: String,

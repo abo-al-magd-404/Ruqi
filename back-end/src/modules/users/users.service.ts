@@ -9,7 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './schemas/user.schema.js';
 import { UserRole } from '../../common/enums/user-role.enum.js';
 import { UserStatus } from '../../common/enums/user-status.enum.js';
-import { generateStudentId } from '../../common/utils/student-id.util.js';
+import { generateUserId } from '../../common/utils/user-id.util.js';
 
 @Injectable()
 export class UsersService {
@@ -32,9 +32,9 @@ export class UsersService {
       throw new ConflictException('Email is already registered');
     }
     const hashedPassword = await bcrypt.hash(data.password, 12);
-    const studentId = generateStudentId();
+    const userId = generateUserId();
     const user = new this.userModel({
-      studentId,
+      userId,
       email,
       password: hashedPassword,
       name: data.name.trim(),
@@ -89,8 +89,16 @@ export class UsersService {
     }
     return user;
   }
-  
+
   async findById(userId: string): Promise<UserDocument | null> {
     return this.userModel.findById(userId);
+  }
+
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findOne({
+        email: email.toLowerCase().trim(),
+      })
+      .exec();
   }
 }
