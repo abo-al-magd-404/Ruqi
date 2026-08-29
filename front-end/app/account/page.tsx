@@ -50,8 +50,8 @@ export default function AccountPage() {
             </div>
 
             <Link
-              href="/register"
-              className="mt-auto w-full flex justify-center items-center h-13 bg-primary rounded-xl font-semibold text-[15px] text-[#1E1A17] shadow-[0_12px_32px_-4px_rgba(212,175,55,0.1)] hover:bg-primary-hover transition-colors duration-200"
+              href="/account/register"
+              className="mt-auto w-full flex justify-center items-center h-13 bg-primary rounded-xl font-semibold text-[15px] text-text-main shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover transition-colors duration-200"
             >
               سجل كطالب جديد
             </Link>
@@ -88,8 +88,8 @@ export default function AccountPage() {
             </div>
 
             <Link
-              href="/login"
-              className="mt-auto w-full flex justify-center items-center h-13 border-2 border-primary rounded-xl font-semibold text-[15px] text-[#997D21] hover:bg-primary hover:text-white transition-colors duration-200"
+              href="/account/login"
+              className="mt-auto w-full flex justify-center items-center h-13 border-2 border-primary rounded-xl font-semibold text-[15px] text-primary-hover hover:bg-primary hover:text-surface transition-colors duration-200"
             >
               دخول للحساب
             </Link>
