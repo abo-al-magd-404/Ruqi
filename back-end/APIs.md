@@ -5,7 +5,7 @@
 Production:
 
 ```text
-https://app-6a923169.deploy.meerasolution.com
+https://app-6a92a0c0.deploy.meerasolution.com
 ```
 
 ---
