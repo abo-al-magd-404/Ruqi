@@ -3,7 +3,7 @@
 ## Base URL
 
 Production:
-https://app-6a923169.deploy.meerasolution.com
+https://app-6a929970.deploy.meerasolution.com
 
 ## Authentication
 
