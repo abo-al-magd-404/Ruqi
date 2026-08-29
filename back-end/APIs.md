@@ -2,8 +2,8 @@
 
 ## Base URL
 
-Development:
-http://localhost:3000
+Production:
+https://app-6a923169.deploy.meerasolution.com
 
 ## Authentication
 
