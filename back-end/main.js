@@ -6,6 +6,15 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         instrument: ObserveInstrument,
     });
+    
+    // Configure Cross-Origin Resource Sharing (CORS)
+    // 'credentials: true' is required to allow cookies to be sent back and forth
+    app.enableCors({
+        origin: ['http://localhost:3000', 'domainfrontEndProduction'], 
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true, 
+    });
+    
     app.useGlobalPipes(new ValidationPipe({
         whitelist: true,
         transform: true,
