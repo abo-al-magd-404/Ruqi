@@ -8,6 +8,3 @@ build/
 .env
 .vercel
 *.tsbuildinfo
-
-# صفحة تسجيل الدخول لا تُرفع أبدًا (قاعدة مشروع)
-front-end/app/account/login/
