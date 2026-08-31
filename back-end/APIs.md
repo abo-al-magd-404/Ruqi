@@ -1,8 +1,8 @@
 # RUQI PLATFORM — API Documentation
 
 > **API Version:** `v1`
-> **Environment:** Production
-> **Base URL:** `https://app-6a95a07e.deploy.meerasolution.com`
+> **Environment:** Development
+> **Base URL:** `http://localhost:8000`
 > **Documentation Language:** English
 > **Response & Error Messages:** Arabic
 
@@ -20,6 +20,15 @@
    - [API 06 — Reset Password](#api-06--reset-password)
    - [API 07 — Get New Access Token](#api-07--get-new-access-token)
    - [API 08 — Logout](#api-08--logout)
+
+2. [Users & Profile](#2-users--profile)
+
+   - [API 09 — Get Current User Profile](#api-09--get-current-user-profile)
+   - [API 10 — Update Student Profile](#api-10--update-student-profile)
+
+3. [Authentication Flow](#authentication-flow)
+4. [HTTP Status Codes](#http-status-codes)
+5. [General Notes](#general-notes)
 
 ---
 
@@ -67,6 +76,8 @@ POST /auth/signup
   "address": "دمنهور"
 }
 ```
+
+### Request Fields
 
 | Field         | Type     | Required | Description                             |
 | ------------- | -------- | :------: | --------------------------------------- |
@@ -140,6 +151,8 @@ POST /auth/resend-otp
 }
 ```
 
+### Request Fields
+
 | Field   | Type     | Required | Description          |
 | ------- | -------- | :------: | -------------------- |
 | `email` | `string` |   Yes    | User's email address |
@@ -204,6 +217,8 @@ POST /auth/verify-account
   "otp": "123456"
 }
 ```
+
+### Request Fields
 
 | Field   | Type     | Required | Description               |
 | ------- | -------- | :------: | ------------------------- |
@@ -271,6 +286,8 @@ POST /auth/login
 }
 ```
 
+### Request Fields
+
 | Field      | Type     | Required | Description          |
 | ---------- | -------- | :------: | -------------------- |
 | `email`    | `string` |   Yes    | User's email address |
@@ -288,7 +305,7 @@ POST /auth/login
     "name": "محمد محمود",
     "email": "mohamed@example.com",
     "role": "STUDENT",
-    "studentId": null
+    "studentId": "20260001"
   },
   "tokens": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6...",
@@ -358,6 +375,8 @@ POST /auth/forget-password
   "email": "mohamed@example.com"
 }
 ```
+
+### Request Fields
 
 | Field   | Type     | Required | Description                     |
 | ------- | -------- | :------: | ------------------------------- |
@@ -430,6 +449,8 @@ POST /auth/reset-password
 }
 ```
 
+### Request Fields
+
 | Field         | Type     | Required | Description                        |
 | ------------- | -------- | :------: | ---------------------------------- |
 | `email`       | `string` |   Yes    | User's registered email            |
@@ -497,6 +518,8 @@ POST /auth/get-new-access-token
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
 }
 ```
+
+### Request Fields
 
 | Field          | Type     | Required | Description         |
 | -------------- | -------- | :------: | ------------------- |
@@ -579,7 +602,143 @@ None.
 
 ---
 
-# Authentication Flow
+# 2. Users & Profile
+
+This section contains endpoints related to fetching user profiles and updating specific role credentials, such as Student profiles.
+
+---
+
+## API 09 — Get Current User Profile
+
+### Fetch Authenticated User Details
+
+Retrieves the complete profile details of the currently authenticated user (`STUDENT`, `TEACHER`, or `ADMIN`) derived from their JWT Access Token.
+
+Sensitive security fields, such as `password`, `hashedRefreshToken`, and `emailOtp`, are omitted from the response.
+
+### Endpoint
+
+```http
+GET /users/me
+```
+
+### Access
+
+`Protected`
+
+### Authorization Header
+
+```http
+Authorization: Bearer <AccessToken>
+```
+
+---
+
+## API 10 — Update Student Profile
+
+### Update Student Profile Information
+
+Updates profile details exclusively for authenticated users with the `STUDENT` role.
+
+All fields in the request body are optional.
+
+If `password` is provided, it is securely re-hashed before being updated.
+
+### Endpoint
+
+```http
+PATCH /users/student/profile
+```
+
+### Access
+
+`Protected` — Requires `STUDENT` Role
+
+### Authorization Header
+
+```http
+Authorization: Bearer <AccessToken>
+```
+
+### Request Body
+
+```json
+{
+  "name": "محمد محمود المعدل",
+  "password": "NewSecretPassword123",
+  "phoneNumber": "01099998888",
+  "address": "القاهرة",
+  "educationalStage": "الصف الثالث الثانوي"
+}
+```
+
+### Request Fields
+
+| Field              | Type     | Required | Description                             |
+| ------------------ | -------- | :------: | --------------------------------------- |
+| `name`             | `string` |    No    | Updated full name (3–100 characters)    |
+| `password`         | `string` |    No    | Updated password (minimum 6 characters) |
+| `phoneNumber`      | `string` |    No    | Valid Egyptian mobile number            |
+| `address`          | `string` |    No    | Updated student address                 |
+| `educationalStage` | `string` |    No    | Student's educational level / grade     |
+
+### Success Response
+
+**200 OK**
+
+```json
+{
+  "message": "تم تحديث بيانات حساب الطالب بنجاح",
+  "user": {
+    "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "studentId": "20260001",
+    "name": "محمد محمود المعدل",
+    "email": "mohamed@example.com",
+    "phoneNumber": "01099998888",
+    "address": "القاهرة",
+    "role": "STUDENT",
+    "status": "ACTIVE",
+    "educationalStage": "الصف الثالث الثانوي",
+    "createdAt": "2026-08-31T12:00:00.000Z",
+    "updatedAt": "2026-08-31T12:30:00.000Z"
+  }
+}
+```
+
+### Error Responses
+
+#### 400 Bad Request — Validation Error
+
+```json
+{
+  "statusCode": 400,
+  "message": ["رقم الهاتف يجب أن يكون رقم مصري صالح"],
+  "error": "Bad Request"
+}
+```
+
+#### 401 Unauthorized — Invalid / Expired Token
+
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+#### 403 Forbidden — Insufficient Role Permissions
+
+```json
+{
+  "statusCode": 403,
+  "message": "غير مصرح لك بالوصول لهذا المورد، هذه الميزة مخصصة للصلاحية: [STUDENT] فقط",
+  "error": "Forbidden"
+}
+```
+
+---
+
+# 3. Authentication Flow
 
 The standard authentication flow is:
 
@@ -617,18 +776,18 @@ The standard authentication flow is:
          │ Access Token Expired
          ▼
 ┌──────────────────┐
-│ Refresh Token    │
+│  Refresh Token   │
 └────────┬─────────┘
          │
          ▼
 ┌──────────────────┐
-│ New Token Pair   │
+│  New Token Pair  │
 └──────────────────┘
 ```
 
 ---
 
-# HTTP Status Codes
+# 4. HTTP Status Codes
 
 | Status Code | Meaning      | Usage                                                          |
 | ----------: | ------------ | -------------------------------------------------------------- |
@@ -642,9 +801,9 @@ The standard authentication flow is:
 
 ---
 
-# General Notes
+# 5. General Notes
 
-- All endpoints use JSON for request and response bodies unless otherwise specified.
+- All endpoints use **JSON** for request and response bodies unless otherwise specified.
 - All response messages are returned in **Arabic**.
 - All error messages are returned in **Arabic**, except for the standard `error` field when it represents the HTTP exception name.
 - Protected endpoints require a valid JWT Access Token.
@@ -653,3 +812,31 @@ The standard authentication flow is:
 - Refresh Tokens are used to obtain a new Access Token after expiration.
 - OTP codes are used for account verification and password recovery.
 - Passwords must never be stored in plain text and must be securely hashed before persistence.
+
+---
+
+# API Summary
+
+|   # | Method  | Endpoint                     | Access                | Purpose                       |
+| --: | :-----: | ---------------------------- | --------------------- | ----------------------------- |
+|  01 | `POST`  | `/auth/signup`               | Public                | Create a new student account  |
+|  02 | `POST`  | `/auth/resend-otp`           | Public                | Resend email verification OTP |
+|  03 | `POST`  | `/auth/verify-account`       | Public                | Verify student account        |
+|  04 | `POST`  | `/auth/login`                | Public                | Authenticate user             |
+|  05 | `POST`  | `/auth/forget-password`      | Public                | Request password reset OTP    |
+|  06 | `POST`  | `/auth/reset-password`       | Public                | Reset password                |
+|  07 | `POST`  | `/auth/get-new-access-token` | Public                | Refresh access token          |
+|  08 | `POST`  | `/auth/logout`               | Protected             | Logout current user           |
+|  09 |  `GET`  | `/users/me`                  | Protected             | Get current user profile      |
+|  10 | `PATCH` | `/users/student/profile`     | Protected — `STUDENT` | Update student profile        |
+
+---
+
+## RUQI PLATFORM
+
+**API Documentation — v1**
+
+**Environment:** Development
+**Base URL:** `http://localhost:8000`
+
+---

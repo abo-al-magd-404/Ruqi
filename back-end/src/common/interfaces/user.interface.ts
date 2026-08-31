@@ -14,6 +14,8 @@ export interface IUser {
   role: UserRole;
   status: UserStatus;
 
+  educationalStage?: string;
+
   // OTP Fields
   emailOtp?: string | null;
   emailOtpExpiresAt?: Date | null;

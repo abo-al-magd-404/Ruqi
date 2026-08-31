@@ -5,6 +5,7 @@ import { envValidationSchema } from './config/validation.js';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -30,6 +31,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
 
     AuthModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],

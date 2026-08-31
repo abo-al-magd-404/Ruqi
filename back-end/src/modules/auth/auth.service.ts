@@ -23,6 +23,7 @@ import { TokenService } from '../../common/services/token.service.js';
 import { ForgetPasswordDto } from './dto/forget-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
+import { generateStudentId } from '../../common/utils/generateStudentID.js';
 
 @Injectable()
 export class AuthService {
@@ -54,7 +55,16 @@ export class AuthService {
     const now = new Date();
     const otpExpiresAt = new Date(now.getTime() + otpExpiresInMinutes * 1000);
 
+    let studentId = generateStudentId();
+    let isStudentIdExists = await this.userModel.findOne({ studentId });
+
+    while (isStudentIdExists) {
+      studentId = generateStudentId();
+      isStudentIdExists = await this.userModel.findOne({ studentId });
+    }
+
     const newUser = await this.userModel.create({
+      studentId,
       name,
       email: email.toLowerCase(),
       password: hashedPassword,

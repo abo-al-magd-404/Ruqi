@@ -32,6 +32,9 @@ export class User implements IUser {
   @Prop({ required: true, enum: UserStatus, default: UserStatus.PENDING })
   status!: UserStatus;
 
+  @Prop({ type: String, required: false })
+  educationalStage?: string;
+
   // OTP Fields
   @Prop({ type: String, default: null })
   emailOtp?: string | null;
