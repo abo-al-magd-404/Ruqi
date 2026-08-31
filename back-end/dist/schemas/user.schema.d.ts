@@ -12,6 +12,7 @@ export declare class User implements IUser {
     address: string;
     role: UserRole;
     status: UserStatus;
+    educationalStage?: string;
     emailOtp?: string | null;
     emailOtpExpiresAt?: Date | null;
     emailOtpLastSentAt?: Date | null;
@@ -90,6 +91,15 @@ export declare const UserSchema: import("mongoose").Schema<User, import("mongoos
         id: string;
     }>> | undefined;
     status?: import("mongoose").SchemaDefinitionProperty<UserStatus, User, import("mongoose").Document<unknown, {}, User, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<User & {
+        _id: import("mongoose").Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & import("mongoose").HydratedDocumentOverrides<{
+        id: string;
+    }>> | undefined;
+    educationalStage?: import("mongoose").SchemaDefinitionProperty<string | undefined, User, import("mongoose").Document<unknown, {}, User, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<User & {
         _id: import("mongoose").Types.ObjectId;

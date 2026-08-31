@@ -1,0 +1,1 @@
+{"version":3,"file":"generateStudentID.js","sourceRoot":"","sources":["../../../src/common/utils/generateStudentID.ts"],"names":[],"mappings":"AAAA,MAAM,UAAU,iBAAiB;IAC/B,MAAM,IAAI,GAAG,IAAI,IAAI,EAAE,CAAC,WAAW,EAAE,CAAC;IACtC,MAAM,YAAY,GAAG,IAAI,CAAC,KAAK,CAAC,KAAK,GAAG,IAAI,CAAC,MAAM,EAAE,GAAG,MAAM,CAAC,CAAC;IAChE,OAAO,OAAO,IAAI,IAAI,YAAY,EAAE,CAAC;AACvC,CAAC"}

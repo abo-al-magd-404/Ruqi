@@ -19,6 +19,7 @@ let User = class User {
     address;
     role;
     status;
+    educationalStage;
     emailOtp;
     emailOtpExpiresAt;
     emailOtpLastSentAt;
@@ -56,6 +57,10 @@ __decorate([
     Prop({ required: true, enum: UserStatus, default: UserStatus.PENDING }),
     __metadata("design:type", String)
 ], User.prototype, "status", void 0);
+__decorate([
+    Prop({ type: String, required: false }),
+    __metadata("design:type", String)
+], User.prototype, "educationalStage", void 0);
 __decorate([
     Prop({ type: String, default: null }),
     __metadata("design:type", Object)

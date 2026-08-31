@@ -21,6 +21,7 @@ import { generateOtp } from '../../common/utils/otp.util.js';
 import { UserStatus } from '../../common/enums/user-status.enum.js';
 import { JwtService } from '@nestjs/jwt';
 import { TokenService } from '../../common/services/token.service.js';
+import { generateStudentId } from '../../common/utils/generateStudentID.js';
 let AuthService = class AuthService {
     userModel;
     mailService;
@@ -47,7 +48,14 @@ let AuthService = class AuthService {
         const otpExpiresInMinutes = this.configService.getOrThrow('emailVerification.otpExpiresIn');
         const now = new Date();
         const otpExpiresAt = new Date(now.getTime() + otpExpiresInMinutes * 1000);
+        let studentId = generateStudentId();
+        let isStudentIdExists = await this.userModel.findOne({ studentId });
+        while (isStudentIdExists) {
+            studentId = generateStudentId();
+            isStudentIdExists = await this.userModel.findOne({ studentId });
+        }
         const newUser = await this.userModel.create({
+            studentId,
             name,
             email: email.toLowerCase(),
             password: hashedPassword,
