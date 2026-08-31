@@ -11,8 +11,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   async getMe(@Req() req: any) {
-    return this.usersService.getMyProfile(req.user.userId);
+    const userId = req.user.userId || req.user.id || req.user.sub;
+    return this.usersService.getMyProfile(userId);
   }
 
   @Patch('student/profile')
@@ -22,8 +24,9 @@ export class UsersController {
     @Req() req: any,
     @Body() updateStudentProfileDto: UpdateStudentProfileDto,
   ) {
+    const userId = req.user.userId || req.user.id || req.user.sub;
     return this.usersService.updateStudentProfile(
-      req.user.id,
+      userId,
       updateStudentProfileDto,
     );
   }
