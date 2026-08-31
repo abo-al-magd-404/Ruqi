@@ -1,4 +1,4 @@
-import { Controller, Patch, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Patch, Body, UseGuards, Req, Get } from '@nestjs/common';
 import { UsersService } from './users.service.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
@@ -12,7 +12,7 @@ export class UsersController {
 
   @Get('me')
   async getMe(@Req() req: any) {
-    return this.usersService.findMe(req.user.userId);
+    return this.usersService.getMyProfile(req.user.userId);
   }
 
   @Patch('student/profile')
