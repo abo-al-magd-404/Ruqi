@@ -2,7 +2,7 @@
 
 > **API Version:** `v1`
 > **Environment:** Development
-> **Base URL:** `http://localhost:8000`
+> **Base URL:** `https://app-6a95a07e.deploy.meerasolution.com`
 > **Documentation Language:** English
 > **Response & Error Messages:** Arabic
 
@@ -837,6 +837,6 @@ The standard authentication flow is:
 **API Documentation — v1**
 
 **Environment:** Development
-**Base URL:** `http://localhost:8000`
+**Base URL:** `https://app-6a95a07e.deploy.meerasolution.com`
 
 ---
