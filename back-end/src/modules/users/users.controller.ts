@@ -10,6 +10,11 @@ import { Roles } from '../../common/decorators/roles.decorator.js';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('me')
+  async getMe(@Req() req: any) {
+    return this.usersService.findMe(req.user.userId);
+  }
+
   @Patch('student/profile')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.STUDENT)
