@@ -1,8 +1,8 @@
 # RUQI PLATFORM — API Documentation
 
 > **API Version:** `v1`
-> **Environment:** Development
-> **Base URL:** `http://localhost:8000`
+> **Environment:** Production
+> **Base URL:** `https://app-6a95a07e.deploy.meerasolution.com`
 > **Documentation Language:** English
 > **Response & Error Messages:** Arabic
 
