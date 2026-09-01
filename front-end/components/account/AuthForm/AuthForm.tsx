@@ -139,7 +139,6 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
               strokeWidth="2"
               strokeLinecap="round"
             />
-            <rect x="273" y="8.5" width="60" height="1" fill="#D4AF37" />
           </svg>
 
           <h1 className="text-[24px] md:text-[28px] font-extrabold text-text-main text-center mb-1">
@@ -193,7 +192,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         {isLogin && (
           <div className="mb-6 text-left -mt-3">
             <Link
-              href="/forgot-password"
+              href="/account/forgot-password"
               className="text-primary-hover font-semibold text-[13px] md:text-[14px] hover:text-primary transition-colors"
             >
               نسيت كلمة المرور؟

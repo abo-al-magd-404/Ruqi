@@ -337,9 +337,45 @@ export async function logoutUser(): Promise<void> {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch {
-      // تجاهل أخطاء الخادم عند الخروج، نكمل تنظيف الجلسة محلياً دائماً
+      
     }
   }
 
   clearTokens();
+}
+
+export async function forgetPassword(email: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/forget-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(Array.isArray(data.message) ? data.message.join(", ") : data.message || "حدث خطأ ما");
+  }
+
+  return data;
+}
+
+export async function resetPassword(body: { email: string; otp: string; newPassword: string }): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(Array.isArray(data.message) ? data.message.join(", ") : data.message || "حدث خطأ ما");
+  }
+
+  return data;
 }

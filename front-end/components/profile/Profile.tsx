@@ -9,7 +9,6 @@ import EditProfileModal from "@/components/profile/edit/EditProfileModal";
 import ChangePasswordModal from "@/components/profile/edit/ChangePasswordModal";
 import LogoutConfirmModal from "@/components/profile/edit/LogoutConfirmModal";
 
-
 export default function StudentProfile() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -45,8 +44,12 @@ export default function StudentProfile() {
     homeworks: { completed: 0, ongoing: 0, notStarted: 0, total: 0 },
     points: 0,
     rank: 0,
-    pointsToNextRank: 0
+    pointsToNextRank: 0,
   });
+
+
+
+
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -147,12 +150,15 @@ export default function StudentProfile() {
   }, []);
 
   if (loading) {
-    return <Loading/>
+    return <Loading />;
   }
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-4 font-cairo text-center" dir="rtl">
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-5 px-4 font-cairo text-center"
+        dir="rtl"
+      >
         <span className="text-danger font-bold text-[16px] max-w-[300px] leading-relaxed">
           {error ?? "تعذر تحميل بيانات الحساب"}
         </span>
@@ -169,21 +175,20 @@ export default function StudentProfile() {
 
   const { name, studentId, email, phoneNumber, educationalStage, role } = profile;
 
-
   const radius = 55;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (stats.progressPercent / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 md:px-8 lg:px-[120px] font-cairo flex flex-col gap-8 lg:gap-12 items-center overflow-x-hidden" dir="rtl">
-      
-
+    <div
+      className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 md:px-8 lg:px-[120px] font-cairo flex flex-col gap-8 lg:gap-12 items-center overflow-x-hidden"
+      dir="rtl"
+    >
       <div className="w-full max-w-[1200px] bg-white rounded-[20px] md:rounded-[24px] border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.05)] p-5 sm:p-6 md:p-10 flex flex-col gap-6 md:gap-8">
-        
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 w-full lg:w-auto text-center sm:text-right">
             <div className="w-[80px] h-[80px] md:w-[112px] md:h-[112px] rounded-full border-2 border-primary bg-primary-light flex items-center justify-center shrink-0">
-              <User size={36} className="text-primary md:w-[48px] md:h-[48px]" /> 
+              <User size={36} className="text-primary md:w-[48px] md:h-[48px]" />
             </div>
             <div className="flex flex-col gap-2 sm:gap-3 mt-1 sm:mt-2">
               <h1 className="text-[20px] sm:text-[22px] md:text-[26px] font-extrabold text-text-main leading-tight">
@@ -196,7 +201,13 @@ export default function StudentProfile() {
                   </span>
                 )}
                 <span className="text-[13px] sm:text-[14px] md:text-[15px] text-text-muted leading-relaxed max-w-[280px] sm:max-w-none">
-                  {role === "STUDENT" ? "طالب أكاديمي في رُقِيّ" : "عضو في رُقِيّ"}
+                  {role === "STUDENT"
+                    ? "طالب أكاديمي في رُقِيّ"
+                    : role === "TEACHER"
+                      ? "الهيئة الأكاديمية ل رُقِيّ"
+                      : role === "ADMIN"
+                        ? "مسؤول النظام (Admin)"
+                        : "عضو في رُقِيّ"}
                   {role === "STUDENT" && educationalStage ? ` • ${educationalStage}` : ""}
                 </span>
               </div>
@@ -244,21 +255,26 @@ export default function StudentProfile() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
           <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none">
             <span className="text-[12px] md:text-[13px] text-text-muted">البريد الإلكتروني</span>
-            <span className="text-[14px] md:text-[16px] font-bold text-text-main break-all" dir="ltr">{email}</span>
+            <span className="text-[14px] md:text-[16px] font-bold text-text-main break-all" dir="ltr">
+              {email}
+            </span>
           </div>
           <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none">
             <span className="text-[12px] md:text-[13px] text-text-muted">رقم الهاتف</span>
-            <span className="text-[14px] md:text-[16px] font-bold text-text-main" dir="ltr">{phoneNumber || "—"}</span>
+            <span className="text-[14px] md:text-[16px] font-bold text-text-main" dir="ltr">
+              {phoneNumber || "—"}
+            </span>
           </div>
           {role === "STUDENT" && (
             <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none sm:col-span-2 lg:col-span-1">
               <span className="text-[12px] md:text-[13px] text-text-muted">المرحلة الدراسية</span>
-              <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words " dir="ltr">{educationalStage || "—"}</span>
+              <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words " dir="ltr">
+                {educationalStage || "—"}
+              </span>
             </div>
           )}
         </div>
       </div>
-
 
       <LogoutConfirmModal
         open={showLogoutConfirm}
@@ -286,7 +302,6 @@ export default function StudentProfile() {
         saving={savingPassword}
         error={passwordError}
       />
-
     </div>
   );
 }
