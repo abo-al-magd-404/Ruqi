@@ -1,9 +1,8 @@
-"use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import StudentProfile from "@/components/profile/Profile";
+import StudentProfile from "@/components/account/profile/Profile";
 import { isAuthenticated } from "@/lib/api";
 
 const subscribe = () => () => {};

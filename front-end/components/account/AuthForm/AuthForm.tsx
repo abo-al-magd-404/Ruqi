@@ -85,7 +85,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
       if (isLogin) {
         const { tokens } = await loginUser({ email: form.email, password: form.password });
         saveTokens(tokens);
-        router.push("/profile");
+        router.push("/account/profile");
       } else {
         await signup({
           name: form.name,

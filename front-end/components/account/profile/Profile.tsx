@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Settings, KeyRound, User, LogOut } from "lucide-react";
 import { getProfile, logoutUser, updateStudentProfile, UserProfile } from "@/lib/api";
 import Loading from "@/app/loading";
-import EditProfileModal from "@/components/profile/Edit/EditProfileModal";
-import ChangePasswordModal from "@/components/profile/Edit/ChangePasswordModal";
-import LogoutConfirmModal from "@/components/profile/Edit/LogoutConfirmModal";
+import EditProfileModal from "@/components/account/profile/Edit/EditProfileModal"
+import ChangePasswordModal from "@/components/account/profile/Edit/ChangePasswordModal";
+import LogoutConfirmModal from "@/components/account/profile/Edit/LogoutConfirmModal";
 
 export default function StudentProfile() {
   const router = useRouter();
