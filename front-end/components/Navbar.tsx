@@ -23,7 +23,12 @@ export default function Navbar() {
     };
   }, [isMenuOpen]);
 
-  const isActive = (href: string) => pathname === href;
+const isActive = (href: string) => {
+    if (href === "/account") {
+      return pathname === "/account" || pathname.startsWith("/account/");
+    }
+    return pathname === href;
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 w-full bg-surface/60 backdrop-blur-sm border-b border-primary rounded-b-3xl transition-all duration-300 z-1000">
