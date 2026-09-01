@@ -35,18 +35,6 @@ export default function StudentProfile() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const [stats, setStats] = useState({
-    progressPercent: 0,
-    progressWeekly: 0,
-    monthsCompleted: 0,
-    monthsTotal: 0,
-    exams: { completed: 0, ongoing: 0, notStarted: 0, total: 0 },
-    homeworks: { completed: 0, ongoing: 0, notStarted: 0, total: 0 },
-    points: 0,
-    rank: 0,
-    pointsToNextRank: 0,
-  });
-
   const handleLogout = async () => {
     setLoggingOut(true);
     await logoutUser();
@@ -170,10 +158,6 @@ export default function StudentProfile() {
   }
 
   const { name, studentId, email, phoneNumber, educationalStage, role } = profile;
-
-  const radius = 55;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (stats.progressPercent / 100) * circumference;
 
   return (
     <div
