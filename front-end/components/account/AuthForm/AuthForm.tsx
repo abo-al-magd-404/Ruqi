@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  loginUser,
-  signup,
-  savePendingEmail,
-  getPendingEmail,
-  saveTokens,
-  NotVerifiedError,
-} from "@/lib/api";
+import { loginUser, signup, savePendingEmail, getPendingEmail, saveTokens, NotVerifiedError } from "@/lib/api";
 import PasswordField from "./PasswordFiled";
 
 type Mode = "login" | "register";
@@ -43,9 +36,7 @@ function FormField({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: boolean }) {
   return (
     <div className="block mb-5">
-      <label className="block text-[13px] md:text-[14px] font-semibold text-text-main mb-2 text-right">
-        {label}
-      </label>
+      <label className="block text-[13px] md:text-[14px] font-semibold text-text-main mb-2 text-right">{label}</label>
       <input
         className={`${INPUT_CLASS} ${error ? "border-danger" : "border-border focus:border-primary"}`}
         dir="rtl"
@@ -120,7 +111,11 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
   const activationPendingEmail = getPendingEmail();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12 md:py-20 relative overflow-hidden font-cairo">
+    <div
+      className={`min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden font-cairo ${
+        isLogin ? "py-8 sm:py-12 md:py-20" : "py-20"
+      }`}
+    >
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('/path-to-islamic-pattern.svg')] bg-repeat"></div>
 
       <form
@@ -151,7 +146,9 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
             {isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
           </h1>
           <p className="text-center text-[13px] md:text-[14px] font-medium text-text-muted">
-            {isLogin ? "مرحباً بك مجدداً في محراب العلم والمعرفة" : "انضم إلى نخبة الطلاب في منصة التعليم العربية الأرقى"}
+            {isLogin
+              ? "مرحباً بك مجدداً في محراب العلم والمعرفة"
+              : "انضم إلى نخبة الطلاب في منصة التعليم العربية الأرقى"}
           </p>
         </div>
 
@@ -248,7 +245,9 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           <p className="text-sm text-danger bg-danger-bg border border-danger/30 rounded-lg p-3 mb-6 text-center font-medium">
             لم يتم تفعيل حسابك بعد.
             <Link
-              href={activationPendingEmail ? `/account/verify-email?email=${activationPendingEmail}` : "/account/register"}
+              href={
+                activationPendingEmail ? `/account/verify-email?email=${activationPendingEmail}` : "/account/register"
+              }
               className="text-danger font-bold underline ms-1 hover:text-primary transition-colors"
             >
               تفعيل الحساب

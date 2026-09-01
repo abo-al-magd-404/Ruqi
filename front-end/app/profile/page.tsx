@@ -22,7 +22,7 @@ export default function ProfilePage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center font-cairo">
+      <div className="min-h-screen bg-background flex items-center justify-center ">
         <span className="text-text-muted font-medium">جاري التحقق...</span>
       </div>
     );
