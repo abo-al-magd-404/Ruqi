@@ -1,5 +1,5 @@
 import AuthForm from "@/components/account/AuthForm/AuthForm";
-import GuestGuard from "@/components/auth/GuestGuard";
+import GuestGuard from "@/components/account/auth/GuestGuard";
 
 export default function Login() {
   return (

@@ -6,8 +6,7 @@ import ResetPasswordContent from "@/components/account/AuthForm/ResetPasswordCon
 export default function ResetPasswordForm() {
 
   return (
-    <Suspense fallback={<div className="text-text-muted">جاري التحميل...</div>}>
     <ResetPasswordContent/>
-    </Suspense>
+
   );
 }
