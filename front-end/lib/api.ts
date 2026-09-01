@@ -1,62 +1,23 @@
 export const API_BASE_URL = "/api/backend";
 
-export const EDUCATIONAL_STAGES_ENDPOINT = `${API_BASE_URL}/stages`;
-
-const MESSAGE_TRANSLATIONS: Record<string, string> = {
-  "Email is already registered": "البريد الإلكتروني مسجل بالفعل",
-  "OTP not found": "رمز التحقق غير موجود",
-  "OTP expiration not found": "بيانات صلاحية الرمز غير موجودة",
-  "OTP has expired. Please request a new OTP": "انتهت صلاحية رمز التحقق، يرجى طلب رمز جديد",
-  "Invalid OTP": "رمز التحقق غير صحيح",
-  "Email is already verified": "البريد الإلكتروني مفعّل بالفعل",
-  "User not found": "المستخدم غير موجود",
-  "Invalid email or password": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-  "Please verify your email first": "يرجى تفعيل الحساب",
-  "Refresh token not found": "رمز الجلسة غير موجود",
-  "Invalid or expired refresh token": "رمز الجلسة غير صالح أو منتهي",
-  "User account is not active": "الحساب غير نشط",
-  "Unauthorized": "غير مصرح بالوصول",
-  "email must be an email": "البريد الإلكتروني غير صالح",
-  "name must be a string": "الاسم غير صالح",
-  "password must be a string": "كلمة المرور غير صالحة",
-  "phoneNumber must be a string": "رقم الهاتف غير صالح",
-  "address must be a string": "العنوان غير صالح",
-  "educationalStageId must be a mongodb id": "المرحلة التعليمية غير صالحة",
-};
-
-function extractErrorMessage(data: unknown): string {
-  if (!data || typeof data !== "object") return "حدث خطأ ما";
-
-  const raw = (data as { message?: unknown }).message;
-
-  if (Array.isArray(raw)) {
-    const translated = raw.map((item) =>
-      typeof item === "string" && MESSAGE_TRANSLATIONS[item] ? MESSAGE_TRANSLATIONS[item] : item
-    );
-    return translated.join("، ");
-  }
-
-  if (typeof raw === "string") {
-    return MESSAGE_TRANSLATIONS[raw] ?? raw;
-  }
-
-  return "حدث خطأ ما";
-}
-
-export interface RegisterPayload {
+export interface SignupPayload {
   name: string;
   email: string;
   password: string;
   phoneNumber: string;
   address: string;
-  educationalStageId?: string;
 }
 
-export async function registerUser(payload: RegisterPayload): Promise<{ userId: string }> {
+export interface SignupResult {
+  message: string;
+  email: string;
+}
+
+export async function signup(payload: SignupPayload): Promise<SignupResult> {
   let res: Response;
 
   try {
-    res = await fetch(`${API_BASE_URL}/auth/register`, {
+    res = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -68,22 +29,22 @@ export async function registerUser(payload: RegisterPayload): Promise<{ userId: 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(data));
+    throw new Error(formatApiError(data));
   }
 
-  return data as { userId: string };
+  return data as SignupResult;
 }
 
-export interface VerifyEmailPayload {
-  userId: string;
+export interface VerifyAccountPayload {
+  email: string;
   otp: string;
 }
 
-export async function verifyEmail(payload: VerifyEmailPayload): Promise<void> {
+export async function verifyAccount(payload: VerifyAccountPayload): Promise<void> {
   let res: Response;
 
   try {
-    res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+    res = await fetch(`${API_BASE_URL}/auth/verify-account`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -95,14 +56,33 @@ export async function verifyEmail(payload: VerifyEmailPayload): Promise<void> {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(data));
+    throw new Error(formatApiError(data));
   }
 }
 
+export async function resendOtp(email: string): Promise<void> {
+  let res: Response;
+
+  try {
+    res = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+  } catch {
+    throw new Error("تعذر الاتصال بالخادم");
+  }
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(formatApiError(data));
+  }
+}
 
 export class NotVerifiedError extends Error {
   constructor() {
-    super("يرجى تفعيل الحساب");
+    super("الحساب غير مفعل، يرجى تفعيل الحساب أولاً بواسطة رمز التحقق");
     this.name = "NotVerifiedError";
   }
 }
@@ -113,11 +93,17 @@ export interface LoginPayload {
 }
 
 export interface LoginResult {
-  accessToken: string;
+  message: string;
   user: {
-    _id: string;
+    id: string;
     name: string;
     email: string;
+    role: string;
+    studentId: string | null;
+  };
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
   };
 }
 
@@ -137,42 +123,223 @@ export async function loginUser(payload: LoginPayload): Promise<LoginResult> {
   const data = await res.json();
 
   if (!res.ok) {
-    if (data?.message === "Please verify your email first") {
+    if (res.status === 403) {
       throw new NotVerifiedError();
     }
-    throw new Error(extractErrorMessage(data));
+    throw new Error(formatApiError(data));
   }
 
   return data as LoginResult;
 }
 
-export interface EducationStage {
-  id: string;
-  title: string;
-}
+function formatApiError(data: unknown): string {
+  if (!data || typeof data !== "object") return "حدث خطأ ما";
 
-export async function fetchEducationalStages(): Promise<EducationStage[]> {
-  try {
-    const res = await fetch(EDUCATIONAL_STAGES_ENDPOINT);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : data.stages;
-    return Array.isArray(list) ? list : [];
-  } catch {
-    return [];
+  const raw = (data as { message?: unknown }).message;
+
+  if (Array.isArray(raw)) {
+    return raw.filter((i): i is string => typeof i === "string").join("، ");
   }
+
+  if (typeof raw === "string") return raw;
+
+  return "حدث خطأ ما";
 }
 
-const PENDING_USER_ID_KEY = "ruqi_pending_user_id";
+const ACCESS_TOKEN_KEY = "ruqi_access_token";
+const REFRESH_TOKEN_KEY = "ruqi_refresh_token";
+const PENDING_EMAIL_KEY = "ruqi_pending_email";
 
-
-export function savePendingUserId(userId: string) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(PENDING_USER_ID_KEY, userId);
-  }
+export function saveTokens(tokens: { accessToken: string; refreshToken: string }) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 }
 
-export function getPendingUserId(): string | null {
+export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(PENDING_USER_ID_KEY);
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function clearTokens() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function isAuthenticated(): boolean {
+  return Boolean(getAccessToken());
+}
+
+export async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/auth/get-new-access-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    return false;
+  }
+
+  if (!res.ok) return false;
+
+  const data = await res.json();
+  const tokens = (data as { tokens?: { accessToken?: string; refreshToken?: string } })
+    .tokens;
+
+  if (!tokens?.accessToken || !tokens?.refreshToken) return false;
+
+  saveTokens({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+  return true;
+}
+
+async function authedFetch(
+  url: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  const withAuth = (token: string | null) => ({
+    ...init,
+    headers: {
+      ...init.headers,
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  let res: Response;
+  try {
+    res = await fetch(url, withAuth(getAccessToken()));
+  } catch {
+    throw new Error("تعذر الاتصال بالخادم");
+  }
+
+  if (res.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      try {
+        res = await fetch(url, withAuth(getAccessToken()));
+      } catch {
+        throw new Error("تعذر الاتصال بالخادم");
+      }
+    }
+  }
+
+  return res;
+}
+
+export interface UserProfile {
+  _id: string;
+  studentId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  role: string;
+  status: string;
+  educationalStage: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getProfile(): Promise<UserProfile> {
+  const res = await authedFetch(`${API_BASE_URL}/users/me`);
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    if (res.status === 401) clearTokens();
+    throw new Error(formatApiError(data));
+  }
+
+  return normalizeProfile(data);
+}
+
+function normalizeProfile(data: unknown): UserProfile {
+  const src =
+    data && typeof data === "object" && "user" in (data as Record<string, unknown>)
+      ? ((data as Record<string, unknown>).user as Record<string, unknown>)
+      : (data as Record<string, unknown>);
+
+  const raw = Array.isArray(src) ? (src[0] as Record<string, unknown>) : src;
+
+  return {
+    _id: String(raw?._id ?? raw?.id ?? ""),
+    studentId: String(raw?.studentId ?? ""),
+    name: String(raw?.name ?? ""),
+    email: String(raw?.email ?? ""),
+    phoneNumber: String(raw?.phoneNumber ?? ""),
+    address: String(raw?.address ?? ""),
+    role: String(raw?.role ?? ""),
+    status: String(raw?.status ?? ""),
+    educationalStage: String(raw?.educationalStage ?? raw?.stage ?? ""),
+    createdAt: String(raw?.createdAt ?? ""),
+    updatedAt: String(raw?.updatedAt ?? ""),
+  };
+}
+
+export interface UpdateStudentProfilePayload {
+  name?: string;
+  password?: string;
+  phoneNumber?: string;
+  address?: string;
+  educationalStage?: string;
+}
+
+export async function updateStudentProfile(
+  payload: UpdateStudentProfilePayload
+): Promise<UserProfile> {
+  const res = await authedFetch(`${API_BASE_URL}/users/student/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    if (res.status === 401) clearTokens();
+    throw new Error(formatApiError(data));
+  }
+
+  return normalizeProfile(data.user);
+}
+
+
+
+export function savePendingEmail(email: string) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PENDING_EMAIL_KEY, email);
+  }
+}
+
+export function getPendingEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(PENDING_EMAIL_KEY);
+}
+
+export async function logoutUser(): Promise<void> {
+  const token = getAccessToken();
+
+  if (token) {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // تجاهل أخطاء الخادم عند الخروج، نكمل تنظيف الجلسة محلياً دائماً
+    }
+  }
+
+  clearTokens();
 }

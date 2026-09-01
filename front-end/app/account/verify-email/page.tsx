@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { verifyEmail } from "@/lib/api";
+import { verifyAccount, resendOtp, getPendingEmail } from "@/lib/api";
 
 const OTP_EXPIRY_SECONDS = 600;
 
 export default function VerifyOTP() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get("userId");
+  const email = searchParams.get("email") ?? getPendingEmail();
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,14 +71,29 @@ export default function VerifyOTP() {
     return `${m}:${s}`;
   };
 
-  const handleResend = () => {
-    if (secondsLeft > 0) return;
+  const handleResend = async () => {
+    if (secondsLeft > 0 || loading) return;
 
-    setSecondsLeft(OTP_EXPIRY_SECONDS);
-    setOtp(["", "", "", "", "", ""]);
+    if (!email) {
+      setError("بيانات التسجيل غير مكتملة، أعد التسجيل من البداية");
+      return;
+    }
+
+    setLoading(true);
     setError(null);
-    setInfo("تم إعادة إرسال رمز تحقق جديد");
-    inputRefs.current[0]?.focus();
+    setInfo(null);
+
+    try {
+      await resendOtp(email);
+      setSecondsLeft(OTP_EXPIRY_SECONDS);
+      setOtp(["", "", "", "", "", ""]);
+      setInfo("تم إعادة إرسال رمز التحقق بنجاح إلى بريدك الإلكتروني");
+      inputRefs.current[0]?.focus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذر إعادة إرسال الرمز");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +105,7 @@ export default function VerifyOTP() {
       return;
     }
 
-    if (!userId) {
+    if (!email) {
       setError("بيانات التسجيل غير مكتملة، أعد التسجيل من البداية");
       return;
     }
@@ -100,7 +115,7 @@ export default function VerifyOTP() {
     setLoading(true);
 
     try {
-      await verifyEmail({ userId, otp: code });
+      await verifyAccount({ email, otp: code });
       router.push("/account/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "الرمز غير صحيح، يرجى المحاولة مرة أخرى.");
@@ -194,7 +209,7 @@ export default function VerifyOTP() {
             </p>
           )}
 
-          {!userId && (
+          {!email && (
             <p className="w-full text-[14px] text-warning bg-warning-bg border border-warning/30 rounded-lg p-3 mb-6 text-center font-medium">
               لم نعثر على بيانات التسجيل.
               <Link href="/account/register" className="text-warning font-bold underline ms-1">
