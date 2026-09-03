@@ -50,14 +50,14 @@ export class EducationalContentController {
   // --- TEACHER ONLY APIs ---
   @Post('stages')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async createStage(@Body() createDto: CreateEducationalStageDto) {
     return await this.educationalContentService.createStage(createDto);
   }
 
   @Patch('stages/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async updateStage(
     @Param('id', MongoIdPipe) id: string,
     @Body() updateDto: UpdateEducationalStageDto,
@@ -67,7 +67,7 @@ export class EducationalContentController {
 
   @Delete('stages/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async removeStage(@Param('id', MongoIdPipe) id: string) {
     await this.educationalContentService.removeStage(id);
     return { message: 'تم حذف المرحلة الدراسية بنجاح' };
@@ -91,14 +91,14 @@ export class EducationalContentController {
   // --- TEACHER ONLY APIs ---
   @Post('months')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async createMonth(@Body() createDto: CreateMonthDto) {
     return await this.educationalContentService.createMonth(createDto);
   }
 
   @Patch('months/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async reorderMonths(@Body() reorderDto: ReorderDto) {
     await this.educationalContentService.reorderMonths(reorderDto);
     return { message: 'تم إعادة ترتيب الشهور بنجاح' };
@@ -106,7 +106,7 @@ export class EducationalContentController {
 
   @Patch('months/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async updateMonth(
     @Param('id', MongoIdPipe) id: string,
     @Body() updateDto: UpdateMonthDto,
@@ -116,7 +116,7 @@ export class EducationalContentController {
 
   @Delete('months/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async removeMonth(@Param('id', MongoIdPipe) id: string) {
     await this.educationalContentService.removeMonth(id);
     return { message: 'تم حذف الشهر بنجاح' };
@@ -140,21 +140,21 @@ export class EducationalContentController {
   // --- TEACHER ONLY APIs ---
   @Post('lessons')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async createLesson(@Body() createDto: CreateLessonDto) {
     return await this.educationalContentService.createLesson(createDto);
   }
 
   @Post('exams')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async createExam(@Body() createDto: CreateExamDto) {
     return await this.educationalContentService.createExam(createDto);
   }
 
   @Patch('content/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async reorderContent(@Body() reorderDto: ReorderDto) {
     await this.educationalContentService.reorderContent(reorderDto);
     return { message: 'تم إعادة ترتيب المحتوى بنجاح' };
@@ -162,7 +162,7 @@ export class EducationalContentController {
 
   @Patch('content/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async updateContent(
     @Param('id', MongoIdPipe) id: string,
     @Body() updateDto: UpdateLessonExamDto,
@@ -172,7 +172,7 @@ export class EducationalContentController {
 
   @Delete('content/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.TEACHER)
   async removeContent(@Param('id', MongoIdPipe) id: string) {
     await this.educationalContentService.removeContent(id);
     return { message: 'تم حذف المحتوى بنجاح' };
