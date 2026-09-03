@@ -6,7 +6,7 @@
 
 | Item           | Value                                   |
 | -------------- | --------------------------------------- |
-| Base URL       | `http://localhost:8000`                 |
+| Base URL       | `https://app-6a95f847.deploy.meerasolution.com`                 |
 | Content-Type   | `application/json`                      |
 | Authentication | `Authorization: Bearer <accessToken>`   |
 | Language       | رسائل الاستجابة والأخطاء باللغة العربية |
