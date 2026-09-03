@@ -8,11 +8,18 @@ import { JwtModule } from '@nestjs/jwt';
 import { TokenService } from '../../common/services/token.service.js';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../../common/strategies/jwt.strategy.js';
+import {
+  EducationalStage,
+  EducationalStageSchema,
+} from '../../schemas/educational-stage.schema.js';
 
 @Global()
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: EducationalStage.name, schema: EducationalStageSchema },
+    ]),
     JwtModule.register({}),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],

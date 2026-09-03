@@ -30,6 +30,11 @@ export class UsersService {
     userId: string,
     updateStudentProfileDto: UpdateStudentProfileDto,
   ) {
+    const existingUser = await this.userModel.findById(userId);
+    if (!existingUser) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
     const updateData: Record<string, any> = { ...updateStudentProfileDto };
 
     if (updateData.password) {
@@ -46,10 +51,6 @@ export class UsersService {
         '-password -hashedRefreshToken -emailOtp -emailOtpExpiresAt -emailOtpLastSentAt',
       )
       .lean();
-
-    if (!updatedUser) {
-      throw new NotFoundException('المستخدم غير موجود');
-    }
 
     return {
       message: 'تم تحديث بيانات حساب الطالب بنجاح',

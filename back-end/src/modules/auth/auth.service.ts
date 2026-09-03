@@ -2,12 +2,13 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { User, UserDocument } from '../../schemas/user.schema.js';
@@ -24,11 +25,18 @@ import { ForgetPasswordDto } from './dto/forget-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { generateStudentId } from '../../common/utils/generateStudentID.js';
+import { UserRole } from '../../common/enums/user-role.enum.js';
+import {
+  EducationalStage,
+  EducationalStageDocument,
+} from '../../schemas/educational-stage.schema.js';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(EducationalStage.name)
+    private readonly stageModel: Model<EducationalStageDocument>,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
     private readonly tokenService: TokenService,
@@ -36,7 +44,7 @@ export class AuthService {
   ) {}
 
   async signup(signupDto: SignupDto) {
-    const { email, password, name, phoneNumber, address } = signupDto;
+    const { email, password, name, phoneNumber, address, stage } = signupDto;
 
     const existingUser = await this.userModel.findOne({
       email: email.toLowerCase(),
@@ -44,6 +52,13 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException('البريد الإلكتروني مُسجل بالفعل');
     }
+
+    const stageExists = await this.stageModel.findById(stage);
+    if (!stageExists) {
+      throw new NotFoundException('المرحلة الدراسية المحددة غير موجودة');
+    }
+
+    const stageObjectId = new Types.ObjectId(stage);
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -53,7 +68,9 @@ export class AuthService {
     );
 
     const now = new Date();
-    const otpExpiresAt = new Date(now.getTime() + otpExpiresInMinutes * 1000);
+    const otpExpiresAt = new Date(
+      now.getTime() + otpExpiresInMinutes * 60 * 1000,
+    );
 
     let studentId = generateStudentId();
     let isStudentIdExists = await this.userModel.findOne({ studentId });
@@ -70,7 +87,10 @@ export class AuthService {
       password: hashedPassword,
       phoneNumber,
       address,
+      role: UserRole.STUDENT,
       status: UserStatus.PENDING,
+      stage: stageObjectId ?? undefined,
+      subscribedMonths: [],
       emailOtp: otp,
       emailOtpExpiresAt: otpExpiresAt,
       emailOtpLastSentAt: now,
@@ -78,7 +98,11 @@ export class AuthService {
 
     try {
       await this.mailService.sendOtpEmail(newUser.email, otp);
-    } catch (error) {}
+    } catch {
+      throw new InternalServerErrorException(
+        'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقًا',
+      );
+    }
 
     return {
       message:
@@ -122,7 +146,9 @@ export class AuthService {
     const otpExpiresInMinutes = this.configService.getOrThrow<number>(
       'emailVerification.otpExpiresIn',
     );
-    const otpExpiresAt = new Date(now.getTime() + otpExpiresInMinutes * 1000);
+    const otpExpiresAt = new Date(
+      now.getTime() + otpExpiresInMinutes * 60 * 1000,
+    );
 
     user.emailOtp = otp;
     user.emailOtpExpiresAt = otpExpiresAt;
@@ -131,7 +157,11 @@ export class AuthService {
 
     try {
       await this.mailService.sendOtpEmail(user.email, otp);
-    } catch (error) {}
+    } catch {
+      throw new InternalServerErrorException(
+        'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقًا',
+      );
+    }
 
     return {
       message: 'تم إعادة إرسال رمز التحقق بنجاح إلى بريدك الإلكتروني',
@@ -263,7 +293,9 @@ export class AuthService {
     const otpExpiresInMinutes = this.configService.getOrThrow<number>(
       'emailVerification.otpExpiresIn',
     );
-    const otpExpiresAt = new Date(now.getTime() + otpExpiresInMinutes * 1000);
+    const otpExpiresAt = new Date(
+      now.getTime() + otpExpiresInMinutes * 60 * 1000,
+    );
 
     user.emailOtp = otp;
     user.emailOtpExpiresAt = otpExpiresAt;
@@ -272,7 +304,11 @@ export class AuthService {
 
     try {
       await this.mailService.sendOtpEmail(user.email, otp);
-    } catch (error) {}
+    } catch {
+      throw new InternalServerErrorException(
+        'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقًا',
+      );
+    }
 
     return {
       message: 'تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
@@ -326,7 +362,7 @@ export class AuthService {
       payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: refreshSecret,
       });
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException(
         'الـ Refresh Token غير صالح أو انتهت صلاحيته',
       );

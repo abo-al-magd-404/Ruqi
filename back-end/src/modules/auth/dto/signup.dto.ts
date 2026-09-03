@@ -1,24 +1,36 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsMongoId,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class SignupDto {
-  @IsString({ message: 'الاسم يجب أن يكون نصاً' })
-  @IsNotEmpty({ message: 'الاسم مطلوب' })
-  name!: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-  @IsEmail({}, { message: 'البريد الإلكتروني غير صالح' })
-  @IsNotEmpty({ message: 'البريد الإلكتروني مطلوب' })
-  email!: string;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
-  @IsString({ message: 'كلمة المرور يجب أن تكون نصاً' })
-  @MinLength(8, { message: 'كلمة المرور يجب ألا تقل عن 8 أحرف' })
-  @IsNotEmpty({ message: 'كلمة المرور مطلوبة' })
-  password!: string;
+  @IsString()
+  @MinLength(6)
+  password: string;
 
-  @IsString({ message: 'رقم الهاتف يجب أن يكون نصاً' })
-  @IsNotEmpty({ message: 'رقم الهاتف مطلوب' })
-  phoneNumber!: string;
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^01[0125][0-9]{8}$/, {
+    message: 'رقم الهاتف يجب أن يكون رقم مصري صحيح',
+  })
+  phoneNumber: string;
 
-  @IsString({ message: 'العنوان يجب أن يكون نصاً' })
-  @IsNotEmpty({ message: 'العنوان مطلوب' })
-  address!: string;
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
+  @IsMongoId({ message: 'معرف المرحلة الدراسية غير صالح' })
+  stage: string;
 }

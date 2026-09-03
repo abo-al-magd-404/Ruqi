@@ -5,6 +5,7 @@ import { UserStatus } from '../enums/user-status.enum.js';
 export interface IUser {
   _id?: Types.ObjectId;
   studentId?: string;
+  avatar?: string;
   name: string;
   email: string;
   password: string;
@@ -14,7 +15,8 @@ export interface IUser {
   role: UserRole;
   status: UserStatus;
 
-  educationalStage?: string;
+  stage?: Types.ObjectId;
+  subscribedMonths: Types.ObjectId[];
 
   // OTP Fields
   emailOtp?: string | null;

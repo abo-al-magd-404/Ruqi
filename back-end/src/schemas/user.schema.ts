@@ -1,8 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { UserRole } from '../common/enums/user-role.enum.js';
 import { UserStatus } from '../common/enums/user-status.enum.js';
 import { IUser } from '../common/interfaces/user.interface.js';
+import { EducationalStage } from './educational-stage.schema.js';
+import { Month } from './month.schema.js';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -10,6 +12,9 @@ export type UserDocument = HydratedDocument<User>;
 export class User implements IUser {
   @Prop({ unique: true, sparse: true, trim: true })
   studentId?: string;
+
+  @Prop({ type: String, default: null })
+  avatar?: string;
 
   @Prop({ required: true, trim: true })
   name!: string;
@@ -32,8 +37,11 @@ export class User implements IUser {
   @Prop({ required: true, enum: UserStatus, default: UserStatus.PENDING })
   status!: UserStatus;
 
-  @Prop({ type: String, required: false })
-  educationalStage?: string;
+  @Prop({ type: Types.ObjectId, ref: EducationalStage.name, default: null })
+  stage?: Types.ObjectId;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: Month.name }], default: [] })
+  subscribedMonths: Types.ObjectId[];
 
   // OTP Fields
   @Prop({ type: String, default: null })

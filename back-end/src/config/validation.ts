@@ -6,6 +6,7 @@ export const envValidationSchema = Joi.object({
     .default('development'),
 
   PORT: Joi.number().port().default(8000),
+  FRONTEND_URL: Joi.string().uri().required(),
 
   MONGODB_URI: Joi.string().uri().required(),
 
