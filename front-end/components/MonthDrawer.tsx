@@ -48,7 +48,6 @@ export default function MonthDrawer({
       className={`fixed inset-0 z-[1100] lg:hidden font-cairo ${isRendered ? "" : "pointer-events-none"}`}
       dir="rtl"
     >
-      {/* Overlay */}
       <div
         className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
           stage === "opening" || stage === "open" ? "opacity-100" : "opacity-0"
@@ -56,7 +55,6 @@ export default function MonthDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer */}
       <div
         className={`absolute bottom-0 left-0 right-0 flex items-end transition-transform duration-300 ease-out ${
           stage === "opening" || stage === "open" ? "translate-y-0" : "translate-y-full"

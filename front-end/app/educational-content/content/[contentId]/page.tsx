@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import { markLessonCompleted } from "@/lib/progress";
 import MonthDrawer, { MonthDrawerButton } from "@/components/MonthDrawer";
+import Loading from "@/app/loading";
 
 export default function ContentDetailsPage({ params }: { params: Promise<{ contentId: string }> }) {
   const router = useRouter();
@@ -80,11 +81,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   }, [contentId, router]);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center w-full min-h-screen bg-background">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!content) {

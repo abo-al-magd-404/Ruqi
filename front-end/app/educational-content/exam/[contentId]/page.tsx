@@ -15,6 +15,7 @@ import {
   EducationalStage,
 } from "@/lib/api";
 import MonthDrawer, { MonthDrawerButton } from "@/components/MonthDrawer";
+import Loading from "@/app/loading";
 
 const EXAM_DURATION_MINUTES = 30;
 
@@ -71,11 +72,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   }, [contentId]);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center w-full min-h-screen bg-background">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!content) {
