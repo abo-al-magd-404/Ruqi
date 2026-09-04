@@ -1,11 +1,14 @@
+import { EducationalStage } from "@/lib/api";
+
 interface EditProfileModalProps {
   open: boolean;
   onClose: () => void;
-  form: { name: string; phoneNumber: string; address: string; educationalStage: string };
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  form: { name: string; phoneNumber: string; address: string; stage: string };
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   saving: boolean;
   error: string | null;
+  stages: EducationalStage[];
 }
 
 export default function EditProfileModal({
@@ -16,6 +19,7 @@ export default function EditProfileModal({
   onSubmit,
   saving,
   error,
+  stages,
 }: EditProfileModalProps) {
   if (!open) return null;
 
@@ -70,13 +74,19 @@ export default function EditProfileModal({
 
           <div className="flex flex-col gap-1">
             <label className="text-[13px] font-semibold text-text-main">المرحلة الدراسية</label>
-            <input
-              type="text"
-              name="educationalStage"
-              value={form.educationalStage}
+            <select
+              name="stage"
+              value={form.stage}
               onChange={onChange}
-              className="w-full h-[48px] rounded-xl border-[1.5px] border-border px-4 text-text-main text-[14px] outline-none focus:border-primary transition-colors bg-background focus:bg-surface"
-            />
+              className="w-full h-[48px] rounded-xl border-[1.5px] border-border px-4 text-text-main text-[14px] outline-none focus:border-primary transition-colors bg-background focus:bg-surface appearance-none cursor-pointer"
+            >
+              <option value="" disabled>اختر المرحلة</option>
+              {stages.map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
           </div>
 
           {error && (

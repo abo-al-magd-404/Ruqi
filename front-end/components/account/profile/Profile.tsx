@@ -3,15 +3,24 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings, KeyRound, User, LogOut } from "lucide-react";
-import { getProfile, logoutUser, updateStudentProfile, UserProfile } from "@/lib/api";
+import {
+  getProfile,
+  logoutUser,
+  updateStudentProfile,
+  UserProfile,
+  getEducationalStages,
+  EducationalStage,
+} from "@/lib/api";
 import Loading from "@/app/loading";
-import EditProfileModal from "@/components/account/profile/Edit/EditProfileModal"
-import ChangePasswordModal from "@/components/account/profile/Edit/ChangePasswordModal";
-import LogoutConfirmModal from "@/components/account/profile/Edit/LogoutConfirmModal";
+import EditProfileModal from "@/components/account/profile/Edit/edit-profile-modal";
+import ChangePasswordModal from "@/components/account/profile/Edit/change-password-modal";
+import LogoutConfirmModal from "@/components/account/profile/Edit/logout-confirm-modal";
+import AdminDashboard from "@/components/eductational-content/teacher/teacher-dashboard";
 
 export default function StudentProfile() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stages, setStages] = useState<EducationalStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -22,7 +31,7 @@ export default function StudentProfile() {
     name: "",
     phoneNumber: "",
     address: "",
-    educationalStage: "",
+    stage: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -43,17 +52,19 @@ export default function StudentProfile() {
   };
 
   const openEditModal = () => {
+    const currentStage = profile?.stage ?? "";
+    const matched = stages.some((s) => s._id === currentStage);
     setEditForm({
       name: profile?.name ?? "",
       phoneNumber: profile?.phoneNumber ?? "",
       address: profile?.address ?? "",
-      educationalStage: profile?.educationalStage ?? "",
+      stage: matched ? currentStage : "",
     });
     setEditError(null);
     setShowEditModal(true);
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name: field, value } = e.target;
     setEditForm((prev) => ({ ...prev, [field]: value }));
     if (editError) setEditError(null);
@@ -61,17 +72,25 @@ export default function StudentProfile() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingEdit(true);
     setEditError(null);
 
+    const phone = editForm.phoneNumber.trim();
+    if (phone && !/^01[0-9]{9}$/.test(phone)) {
+      setEditError("يرجى إدخال رقم هاتف مصري صحيح (مثال: 01012345678)");
+      return;
+    }
+
+    setSavingEdit(true);
+
     try {
-      const updated = await updateStudentProfile({
+      await updateStudentProfile({
         name: editForm.name,
         phoneNumber: editForm.phoneNumber,
         address: editForm.address,
-        educationalStage: editForm.educationalStage,
+        stage: editForm.stage,
       });
-      setProfile(updated);
+      const fresh = await getProfile();
+      setProfile(fresh);
       setShowEditModal(false);
     } catch (err) {
       setEditError(err instanceof Error ? err.message : "تعذر حفظ البيانات");
@@ -115,10 +134,11 @@ export default function StudentProfile() {
   useEffect(() => {
     let active = true;
 
-    getProfile()
-      .then((data) => {
+    Promise.all([getProfile(), getEducationalStages().catch(() => [])])
+      .then(([profileData, stagesData]) => {
         if (!active) return;
-        setProfile(data);
+        setProfile(profileData);
+        setStages(stagesData);
       })
       .catch((err) => {
         if (!active) return;
@@ -157,7 +177,8 @@ export default function StudentProfile() {
     );
   }
 
-  const { name, studentId, email, phoneNumber, educationalStage, role } = profile;
+  const { name, studentId, email, phoneNumber, stage, role } = profile;
+  const stageTitle = stages.find((s) => s._id === stage)?.title || stage;
 
   return (
     <div
@@ -188,7 +209,7 @@ export default function StudentProfile() {
                       : role === "ADMIN"
                         ? "مسؤول النظام (Admin)"
                         : "عضو في رُقِيّ"}
-                  {role === "STUDENT" && educationalStage ? ` • ${educationalStage}` : ""}
+                  {role === "STUDENT" && stageTitle ? ` • ${stageTitle}` : ""}
                 </span>
               </div>
             </div>
@@ -248,13 +269,15 @@ export default function StudentProfile() {
           {role === "STUDENT" && (
             <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none sm:col-span-2 lg:col-span-1">
               <span className="text-[12px] md:text-[13px] text-text-muted">المرحلة الدراسية</span>
-              <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words " dir="ltr">
-                {educationalStage || "—"}
+              <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words">
+                {stageTitle || "—"}
               </span>
             </div>
           )}
         </div>
       </div>
+
+      {role === "TEACHER" && <AdminDashboard />}
 
       <LogoutConfirmModal
         open={showLogoutConfirm}
@@ -271,6 +294,7 @@ export default function StudentProfile() {
         onSubmit={handleSaveEdit}
         saving={savingEdit}
         error={editError}
+        stages={stages} // تمرير المراحل للنافذة
       />
 
       <ChangePasswordModal

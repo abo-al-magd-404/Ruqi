@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyAccount, resendOtp, getPendingEmail } from "@/lib/api";
 
-const OTP_EXPIRY_SECONDS = 600;
+const OTP_COOLDOWN_SECONDS = 60; 
+const OTP_EXPIRY_SECONDS = 600; 
 
 export default function VerifyOTP() {
   const router = useRouter();
@@ -15,18 +16,20 @@ export default function VerifyOTP() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  
   const [secondsLeft, setSecondsLeft] = useState(OTP_EXPIRY_SECONDS);
+  const [cooldownLeft, setCooldownLeft] = useState(0); // مؤقت منفصل لإعادة الإرسال
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setCooldownLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
-
 
   const handleChange = (index: number, value: string) => {
     if (isNaN(Number(value))) return;
@@ -39,7 +42,6 @@ export default function VerifyOTP() {
     }
   };
 
-
   const handleKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>
@@ -48,7 +50,6 @@ export default function VerifyOTP() {
       inputRefs.current[index - 1]?.focus();
     }
   };
-
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -72,7 +73,7 @@ export default function VerifyOTP() {
   };
 
   const handleResend = async () => {
-    if (secondsLeft > 0 || loading) return;
+    if (cooldownLeft > 0 || loading) return;
 
     if (!email) {
       setError("بيانات التسجيل غير مكتملة، أعد التسجيل من البداية");
@@ -85,7 +86,8 @@ export default function VerifyOTP() {
 
     try {
       await resendOtp(email);
-      setSecondsLeft(OTP_EXPIRY_SECONDS);
+      setSecondsLeft(OTP_EXPIRY_SECONDS); 
+      setCooldownLeft(OTP_COOLDOWN_SECONDS); 
       setOtp(["", "", "", "", "", ""]);
       setInfo("تم إعادة إرسال رمز التحقق بنجاح إلى بريدك الإلكتروني");
       inputRefs.current[0]?.focus();
@@ -118,7 +120,7 @@ export default function VerifyOTP() {
       await verifyAccount({ email, otp: code });
       router.push("/account/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "الرمز غير صحيح، يرجى المحاولة مرة أخرى.");
+      setError(err instanceof Error ? err.message : "الرمز غير صحيح أو منتهي الصلاحية، يرجى المحاولة مرة أخرى.");
     } finally {
       setLoading(false);
     }
@@ -226,7 +228,6 @@ export default function VerifyOTP() {
             {loading ? "جاري التحقق..." : "تأكيد الرمز"}
           </button>
 
-
           <div className="flex items-center gap-1 mt-2">
             <span className="text-text-muted font-medium text-[14px]">
               لم تستلم الرمز؟
@@ -234,10 +235,10 @@ export default function VerifyOTP() {
             <button
               type="button"
               onClick={handleResend}
-              disabled={secondsLeft > 0}
+              disabled={cooldownLeft > 0} 
               className="text-primary-hover font-bold text-[14px] hover:text-primary transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              إعادة الإرسال
+              {cooldownLeft > 0 ? `إعادة الإرسال بعد (${formatTime(cooldownLeft)})` : "إعادة الإرسال"}
             </button>
           </div>
         </form>

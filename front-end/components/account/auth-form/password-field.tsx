@@ -15,16 +15,16 @@ export default function PasswordField({
   const level = getPasswordStrength(password);
 
   const LEVEL_COLORS: Record<PasswordStrengthLevel, string> = {
-    1: "var(--color-danger)",
-    2: "var(--color-warning)",
-    3: "var(--color-success)",
-    4: "var(--color-success)",
+    1: "#ba1a1a",
+    2: "#d97706",
+    3: "#2e7d32",
+    4: "#2e7d32",
   };
 
   const levelColor = LEVEL_COLORS[level];
-  const successColor = "var(--color-success)";
-  const trackColor = "var(--color-border)";
-  const mutedColor = "var(--color-text-muted)";
+  const successColor = "#2e7d32";
+  const trackColor = "#e2ddd5";
+  const mutedColor = "#736c65";
   const complexEnough = checks.caseMix && checks.number && checks.special;
 const INPUT_CLASS =
   "w-full h-[52px] rounded-xl border-[1.5px] border-border bg-surface px-4 text-text-main placeholder-text-muted focus:border-primary outline-none text-[14px] md:text-[15px] transition-all text-right";

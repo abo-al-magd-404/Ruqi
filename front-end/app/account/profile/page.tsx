@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import StudentProfile from "@/components/account/profile/Profile";
+import StudentProfile from "@/components/account/profile/profile";
 import { isAuthenticated } from "@/lib/api";
 
 const subscribe = () => () => {};
@@ -14,7 +13,7 @@ export default function ProfilePage() {
   const isLoggedIn = useSyncExternalStore(
     subscribe,
     () => isAuthenticated(),
-    () => false
+    () => false,
   );
 
   useEffect(() => {

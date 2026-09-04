@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginUser, signup, savePendingEmail, getPendingEmail, saveTokens, NotVerifiedError } from "@/lib/api";
-import PasswordField from "./PasswordFiled";
+import {
+  loginUser,
+  signup,
+  savePendingEmail,
+  getPendingEmail,
+  saveTokens,
+  NotVerifiedError,
+  getEducationalStages,
+  EducationalStage,
+} from "@/lib/api";
+import PasswordField from "./password-field";
 
 type Mode = "login" | "register";
 
@@ -15,6 +24,7 @@ interface FormState {
   confirmPassword: string;
   phoneNumber: string;
   address: string;
+  stage: string;
 }
 
 const INITIAL_FORM: FormState = {
@@ -24,6 +34,7 @@ const INITIAL_FORM: FormState = {
   confirmPassword: "",
   phoneNumber: "",
   address: "",
+  stage: "",
 };
 
 const INPUT_CLASS =
@@ -56,7 +67,20 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
   const [emailError, setEmailError] = useState(false);
   const [needsActivation, setNeedsActivation] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [stages, setStages] = useState<EducationalStage[]>([]);
+  const [loadingStages, setLoadingStages] = useState(false);
+
+  useEffect(() => {
+    if (!isLogin) {
+      setLoadingStages(true);
+      getEducationalStages()
+        .then((data) => setStages(data))
+        .catch(() => setError("تعذر تحميل المراحل الدراسية، تأكد من اتصال الخادم"))
+        .finally(() => setLoadingStages(false));
+    }
+  }, [isLogin]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
 
@@ -78,6 +102,11 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
       return;
     }
 
+    if (!isLogin && !form.stage) {
+      setError("من فضلك اختر المرحلة الدراسية أولاً");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -93,6 +122,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           password: form.password,
           phoneNumber: form.phoneNumber,
           address: form.address,
+          stage: form.stage,
         });
         savePendingEmail(form.email);
         router.push(`/account/verify-email?email=${form.email}`);
@@ -139,6 +169,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
               strokeWidth="2"
               strokeLinecap="round"
             />
+            <rect x="273" y="8.5" width="60" height="1" fill="#D4AF37" />
           </svg>
 
           <h1 className="text-[24px] md:text-[28px] font-extrabold text-text-main text-center mb-1">
@@ -170,7 +201,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           value={form.email}
           onChange={handleChange}
           required
-          placeholder={isLogin ? "yourGmail@gamil.com" : "example@gmail.com"}
+          placeholder={isLogin ? "yourGmail@gmail.com" : "example@gmail.com"}
           error={emailError}
         />
         {emailError && (
@@ -229,8 +260,31 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
               value={form.address}
               onChange={handleChange}
               required
-              placeholder="مثال: مركز بدر عمر شاهين"
+              placeholder="مثال: دمنهور"
             />
+
+            <div className="block mb-5">
+              <label className="block text-[13px] md:text-[14px] font-semibold text-text-main mb-2 text-right">
+                المرحلة الدراسية
+              </label>
+              <select
+                name="stage"
+                value={form.stage}
+                onChange={handleChange}
+                required
+                className={`${INPUT_CLASS} border-border focus:border-primary appearance-none cursor-pointer`}
+                dir="rtl"
+              >
+                <option value="" disabled>
+                  {loadingStages ? "جاري تحميل المراحل..." : "اختر المرحلة الدراسية"}
+                </option>
+                {stages.map((stage) => (
+                  <option key={stage._id} value={stage._id}>
+                    {stage.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           </>
         )}
 
@@ -257,7 +311,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         <div className="flex flex-col items-center gap-5 mt-2">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (!isLogin && loadingStages)}
             className="w-full h-[52px] md:h-[58px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
           >
             {loading ? (isLogin ? "جاري الدخول..." : "جاري الإنشاء...") : isLogin ? "تسجيل الدخول" : "إنشاء الحساب"}

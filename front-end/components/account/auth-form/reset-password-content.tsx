@@ -1,14 +1,13 @@
-"use client"
+"use client";
 import Link from "next/link";
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/lib/api";
-import PasswordField from "@/components/account/AuthForm/PasswordFiled";
+import PasswordField from "@/components/account/auth-form/password-field";
 
 const INPUT_CLASS =
   "w-full h-[52px] rounded-xl border-[1.5px] border-border bg-surface px-4 text-text-main placeholder-text-muted outline-none text-[14px] md:text-[15px] transition-all text-right";
-
 
 function FormField({
   label,
@@ -27,7 +26,7 @@ function FormField({
   );
 }
 
-export default function ResetPasswordContent(){
+export default function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email") || "";
@@ -47,8 +46,7 @@ export default function ResetPasswordContent(){
     }
   }, [emailParam]);
 
-
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
@@ -68,7 +66,7 @@ export default function ResetPasswordContent(){
     try {
       const res = await resetPassword({ email, otp, newPassword });
       setSuccessMessage(res.message);
-      
+
       setTimeout(() => {
         router.push("/account/login");
       }, 2500);
@@ -79,8 +77,8 @@ export default function ResetPasswordContent(){
     }
   };
 
-  return(
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden font-cairo py-12 py-20">
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden font-cairo py-12 md:py-20">
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('/path-to-islamic-pattern.svg')] bg-repeat"></div>
 
       <form
@@ -180,9 +178,7 @@ export default function ResetPasswordContent(){
           </button>
 
           <div className="flex items-center gap-1">
-            <span className="text-text-muted font-medium text-[13px] md:text-[14px]">
-              تذكرت كلمة المرور؟
-            </span>
+            <span className="text-text-muted font-medium text-[13px] md:text-[14px]">تذكرت كلمة المرور؟</span>
             <Link
               href="/account/login"
               className="text-primary-hover font-bold text-[13px] md:text-[14px] hover:text-primary transition-colors"
@@ -193,5 +189,5 @@ export default function ResetPasswordContent(){
         </div>
       </form>
     </div>
-  )
+  );
 }

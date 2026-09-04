@@ -1,4 +1,4 @@
-import PlateFormBeforeLogin from "@/components/account/landingLogin&Register";
+import PlateFormBeforeLogin from "@/components/account/auth-landing";
 import GuestGuard from "@/components/account/auth/GuestGuard";
 
 export default function AccountPage() {
