@@ -4,12 +4,12 @@
 
 ## Quick Start
 
-| Item           | Value                                   |
-| -------------- | --------------------------------------- |
-| Base URL       | `https://app-6a995274.deploy.meerasolution.com`                 |
-| Content-Type   | `application/json`                      |
-| Authentication | `Authorization: Bearer <accessToken>`   |
-| Language       | رسائل الاستجابة والأخطاء باللغة العربية |
+| Item           | Value                                           |
+| -------------- | ----------------------------------------------- |
+| Base URL       | `https://app-6a995274.deploy.meerasolution.com` |
+| Content-Type   | `application/json`                              |
+| Authentication | `Authorization: Bearer <accessToken>`           |
+| Language       | رسائل الاستجابة والأخطاء باللغة العربية         |
 
 ### Authenticated Requests
 
@@ -26,8 +26,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 | Role      | الاستخدام                                       |
 | --------- | ----------------------------------------------- |
 | `STUDENT` | الحساب الافتراضي عند التسجيل، وتحديث ملف الطالب |
-| `TEACHER` | حساب مستخدم عادي حاليًا                         |
-| `ADMIN`   | إدارة المراحل والشهور والدروس والاختبارات       |
+| `TEACHER` | إدارة المراحل والشهور والدروس والاختبارات       |
+| `ADMIN`   | حساب مستخدم عادي حاليًا                         |
 
 ## Response Rules
 
@@ -219,6 +219,28 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ## 3. Educational Content
 
 جميع endpoints الإدارة التالية تتطلب `TEACHER`.
+
+### Platform Statistics
+
+#### GET `/educational-content/stats`
+
+جلب إحصائيات المحتوى التعليمي والمنصة.
+
+**Access:** Public
+**Status:** `200 OK`
+
+```json
+{
+  "message": "تم جلب الإحصائيات بنجاح",
+  "data": {
+    "stagesCount": 3,
+    "monthsCount": 12,
+    "lessonsCount": 45,
+    "examsCount": 15,
+    "studentsCount": 250
+  }
+}
+```
 
 ### Educational Stages
 
