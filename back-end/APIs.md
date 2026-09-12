@@ -218,7 +218,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
 ## 3. Educational Content
 
-جميع endpoints الإدارة التالية تتطلب `ADMIN`.
+جميع endpoints الإدارة التالية تتطلب `TEACHER`.
 
 ### Educational Stages
 
