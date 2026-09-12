@@ -3,17 +3,9 @@
 import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
-import {
-  getContentById,
-  getMonthContent,
-  getEducationalMonthById,
-  getEducationalStageById,
-  ContentDetails,
-  ContentQuestion,
-  EducationalMonth,
-  EducationalStage,
-} from "@/lib/api";
+import { CheckCircle2, Check } from "lucide-react";
+import { getContentById } from "@/lib/educational-content/content";
+import type { ContentDetails, ContentQuestion } from "@/lib/types/educational-content";
 import { markExamCompleted } from "@/lib/progress";
 
 const EXAM_DURATION_SECONDS = 30 * 60;
@@ -32,18 +24,31 @@ function getRemainingTime(contentId: string): number {
   return Math.max(0, EXAM_DURATION_SECONDS - elapsed);
 }
 
-function saveAnswers(contentId: string, answers: Record<number, number>) {
+function saveAnswers(contentId: string, answers: Record<number, number[]>) {
   try {
     localStorage.setItem(getStorageKey(contentId, "answers"), JSON.stringify(answers));
   } catch {}
 }
 
-function loadAnswers(contentId: string): Record<number, number> {
+function loadAnswers(contentId: string): Record<number, number[]> {
   try {
     const raw = localStorage.getItem(getStorageKey(contentId, "answers"));
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, number | number[]>;
+      const answers: Record<number, number[]> = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        answers[Number(key)] = Array.isArray(value) ? value : [value];
+      }
+      return answers;
+    }
   } catch {}
   return {};
+}
+
+function isExactSet(chosen: number[], correct: number[]): boolean {
+  if (chosen.length !== correct.length) return false;
+  const set = new Set(correct);
+  return chosen.every((c) => set.has(c));
 }
 
 const MAX_VIOLATIONS = 5;
@@ -75,12 +80,10 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
   const contentId = resolvedParams.contentId;
 
   const [content, setContent] = useState<ContentDetails | null>(null);
-  const [month, setMonth] = useState<EducationalMonth | null>(null);
-  const [stage, setStage] = useState<EducationalStage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number[]>>({});
   const [timeLeft, setTimeLeft] = useState(EXAM_DURATION_SECONDS);
   const [timerInitialized, setTimerInitialized] = useState(false);
   const [violations, setViolations] = useState(0);
@@ -93,8 +96,8 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
     const total = qs.length;
     if (total > 0) {
       qs.forEach((q, idx) => {
-        const chosen = selectedAnswers[idx];
-        if (chosen !== undefined && q.correctAnswers.includes(chosen)) {
+        const chosen = selectedAnswers[idx] ?? [];
+        if (chosen.length > 0 && isExactSet(chosen, q.correctAnswers)) {
           correct += 1;
         }
       });
@@ -116,17 +119,6 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
         const data = await getContentById(contentId);
         if (!active) return;
         setContent(data);
-
-        if (data && data.month) {
-          const monthData = await getEducationalMonthById(data.month);
-          if (active && monthData) {
-            setMonth(monthData);
-            if (monthData.stage) {
-              const stageData = await getEducationalStageById(monthData.stage);
-              if (active) setStage(stageData);
-            }
-          }
-        }
       } catch {
         if (active) setContent(null);
       } finally {
@@ -141,22 +133,24 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const existing = localStorage.getItem(getStorageKey(contentId, "start"));
-    if (!existing) {
-      localStorage.setItem(getStorageKey(contentId, "start"), String(Date.now()));
+    const startKey = getStorageKey(contentId, "start");
+    if (!localStorage.getItem(startKey)) {
+      localStorage.setItem(startKey, String(Date.now()));
     }
-    setTimeLeft(getRemainingTime(contentId));
-    setSelectedAnswers(loadAnswers(contentId));
-    setViolations(loadViolations(contentId));
-    setTimerInitialized(true);
+    const remaining = getRemainingTime(contentId);
+    const savedAnswers = loadAnswers(contentId);
+    const savedViolations = loadViolations(contentId);
+    const frame = requestAnimationFrame(() => {
+      setTimeLeft(remaining);
+      setSelectedAnswers(savedAnswers);
+      setViolations(savedViolations);
+      setTimerInitialized(true);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [contentId]);
 
   useEffect(() => {
     if (!timerInitialized) return;
-    if (timeLeft <= 0) {
-      submitExam();
-      return;
-    }
     const timer = setInterval(() => {
       const remaining = getRemainingTime(contentId);
       setTimeLeft(remaining);
@@ -244,11 +238,17 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
   const questions: ContentQuestion[] = content.examQuestions || content.homework || [];
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length || 1;
-  const answeredCount = Object.keys(selectedAnswers).length;
+  const answeredCount = Object.values(selectedAnswers).filter((a) => a.length > 0).length;
   const progressPercentage = Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100);
 
   const handleSelectOption = (optionIdx: number) => {
-    setSelectedAnswers((prev) => ({ ...prev, [currentQuestionIndex]: optionIdx }));
+    setSelectedAnswers((prev) => {
+      const current = prev[currentQuestionIndex] ?? [];
+      const next = current.includes(optionIdx)
+        ? current.filter((o) => o !== optionIdx)
+        : [...current, optionIdx];
+      return { ...prev, [currentQuestionIndex]: next };
+    });
   };
 
   const handleNext = () => {
@@ -347,9 +347,15 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
                   {currentQuestion.questionText}
                 </h2>
 
+                {currentQuestion.correctAnswers.length > 1 && (
+                  <span className="self-start text-[12px] sm:text-[13px] font-semibold text-primary bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5">
+                    يمكن اختيار أكثر من إجابة لهذا السؤال
+                  </span>
+                )}
+
                 <div className="flex flex-col gap-3 sm:gap-4 w-full">
                   {currentQuestion.options.map((option, optIdx) => {
-                    const isSelected = selectedAnswers[currentQuestionIndex] === optIdx;
+                    const isSelected = (selectedAnswers[currentQuestionIndex] ?? []).includes(optIdx);
 
                     return (
                       <button
@@ -364,11 +370,11 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div
-                            className={`w-[20px] h-[20px] sm:w-[22px] sm:h-[22px] rounded-full flex items-center justify-center shrink-0 border-2 transition-colors ${
+                            className={`w-[20px] h-[20px] sm:w-[22px] sm:h-[22px] rounded-[6px] flex items-center justify-center shrink-0 border-2 transition-colors ${
                               isSelected ? "border-primary bg-primary" : "border-border bg-transparent"
                             }`}
                           >
-                            {isSelected && <div className="w-2 h-2 rounded-full bg-surface" />}
+                            {isSelected && <Check size={16} className="text-surface" strokeWidth={3} />}
                           </div>
                           <span
                             className={`font-medium text-[14px] sm:text-[15px] leading-relaxed break-words flex-1 text-right ${isSelected ? "text-primary-hover" : "text-text-main"}`}

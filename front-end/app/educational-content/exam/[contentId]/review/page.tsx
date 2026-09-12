@@ -3,7 +3,14 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { CheckCircle2, XCircle, ArrowRight, Check, X } from "lucide-react";
-import { getContentById, ContentDetails, ContentQuestion } from "@/lib/api";
+import { getContentById } from "@/lib/educational-content/content";
+import type { ContentDetails, ContentQuestion } from "@/lib/types/educational-content";
+
+function isExactSet(chosen: number[], correct: number[]): boolean {
+  if (chosen.length !== correct.length) return false;
+  const set = new Set(correct);
+  return chosen.every((c) => set.has(c));
+}
 
 export default function ExamReviewPage({ params }: { params: Promise<{ contentId: string }> }) {
   const resolvedParams = use(params);
@@ -11,15 +18,34 @@ export default function ExamReviewPage({ params }: { params: Promise<{ contentId
 
   const [content, setContent] = useState<ContentDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<number, number[]>>({});
 
   useEffect(() => {
     let active = true;
 
+    const rawAnswers = contentId
+      ? (() => {
+          try {
+            return localStorage.getItem(`exam_${contentId}_answers`);
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
     const fetchContent = async () => {
       try {
         const data = await getContentById(contentId);
-        if (active) setContent(data);
+        if (!active) return;
+        if (rawAnswers) {
+          const parsed = JSON.parse(rawAnswers) as Record<string, number | number[]>;
+          const answers: Record<number, number[]> = {};
+          for (const [key, value] of Object.entries(parsed)) {
+            answers[Number(key)] = Array.isArray(value) ? value : [value];
+          }
+          setUserAnswers(answers);
+        }
+        setContent(data);
       } catch {
         if (active) setContent(null);
       } finally {
@@ -27,13 +53,7 @@ export default function ExamReviewPage({ params }: { params: Promise<{ contentId
       }
     };
 
-    if (contentId) {
-      try {
-        const raw = localStorage.getItem(`exam_${contentId}_answers`);
-        if (raw) setUserAnswers(JSON.parse(raw));
-      } catch {}
-      fetchContent();
-    }
+    if (contentId) fetchContent();
 
     return () => {
       active = false;
@@ -91,8 +111,8 @@ export default function ExamReviewPage({ params }: { params: Promise<{ contentId
 
         <div className="flex flex-col gap-8 w-full">
           {questions.map((question, qIndex) => {
-            const userAnswer = userAnswers[qIndex];
-            const isCorrectAnswered = question.correctAnswers.includes(userAnswer);
+            const chosen = userAnswers[qIndex] ?? [];
+            const isCorrectAnswered = chosen.length > 0 && isExactSet(chosen, question.correctAnswers);
 
             return (
               <div
@@ -120,7 +140,7 @@ export default function ExamReviewPage({ params }: { params: Promise<{ contentId
 
                 <div className="flex flex-col gap-3 w-full">
                   {question.options.map((option, optIdx) => {
-                    const isUserChoice = userAnswer === optIdx;
+                    const isUserChoice = chosen.includes(optIdx);
                     const isCorrectChoice = question.correctAnswers.includes(optIdx);
 
                     let optionStyle = "bg-surface border-border text-text-main";

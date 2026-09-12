@@ -3,19 +3,14 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Play, Check, Circle } from "lucide-react";
-import {
-  getContentById,
-  getMonthContent,
-  getEducationalMonthById,
-  getEducationalStageById,
-  ContentDetails,
-  ContentItem,
-  EducationalMonth,
-  EducationalStage,
-} from "@/lib/api";
+import { Play, Check, Circle, ChevronDown, ChevronUp } from "lucide-react";
+import { getContentById } from "@/lib/educational-content/content";
+import { getMonthContent } from "@/lib/educational-content/content";
+import { getEducationalMonthById } from "@/lib/educational-content/months";
+import { getEducationalStageById } from "@/lib/educational-content/stages";
+import type { ContentDetails, ContentItem, EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
 import { markLessonCompleted } from "@/lib/progress";
-import MonthDrawer, { MonthDrawerButton } from "@/components/MonthDrawer";
+import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 
 export default function ContentDetailsPage({ params }: { params: Promise<{ contentId: string }> }) {
@@ -29,6 +24,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   const [monthContentList, setMonthContentList] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [step, setStep] = useState<"video" | "explanation">("video");
 
   useEffect(() => {
     let active = true;
@@ -153,21 +149,54 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               {content.title}
             </h1>
 
-            {content.videoUrl ? (
-              <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
-                <video key={content.videoUrl} src={content.videoUrl} controls className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex flex-col items-center justify-center relative border border-border">
-                <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-[0_8px_24px_rgba(196,154,69,0.25)] mb-4">
-                  <Play size={32} className="text-footer ml-1" fill="currentColor" />
+            {step === "video" &&
+              (content.videoUrl ? (
+                <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
+                  <video key={content.videoUrl} src={content.videoUrl} controls className="w-full h-full object-cover" />
                 </div>
-                <span className="text-primary font-bold text-[16px]">الفيديو غير متوفر حالياً</span>
-              </div>
+              ) : (
+                <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex flex-col items-center justify-center relative border border-border">
+                  <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-[0_8px_24px_rgba(196,154,69,0.25)] mb-4">
+                    <Play size={32} className="text-footer ml-1" fill="currentColor" />
+                  </div>
+                  <span className="text-primary font-bold text-[16px]">الفيديو غير متوفر حالياً</span>
+                </div>
+              ))}
+
+            {step === "explanation" && articleText && (
+              <button
+                type="button"
+                onClick={() => setStep("video")}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:text-primary-hover transition-colors"
+              >
+                <ChevronUp size={16} strokeWidth={2.5} />
+                العودة لمشاهدة الفيديو
+              </button>
             )}
 
-            {articleText && (
-              <div className="w-full bg-surface border border-border shadow-sm rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2">
+            {step === "video" && articleText && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("explanation");
+                  requestAnimationFrame(() => {
+                    document
+                      .getElementById("explanation-section")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }}
+                className="w-full h-[58px] bg-surface border border-primary text-primary font-bold text-[16px] rounded-control transition-colors flex items-center justify-center gap-2 hover:bg-primary-light mt-2"
+              >
+                <span>الانتقال إلى الشرح التفصيلي</span>
+                <ChevronDown size={20} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {step === "explanation" && articleText && (
+              <div
+                id="explanation-section"
+                className="w-full bg-surface border border-border shadow-sm rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2 scroll-mt-32"
+              >
                 <h3 className="font-bold text-[18px] text-primary flex items-center gap-2">
                   <span className="w-1.5 h-6 bg-primary rounded-full"></span>
                   الشرح التفصيلي
@@ -178,18 +207,20 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleNextAction}
-              className="w-full h-[58px] bg-primary hover:bg-primary-hover text-footer font-bold text-[16px] rounded-control shadow-[0_12px_32px_rgba(196,154,69,0.1)] transition-colors flex items-center justify-center gap-2 mt-4"
-            >
-              <span>
-                {content.homework && content.homework.length > 0
-                  ? "الانتقال إلى الواجب والتطبيقات"
-                  : "تمت مشاهدة الدرس المصور والانتقال للتالي"}
-              </span>
-              <Check size={20} strokeWidth={2.5} />
-            </button>
+            {(step === "explanation" || !articleText) && (
+              <button
+                type="button"
+                onClick={handleNextAction}
+                className="w-full h-[58px] bg-primary hover:bg-primary-hover text-footer font-bold text-[16px] rounded-control shadow-[0_12px_32px_rgba(196,154,69,0.1)] transition-colors flex items-center justify-center gap-2 mt-4"
+              >
+                <span>
+                  {content.homework && content.homework.length > 0
+                    ? "الانتقال إلى الواجب والتطبيقات"
+                    : "تمت مشاهدة الدرس المصور والانتقال للتالي"}
+                </span>
+                <Check size={20} strokeWidth={2.5} />
+              </button>
+            )}
             
           </div>
 

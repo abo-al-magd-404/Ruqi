@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { X, ChevronUp, Play, Check, Circle } from "lucide-react";
-import { ContentItem } from "@/lib/api";
+import type { ContentItem } from "@/lib/types/educational-content";
 
 interface MonthDrawerProps {
   isOpen: boolean;
@@ -27,14 +27,16 @@ export default function MonthDrawer({
   totalItems,
 }: MonthDrawerProps) {
   const [stage, setStage] = useState<"closed" | "opening" | "open" | "closing">("closed");
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen && stage === "closed") {
       setStage("opening");
     } else if (!isOpen && stage === "open") {
       setStage("closing");
     }
-  }, [isOpen, stage]);
+  }
 
   const onTransitionEnd = () => {
     if (stage === "opening") setStage("open");

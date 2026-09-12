@@ -2,7 +2,9 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { getEducationalMonths, getEducationalStageById, EducationalMonth, EducationalStage } from "@/lib/api";
+import { getEducationalMonths } from "@/lib/educational-content/months";
+import { getEducationalStageById } from "@/lib/educational-content/stages";
+import type { EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
 
 export default function StageMonthsPage({ params }: { params: Promise<{ stageId: string }> }) {
   const resolvedParams = use(params);

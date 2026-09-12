@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { resetPassword } from "@/lib/api";
-import PasswordField from "@/components/account/auth-form/password-field";
+import { resetPassword } from "@/lib/account/auth";
+import PasswordField from "../../module/password-field";
 
 const INPUT_CLASS =
   "w-full h-[52px] rounded-xl border-[1.5px] border-border bg-surface px-4 text-text-main placeholder-text-muted outline-none text-[14px] md:text-[15px] transition-all text-right";
@@ -32,6 +32,13 @@ export default function ResetPasswordContent() {
   const emailParam = searchParams.get("email") || "";
 
   const [email, setEmail] = useState(emailParam);
+  const [prevEmailParam, setPrevEmailParam] = useState(emailParam);
+
+  if (emailParam !== prevEmailParam) {
+    setPrevEmailParam(emailParam);
+    if (emailParam) setEmail(emailParam);
+  }
+
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,12 +46,6 @@ export default function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (emailParam) {
-      setEmail(emailParam);
-    }
-  }, [emailParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

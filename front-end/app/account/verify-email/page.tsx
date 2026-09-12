@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { verifyAccount, resendOtp, getPendingEmail } from "@/lib/api";
+import { verifyAccount, resendOtp } from "@/lib/account/auth";
+import { getPendingEmail } from "@/lib/core/http";
 
 const OTP_COOLDOWN_SECONDS = 60; 
 const OTP_EXPIRY_SECONDS = 600; 

@@ -1,5 +1,5 @@
-import AuthForm from "@/components/account/auth-form/auth-form";
-import GuestGuard from "@/components/account/auth/GuestGuard";
+import AuthForm from "../module/auth-form";
+import GuestGuard from "../module/GuestGuard";
 
 export default function Register() {
   return (

@@ -2,17 +2,12 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
-import {
-  getEducationalMonthById,
-  getMonthContent,
-  getContentById,
-  getEducationalStageById,
-  EducationalMonth,
-  ContentItem,
-  ContentDetails,
-  EducationalStage,
-} from "@/lib/api";
+import { Sparkles, CheckCircle2, UserCheck, UserMinus } from "lucide-react";
+import { getEducationalMonthById } from "@/lib/educational-content/months";
+import { getMonthContent, getContentById } from "@/lib/educational-content/content";
+import { getEducationalStageById } from "@/lib/educational-content/stages";
+import { getProfile, updateStudentProfile } from "@/lib/account/profile";
+import type { EducationalMonth, ContentItem, EducationalStage, ContentDetails } from "@/lib/types/educational-content";
 import { getProgress, getMonthSummary } from "@/lib/progress";
 
 export default function MonthContentPage({ params }: { params: Promise<{ monthId: string }> }) {
@@ -25,6 +20,47 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
   const [detailsMap, setDetailsMap] = useState<Record<string, ContentDetails>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscribedMonths, setSubscribedMonths] = useState<string[]>([]);
+  const [isStudent, setIsStudent] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let activeSub = true;
+    getProfile()
+      .then((p) => {
+        if (!activeSub) return;
+        const subs = p?.subscribedMonths ?? [];
+        setSubscribedMonths(subs);
+        setIsSubscribed(subs.includes(monthId));
+        setIsStudent(p?.role === "STUDENT");
+      })
+      .catch(() => {
+        if (activeSub) setIsSubscribed(false);
+      });
+    return () => {
+      activeSub = false;
+    };
+  }, [monthId]);
+
+  const toggleSubscription = async () => {
+    if (subscribing) return;
+    setSubscribing(true);
+    setSubscribeError(null);
+    try {
+      const next = isSubscribed
+        ? subscribedMonths.filter((id) => id !== monthId)
+        : [...subscribedMonths, monthId];
+      await updateStudentProfile({ subscribedMonths: next });
+      setSubscribedMonths(next);
+      setIsSubscribed(!isSubscribed);
+    } catch (e) {
+      setSubscribeError(e instanceof Error ? e.message : "تعذر تحديث الاشتراك، حاول مجددًا");
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -129,7 +165,47 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                     {monthDetails.price} ج.م
                   </span>
                 )}
+                {isSubscribed ? (
+                  <span className="bg-success-bg text-success font-bold text-xs px-3.5 py-1.5 rounded-control border border-success/30 inline-flex items-center gap-1.5">
+                    <CheckCircle2 size={13} />
+                    أنت مشترك في هذا الشهر
+                  </span>
+                ) : (
+                  <span className="bg-background border border-border text-text-muted font-bold text-xs px-3.5 py-1.5 rounded-control">
+                    غير مشترك
+                  </span>
+                )}
               </div>
+
+              {isStudent && (
+                <div className="flex flex-col items-start gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleSubscription}
+                    disabled={subscribing}
+                    className={`h-[44px] px-5 rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${
+                      isSubscribed
+                        ? "bg-transparent border border-border text-text-muted hover:bg-surface-secondary hover:border-primary/40"
+                        : "bg-primary text-text-main hover:bg-primary-hover"
+                    }`}
+                  >
+                    {isSubscribed ? (
+                      <>
+                        <UserMinus size={16} />
+                        إلغاء الاشتراك
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck size={16} />
+                        اشترك في الشهر
+                      </>
+                    )}
+                  </button>
+                  {subscribeError && (
+                    <span className="text-xs text-danger font-medium">{subscribeError}</span>
+                  )}
+                </div>
+              )}
 
               <h1 className="font-extrabold text-2xl md:text-3xl lg:text-[32px] text-text-main leading-tight">
                 {monthDetails?.title}

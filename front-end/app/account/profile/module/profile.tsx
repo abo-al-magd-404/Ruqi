@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, KeyRound, User, LogOut } from "lucide-react";
-import {
-  getProfile,
-  logoutUser,
-  updateStudentProfile,
-  UserProfile,
-  getEducationalStages,
-  EducationalStage,
-} from "@/lib/api";
+import { Settings, KeyRound, LogOut, CheckCircle2, Camera } from "lucide-react";
+import { logoutUser } from "@/lib/account/auth";
+import { getProfile, updateStudentProfile } from "@/lib/account/profile";
+import { getEducationalStages } from "@/lib/educational-content/stages";
+import { getEducationalMonthById } from "@/lib/educational-content/months";
+import type { UserProfile } from "@/lib/types/account";
+import type { EducationalStage } from "@/lib/types/educational-content";
 import Loading from "@/app/loading";
-import EditProfileModal from "@/components/account/profile/Edit/edit-profile-modal";
-import ChangePasswordModal from "@/components/account/profile/Edit/change-password-modal";
-import LogoutConfirmModal from "@/components/account/profile/Edit/logout-confirm-modal";
-import AdminDashboard from "@/components/eductational-content/teacher/teacher-dashboard";
+import EditProfileModal from "./edit-profile-modal";
+import StudentAvatar from "./student-avatar";
+import ChangePasswordModal from "./change-password-modal";
+import LogoutConfirmModal from "./logout-confirm-modal";
+import AdminDashboard from "@/app/educational-content/module/teacher-dashboard";
 
 export default function StudentProfile() {
   const router = useRouter();
@@ -27,12 +26,15 @@ export default function StudentProfile() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editSection, setEditSection] = useState<"data" | "avatar">("data");
   const [editForm, setEditForm] = useState({
     name: "",
     phoneNumber: "",
     address: "",
     stage: "",
+    avatar: "",
   });
+  const [subscribedMonthNames, setSubscribedMonthNames] = useState<Record<string, string>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -51,7 +53,7 @@ export default function StudentProfile() {
     router.refresh();
   };
 
-  const openEditModal = () => {
+  const openEditModal = (section: "data" | "avatar" = "data") => {
     const currentStage = profile?.stage ?? "";
     const matched = stages.some((s) => s._id === currentStage);
     setEditForm({
@@ -59,7 +61,9 @@ export default function StudentProfile() {
       phoneNumber: profile?.phoneNumber ?? "",
       address: profile?.address ?? "",
       stage: matched ? currentStage : "",
+      avatar: profile?.avatar ?? "",
     });
+    setEditSection(section);
     setEditError(null);
     setShowEditModal(true);
   };
@@ -75,7 +79,7 @@ export default function StudentProfile() {
     setEditError(null);
 
     const phone = editForm.phoneNumber.trim();
-    if (phone && !/^01[0-9]{9}$/.test(phone)) {
+    if (phone && !/^01[0125][0-9]{8}$/.test(phone)) {
       setEditError("يرجى إدخال رقم هاتف مصري صحيح (مثال: 01012345678)");
       return;
     }
@@ -88,6 +92,7 @@ export default function StudentProfile() {
         phoneNumber: editForm.phoneNumber,
         address: editForm.address,
         stage: editForm.stage,
+        avatar: editForm.avatar,
       });
       const fresh = await getProfile();
       setProfile(fresh);
@@ -135,10 +140,26 @@ export default function StudentProfile() {
     let active = true;
 
     Promise.all([getProfile(), getEducationalStages().catch(() => [])])
-      .then(([profileData, stagesData]) => {
+      .then(async ([profileData, stagesData]) => {
         if (!active) return;
         setProfile(profileData);
         setStages(stagesData);
+
+        const subscribed = profileData?.subscribedMonths ?? [];
+        if (profileData?.role === "STUDENT" && subscribed.length > 0) {
+          const titleMap: Record<string, string> = {};
+          await Promise.all(
+            subscribed.map(async (id) => {
+              try {
+                const month = await getEducationalMonthById(id);
+                titleMap[id] = month?.title ?? "";
+              } catch {
+                titleMap[id] = "";
+              }
+            }),
+          );
+          if (active) setSubscribedMonthNames(titleMap);
+        }
       })
       .catch((err) => {
         if (!active) return;
@@ -177,7 +198,7 @@ export default function StudentProfile() {
     );
   }
 
-  const { name, studentId, email, phoneNumber, stage, role } = profile;
+  const { name, studentId, email, phoneNumber, stage, role, avatar } = profile;
   const stageTitle = stages.find((s) => s._id === stage)?.title || stage;
 
   return (
@@ -188,9 +209,17 @@ export default function StudentProfile() {
       <div className="w-full max-w-[1200px] bg-white rounded-[20px] md:rounded-[24px] border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.05)] p-5 sm:p-6 md:p-10 flex flex-col gap-6 md:gap-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 w-full lg:w-auto text-center sm:text-right">
-            <div className="w-[80px] h-[80px] md:w-[112px] md:h-[112px] rounded-full border-2 border-primary bg-primary-light flex items-center justify-center shrink-0">
-              <User size={36} className="text-primary md:w-[48px] md:h-[48px]" />
-            </div>
+            <button
+              type="button"
+              onClick={() => openEditModal("avatar")}
+              className="relative w-[80px] h-[80px] md:w-[112px] md:h-[112px] rounded-full border-2 border-primary bg-primary-light flex items-center justify-center shrink-0 overflow-hidden group"
+              aria-label="تغيير الصورة الرمزية"
+            >
+              <StudentAvatar avatar={avatar ?? ""} seed={name} />
+              <span className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+                <Camera size={22} className="md:w-[28px] md:h-[28px] text-white" />
+              </span>
+            </button>
             <div className="flex flex-col gap-2 sm:gap-3 mt-1 sm:mt-2">
               <h1 className="text-[20px] sm:text-[22px] md:text-[26px] font-extrabold text-text-main leading-tight">
                 {name}
@@ -220,7 +249,7 @@ export default function StudentProfile() {
               <>
                 <button
                   type="button"
-                  onClick={openEditModal}
+                  onClick={() => openEditModal()}
                   className="h-[48px] md:h-[50px] px-4 md:px-6 bg-primary text-text-main font-bold text-[13px] md:text-[14px] rounded-xl shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   <Settings size={18} />
@@ -275,6 +304,32 @@ export default function StudentProfile() {
             </div>
           )}
         </div>
+
+        {role === "STUDENT" && (
+          <div className="flex flex-col gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+              <h3 className="font-bold text-[16px] text-text-main">الاشتراكات الشهرية</h3>
+            </div>
+            {profile.subscribedMonths.length === 0 ? (
+              <p className="text-[13px] md:text-[14px] text-text-muted font-medium">
+                لا توجد اشتراكات شهرية حالياً.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {profile.subscribedMonths.map((id) => (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-success-bg border border-success/30 rounded-control text-success font-bold text-[12px] md:text-[13px]"
+                  >
+                    <CheckCircle2 size={14} />
+                    {subscribedMonthNames[id] || "شهر مشترك"}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {role === "TEACHER" && <AdminDashboard />}
@@ -294,7 +349,8 @@ export default function StudentProfile() {
         onSubmit={handleSaveEdit}
         saving={savingEdit}
         error={editError}
-        stages={stages} // تمرير المراحل للنافذة
+        stages={stages}
+        initialSection={editSection}
       />
 
       <ChangePasswordModal

@@ -5,18 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Circle, Play, ShieldAlert } from "lucide-react";
 import { markLessonCompleted } from "@/lib/progress";
-import {
-  getContentById,
-  getMonthContent,
-  getEducationalMonthById,
-  getEducationalStageById,
-  ContentDetails,
-  ContentItem,
-  ContentQuestion,
-  EducationalMonth,
-  EducationalStage,
-} from "@/lib/api";
-import MonthDrawer, { MonthDrawerButton } from "@/components/MonthDrawer";
+import { getMonthContent, getContentById } from "@/lib/educational-content/content";
+import { getEducationalMonthById } from "@/lib/educational-content/months";
+import { getEducationalStageById } from "@/lib/educational-content/stages";
+import type { ContentDetails, ContentItem, ContentQuestion, EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
+import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
+
+function isExactSet(chosen: number[], correct: number[]): boolean {
+  if (chosen.length !== correct.length) return false;
+  const set = new Set(correct);
+  return chosen.every((c) => set.has(c));
+}
 
 export default function AssignmentPage({ params }: { params: Promise<{ contentId: string }> }) {
   const router = useRouter();
@@ -30,7 +29,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
   const [isLoading, setIsLoading] = useState(true);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<number, number[]>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -108,15 +107,21 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
   const progressPercentage = Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100);
 
   const handleOptionSelect = (optionIndex: number) => {
-    setSelectedOptions((prev) => ({ ...prev, [currentQuestionIndex]: optionIndex }));
+    setSelectedOptions((prev) => {
+      const current = prev[currentQuestionIndex] ?? [];
+      const next = current.includes(optionIndex)
+        ? current.filter((o) => o !== optionIndex)
+        : [...current, optionIndex];
+      return { ...prev, [currentQuestionIndex]: next };
+    });
   };
 
   const handleSubmit = () => {
     let correct = 0;
     const total = questions.length;
     questions.forEach((q, idx) => {
-      const chosen = selectedOptions[idx];
-      if (chosen !== undefined && q.correctAnswers.includes(chosen)) {
+      const chosen = selectedOptions[idx] ?? [];
+      if (chosen.length > 0 && isExactSet(chosen, q.correctAnswers)) {
         correct += 1;
       }
     });
@@ -179,9 +184,15 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
                     {currentQuestion.questionText}
                   </h2>
 
+                  {currentQuestion.correctAnswers.length > 1 && (
+                    <span className="self-start text-[12px] sm:text-[13px] font-semibold text-primary bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5">
+                      يمكن اختيار أكثر من إجابة لهذا السؤال
+                    </span>
+                  )}
+
                   <div className="flex flex-col gap-3 md:gap-4 w-full">
                     {currentQuestion.options.map((option, optIdx) => {
-                      const isSelected = selectedOptions[currentQuestionIndex] === optIdx;
+                      const isSelected = (selectedOptions[currentQuestionIndex] ?? []).includes(optIdx);
                       return (
                         <button
                           key={optIdx}
@@ -195,11 +206,11 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
                         >
                           <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
                             <div
-                              className={`w-[20px] h-[20px] sm:w-[22px] sm:h-[22px] rounded-full flex items-center justify-center shrink-0 border-2 transition-colors mt-0.5 sm:mt-0 ${
+                              className={`w-[20px] h-[20px] sm:w-[22px] sm:h-[22px] rounded-[6px] flex items-center justify-center shrink-0 border-2 transition-colors mt-0.5 sm:mt-0 ${
                                 isSelected ? "border-primary bg-primary" : "border-border bg-transparent"
                               }`}
                             >
-                              {isSelected && <div className="w-2 h-2 rounded-full bg-surface" />}
+                              {isSelected && <Check size={16} className="text-surface" strokeWidth={3} />}
                             </div>
                             <span
                               className={`font-medium text-[14px] sm:text-[15px] leading-relaxed break-words flex-1 text-right ${isSelected ? "text-primary-hover" : "text-text-main"}`}

@@ -4,14 +4,8 @@ import { Suspense, useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Trophy, CheckCircle2, XCircle, Eye, BookOpen } from "lucide-react";
-import {
-  getContentById,
-  getEducationalMonthById,
-  getEducationalStageById,
-  ContentDetails,
-  EducationalMonth,
-  EducationalStage,
-} from "@/lib/api";
+import { getContentById } from "@/lib/educational-content/content";
+import type { ContentDetails } from "@/lib/types/educational-content";
 
 export default function ExamResultPage({ params }: { params: Promise<{ contentId: string }> }) {
   return (
@@ -33,37 +27,28 @@ function ExamResultInner({ params }: { params: Promise<{ contentId: string }> })
   const searchParams = useSearchParams();
 
   const [content, setContent] = useState<ContentDetails | null>(null);
-  const [month, setMonth] = useState<EducationalMonth | null>(null);
-  const [stage, setStage] = useState<EducationalStage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [examResult, setExamResult] = useState<{ score: number; correct: number; total: number } | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(`exam_${contentId}_result`);
-      if (raw) setExamResult(JSON.parse(raw));
-    } catch {}
-  }, [contentId]);
-
-  useEffect(() => {
     let active = true;
+
+    const rawResult = contentId
+      ? (() => {
+          try {
+            return localStorage.getItem(`exam_${contentId}_result`);
+          } catch {
+            return null;
+          }
+        })()
+      : null;
 
     const fetchResult = async () => {
       try {
         const data = await getContentById(contentId);
         if (!active) return;
+        if (rawResult) setExamResult(JSON.parse(rawResult) as { score: number; correct: number; total: number });
         setContent(data);
-
-        if (data && data.month) {
-          const monthData = await getEducationalMonthById(data.month);
-          if (active && monthData) {
-            setMonth(monthData);
-            if (monthData.stage) {
-              const stageData = await getEducationalStageById(monthData.stage);
-              if (active) setStage(stageData);
-            }
-          }
-        }
       } catch {
         if (active) setContent(null);
       } finally {

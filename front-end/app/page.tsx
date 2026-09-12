@@ -14,21 +14,12 @@ import {
   Trophy,
   CheckCircle2,
   Star,
-  Gift,
-  Video,
-  ShieldCheck,
-  Medal,
   BookOpen,
   GraduationCap,
   ClipboardCheck,
-  Users,
 } from "lucide-react";
-import {
-  getEducationalStages,
-  getMonthsByStage,
-  getContentByMonth,
-} from "@/lib/api";
-import Loading from "./loading";
+import { getPlatformStats } from "@/lib/educational-content/stats";
+import type { PlatformStats } from "@/lib/types/educational-content";
 
 const PLATFORM_FEATURES = [
   {
@@ -103,12 +94,6 @@ const FALLBACK_STATS = [
   { icon: Trophy, label: "اختبار تفاعلي", value: undefined as number | undefined },
 ];
 
-interface PlatformStats {
-  stages: number;
-  months: number;
-  lessons: number;
-  exams: number;
-}
 const experienceStartYears = 2018;
 const experienceYears = new Date().getFullYear() - experienceStartYears;
 
@@ -190,32 +175,13 @@ function AnimatedCounter({
 export default function HomePage() {
   const [heroReady, setHeroReady] = useState(false);
   const [stats, setStats] = useState<PlatformStats | null>(null);
-  const [pageReady, setPageReady] = useState(false);
-
-  useEffect(() => {
-    setPageReady(true);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const stages = await getEducationalStages();
-        let months = 0;
-        let lessons = 0;
-        let exams = 0;
-        for (const stage of stages) {
-          const stageMonths = await getMonthsByStage(stage._id);
-          months += stageMonths.length;
-          for (const m of stageMonths) {
-            const content = await getContentByMonth(m._id);
-            for (const item of content) {
-              if (item.type === "LESSON") lessons++;
-              else exams++;
-            }
-          }
-        }
-        if (!cancelled) setStats({ stages: stages.length, months, lessons, exams });
+        const data = await getPlatformStats();
+        if (!cancelled) setStats(data);
       } catch {
         if (!cancelled) setStats(null);
       }
@@ -223,9 +189,7 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
-  if (!pageReady) return <Loading />;
-
-  return (
+    return (
     <>
       {/* ============================================================
           SECTION 1 — Landing Section

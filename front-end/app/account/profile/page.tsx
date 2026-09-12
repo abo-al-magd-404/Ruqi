@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import StudentProfile from "@/components/account/profile/profile";
-import { isAuthenticated } from "@/lib/api";
+import StudentProfile from "./module/profile";
+import { isAuthenticated } from "@/lib/tokens/tokens";
 
 const subscribe = () => () => {};
 

@@ -1,16 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface StudentRank {
-  id: string | number;
-  name: string;
-  stage: string;
-  points: number;
-  rank: number;
-  imageUrl: string;
-  isCurrentUser?: boolean;
-}
+import { getLeaderboard } from "@/lib/leaderboard";
+import type { StudentRank } from "@/lib/types/leaderboard";
 
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<string>("على مستوى المنصة");
@@ -23,9 +15,7 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/backend/leaderboard?tab=${encodeURIComponent(activeTab)}`);
-        const data = await response.json();
-        const list = Array.isArray(data) ? data : Array.isArray(data?.students) ? data.students : [];
+        const list = await getLeaderboard(activeTab);
         setStudents(list);
       } catch {
         setStudents([]);

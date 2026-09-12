@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import type { ContentType, ContentQuestion } from "@/lib/api";
+import { useState } from "react";
+import { Plus, Trash2, Check } from "lucide-react";
+import type { ContentType, ContentQuestion } from "@/lib/types/educational-content";
 
 interface ContentModalProps {
   open: boolean;
@@ -57,17 +57,19 @@ export default function ContentModal({
   const [writtenExplanation, setWrittenExplanation] = useState(initialWrittenExplanation);
   const [passPercentage, setPassPercentage] = useState(String(initialPassPercentage));
   const [questions, setQuestions] = useState<ContentQuestion[]>(initialQuestions);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setTitle(initialTitle);
       setDescription(initialDescription);
       setVideoUrl(initialVideoUrl);
       setWrittenExplanation(initialWrittenExplanation);
       setPassPercentage(String(initialPassPercentage));
-      setQuestions(initialQuestions.length ? initialQuestions : [EMPTY_QUESTION]);
+      setQuestions(initialQuestions.length ? [...initialQuestions] : [EMPTY_QUESTION]);
     }
-  }, [open, initialTitle, initialDescription, initialVideoUrl, initialWrittenExplanation, initialPassPercentage, initialQuestions, type]);
+  }
 
   if (!open) return null;
 
@@ -107,8 +109,11 @@ export default function ContentModal({
     setQuestions((q) =>
       q.map((item, i) => {
         if (i !== qIndex) return item;
-        const isSelected = item.correctAnswers[0] === optIndex;
-        return { ...item, correctAnswers: isSelected ? [] : [optIndex] };
+        const isSelected = item.correctAnswers.includes(optIndex);
+        const correctAnswers = isSelected
+          ? item.correctAnswers.filter((c) => c !== optIndex)
+          : [...item.correctAnswers, optIndex];
+        return { ...item, correctAnswers };
       })
     );
   };
@@ -264,18 +269,18 @@ export default function ContentModal({
                   <label className="text-[12px] font-semibold text-text-muted">الخيارات</label>
                   <div className="flex flex-col gap-2">
                     {(q.options.length ? q.options : [""]).map((opt, oi) => {
-                      const isCorrect = q.correctAnswers[0] === oi;
+                      const isCorrect = q.correctAnswers.includes(oi);
                       return (
                         <div key={oi} className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => toggleCorrect(qi, oi)}
                             title={isCorrect ? "إزالة كإجابة صحيحة" : "تحديد كإجابة صحيحة"}
-                            className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            className={`shrink-0 w-6 h-6 rounded-[6px] border-2 flex items-center justify-center transition-colors ${
                               isCorrect ? "bg-success border-success" : "bg-surface border-border hover:border-primary"
                             }`}
                           >
-                            {isCorrect && <span className="w-3 h-3 rounded-full bg-white" />}
+                            {isCorrect && <Check size={14} className="text-white" strokeWidth={3} />}
                           </button>
                           <input
                             type="text"
@@ -301,7 +306,7 @@ export default function ContentModal({
                     </button>
                     <p className="text-[11px] text-text-muted">
                       {q.correctAnswers.length === 0
-                        ? "حدد الإجابة الصحيحة بالنقر على الدائرة"
+                        ? "حدد الإجابة الصحيحة بالنقر على المربع (يمكن اختيار أكثر من إجابة)"
                         : "الأخضر = إجابة صحيحة"}
                     </p>
                   </div>
@@ -310,7 +315,7 @@ export default function ContentModal({
             ))}
 
             {questions.length === 0 && (
-              <p className="text-[13px] text-text-muted text-center">لا توجد أسئلة. اضغط "إضافة سؤال" للبدء.</p>
+              <p className="text-[13px] text-text-muted text-center">لا توجد أسئلة. اضغط «إضافة سؤال» للبدء.</p>
             )}
 
             <button

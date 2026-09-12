@@ -5,7 +5,8 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Trophy, CheckCircle2, XCircle } from "lucide-react";
-import { getContentById, ContentDetails } from "@/lib/api";
+import { getContentById } from "@/lib/educational-content/content";
+import type { ContentDetails } from "@/lib/types/educational-content";
 
 export default function AssignmentResultPage({ params }: { params: Promise<{ contentId: string }> }) {
   return (

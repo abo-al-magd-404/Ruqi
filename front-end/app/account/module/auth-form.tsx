@@ -3,16 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  loginUser,
-  signup,
-  savePendingEmail,
-  getPendingEmail,
-  saveTokens,
-  NotVerifiedError,
-  getEducationalStages,
-  EducationalStage,
-} from "@/lib/api";
+import { loginUser, signup, NotVerifiedError } from "@/lib/account/auth";
+import { saveTokens } from "@/lib/tokens/tokens";
+import { savePendingEmail, getPendingEmail } from "@/lib/core/http";
+import { getEducationalStages } from "@/lib/educational-content/stages";
+import type { EducationalStage } from "@/lib/types/educational-content";
 import PasswordField from "./password-field";
 
 type Mode = "login" | "register";
@@ -68,11 +63,10 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
   const [needsActivation, setNeedsActivation] = useState(false);
 
   const [stages, setStages] = useState<EducationalStage[]>([]);
-  const [loadingStages, setLoadingStages] = useState(false);
+  const [loadingStages, setLoadingStages] = useState(!isLogin);
 
   useEffect(() => {
     if (!isLogin) {
-      setLoadingStages(true);
       getEducationalStages()
         .then((data) => setStages(data))
         .catch(() => setError("تعذر تحميل المراحل الدراسية، تأكد من اتصال الخادم"))

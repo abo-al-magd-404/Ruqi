@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getEducationalStages, EducationalStage } from "@/lib/api";
+import { getEducationalStages } from "@/lib/educational-content/stages";
+import type { EducationalStage } from "@/lib/types/educational-content";
 
 export default function ContentPage() {
   const [stages, setStages] = useState<EducationalStage[]>([]);

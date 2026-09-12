@@ -2,25 +2,18 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ClipboardList, Timer, Trophy, PlayCircle, Play, Check, Circle } from "lucide-react";
-import {
-  getContentById,
-  getMonthContent,
-  getEducationalMonthById,
-  getEducationalStageById,
-  ContentDetails,
-  ContentItem,
-  EducationalMonth,
-  EducationalStage,
-} from "@/lib/api";
-import MonthDrawer, { MonthDrawerButton } from "@/components/MonthDrawer";
+import { getContentById } from "@/lib/educational-content/content";
+import { getMonthContent } from "@/lib/educational-content/content";
+import { getEducationalMonthById } from "@/lib/educational-content/months";
+import { getEducationalStageById } from "@/lib/educational-content/stages";
+import type { ContentDetails, ContentItem, EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
+import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 
 const EXAM_DURATION_MINUTES = 30;
 
 export default function ExamOverviewPage({ params }: { params: Promise<{ contentId: string }> }) {
-  const router = useRouter();
   const resolvedParams = use(params);
   const contentId = resolvedParams.contentId;
 
@@ -166,7 +159,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
                   <Trophy size={22} strokeWidth={2.5} />
                 </div>
                 <span className="font-black text-[24px] md:text-[28px] text-text-main leading-none mt-1">
-                  {typeof content.passPercentage === "number" ? `${content.passPercentage}٪` : "١٠٠٪"}
+                  {typeof content.passPercentage === "number" ? `${content.passPercentage}٪` : "٥٠٪"}
                 </span>
                 <span className="font-semibold  text-[13px] sm:text-[14px] text-text-muted">نسبة النجاح</span>
               </div>

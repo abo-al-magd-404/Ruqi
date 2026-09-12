@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo, Aref_Ruqaa } from "next/font/google";
-import LayoutWrapper from "@/components/LayoutWrapper";
+import LayoutWrapper from "@/app/layout-wrapper";
 import "./globals.css";
 
 const cairo = Cairo({

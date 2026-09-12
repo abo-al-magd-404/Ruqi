@@ -1,47 +1,64 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-interface StageModalProps {
+interface MonthModalProps {
   open: boolean;
   mode: "create" | "edit";
   initialTitle?: string;
+  initialDescription?: string;
+  initialPrice?: number;
   initialImage?: string;
   saving?: boolean;
   error?: string | null;
-  onSave: (data: { title: string; image: string }) => void;
+  onSave: (data: { title: string; description: string; price: number; image: string }) => void;
   onClose: () => void;
 }
 
 const INPUT_CLASS =
   "w-full h-[48px] rounded-xl border-[1.5px] border-border px-4 text-text-main text-[14px] outline-none focus:border-primary transition-colors bg-background focus:bg-surface";
+const TEXTAREA_CLASS =
+  "w-full rounded-xl border-[1.5px] border-border px-4 py-3 text-text-main text-[14px] outline-none focus:border-primary transition-colors bg-background focus:bg-surface resize-none";
 
-export default function StageModal({
+export default function MonthModal({
   open,
   mode,
   initialTitle = "",
+  initialDescription = "",
+  initialPrice = 0,
   initialImage = "",
   saving = false,
   error = null,
   onSave,
   onClose,
-}: StageModalProps) {
+}: MonthModalProps) {
   const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription);
+  const [price, setPrice] = useState(String(initialPrice));
   const [image, setImage] = useState(initialImage);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setTitle(initialTitle);
+      setDescription(initialDescription);
+      setPrice(String(initialPrice));
       setImage(initialImage);
     }
-  }, [open, initialTitle, initialImage]);
+  }
 
   if (!open) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onSave({ title: title.trim(), image: image.trim() });
+    onSave({
+      title: title.trim(),
+      description: description.trim(),
+      price: Number(price) || 0,
+      image: image.trim(),
+    });
   };
 
   return (
@@ -52,24 +69,48 @@ export default function StageModal({
       onClick={() => !saving && onClose()}
     >
       <div
-        className="w-full sm:max-w-[460px] bg-surface rounded-t-[20px] sm:rounded-b-[20px] border border-border p-6 md:p-8 shadow-2xl"
+        className="w-full sm:max-w-[480px] bg-surface rounded-t-[20px] sm:rounded-b-[20px] border border-border p-6 md:p-8 shadow-2xl"
         dir="rtl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-[20px] font-extrabold text-text-main mb-6 text-center">
-          {mode === "create" ? "إضافة مرحلة دراسية جديدة" : "تعديل المرحلة الدراسية"}
+          {mode === "create" ? "إنشاء شهر دراسي جديد" : "تعديل الشهر الدراسي"}
         </h3>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[13px] font-semibold text-text-main">اسم المرحلة</label>
+            <label className="text-[13px] font-semibold text-text-main">اسم الشهر</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="مثال: الصف الأول الثانوي"
+              placeholder="مثال: سبتمبر - الفيزياء الحديثة"
               className={INPUT_CLASS}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-semibold text-text-main">الوصف</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="وصف شهر الدراسة"
+              className={TEXTAREA_CLASS}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-semibold text-text-main">السعر (بالجنيه)</label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              min={0}
+              placeholder="0"
+              className={INPUT_CLASS}
+              dir="ltr"
             />
           </div>
 
@@ -79,7 +120,7 @@ export default function StageModal({
               type="text"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              placeholder="https://example.com/stage.jpg"
+              placeholder="https://example.com/month.jpg"
               className={INPUT_CLASS}
               dir="ltr"
             />
@@ -105,7 +146,7 @@ export default function StageModal({
               disabled={saving}
               className="flex-1 h-[48px] bg-primary text-text-main font-bold text-[14px] rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-60"
             >
-              {saving ? "جاري الحفظ..." : mode === "create" ? "إضافة المرحلة" : "حفظ التعديلات"}
+              {saving ? "جاري الحفظ..." : mode === "create" ? "إنشاء الشهر" : "حفظ التعديلات"}
             </button>
           </div>
         </form>
