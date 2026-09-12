@@ -1,26 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
 import {
   EducationalStage,
   EducationalStageDocument,
-} from '../../schemas/educational-stage.schema.js';
-import { Model, Types } from 'mongoose';
+} from "../../schemas/educational-stage.schema.js";
+import { Model, Types } from "mongoose";
 import {
   CreateEducationalStageDto,
   UpdateEducationalStageDto,
-} from './dto/educational-stage.dto.js';
-import { ReorderDto } from './dto/reorder.dto.js';
-import { Month, MonthDocument } from '../../schemas/month.schema.js';
+} from "./dto/educational-stage.dto.js";
+import { ReorderDto } from "./dto/reorder.dto.js";
+import { Month, MonthDocument } from "../../schemas/month.schema.js";
 import {
   LessonExam,
   LessonExamDocument,
-} from '../../schemas/lesson-exam.schema.js';
-import { CreateMonthDto, UpdateMonthDto } from './dto/month.dto.js';
+} from "../../schemas/lesson-exam.schema.js";
+import { CreateMonthDto, UpdateMonthDto } from "./dto/month.dto.js";
 import {
   CreateExamDto,
   CreateLessonDto,
   UpdateLessonExamDto,
-} from './dto/lesson-exam.dto.js';
+} from "./dto/lesson-exam.dto.js";
+import { ContentType } from "../../common/enums/content-type.enum.js";
 
 @Injectable()
 export class EducationalContentService {
@@ -55,7 +56,7 @@ export class EducationalContentService {
   async findOneStage(id: string): Promise<EducationalStage> {
     const stage = await this.stageModel.findById(id).exec();
     if (!stage) {
-      throw new NotFoundException('المرحلة الدراسية غير موجودة');
+      throw new NotFoundException("المرحلة الدراسية غير موجودة");
     }
     return stage;
   }
@@ -68,7 +69,7 @@ export class EducationalContentService {
       .findByIdAndUpdate(id, updateDto, { new: true })
       .exec();
     if (!updatedStage) {
-      throw new NotFoundException('المرحلة الدراسية غير موجودة');
+      throw new NotFoundException("المرحلة الدراسية غير موجودة");
     }
     return updatedStage;
   }
@@ -86,12 +87,12 @@ export class EducationalContentService {
   async removeStage(id: string): Promise<void> {
     const result = await this.stageModel.findByIdAndDelete(id).exec();
     if (!result) {
-      throw new NotFoundException('المرحلة الدراسية غير موجودة');
+      throw new NotFoundException("المرحلة الدراسية غير موجودة");
     }
 
     const months = await this.monthModel
       .find({ stage: result._id })
-      .select('_id')
+      .select("_id")
       .lean();
 
     const monthIds = months.map((month) => month._id);
@@ -125,7 +126,7 @@ export class EducationalContentService {
   async findOneMonth(id: string): Promise<Month> {
     const month = await this.monthModel.findById(id).exec();
     if (!month) {
-      throw new NotFoundException('الشهر غير موجود');
+      throw new NotFoundException("الشهر غير موجود");
     }
     return month;
   }
@@ -141,7 +142,7 @@ export class EducationalContentService {
       .exec();
 
     if (!updatedMonth) {
-      throw new NotFoundException('الشهر غير موجود');
+      throw new NotFoundException("الشهر غير موجود");
     }
     return updatedMonth;
   }
@@ -159,7 +160,7 @@ export class EducationalContentService {
   async removeMonth(id: string): Promise<void> {
     const result = await this.monthModel.findByIdAndDelete(id).exec();
     if (!result) {
-      throw new NotFoundException('الشهر غير موجود');
+      throw new NotFoundException("الشهر غير موجود");
     }
 
     await this.lessonExamModel.deleteMany({ month: result._id });
@@ -203,7 +204,7 @@ export class EducationalContentService {
   async findOneContent(id: string): Promise<LessonExam> {
     const item = await this.lessonExamModel.findById(id).exec();
     if (!item) {
-      throw new NotFoundException('المحتوى المطلوب غير موجود');
+      throw new NotFoundException("المحتوى المطلوب غير موجود");
     }
     return item;
   }
@@ -217,7 +218,7 @@ export class EducationalContentService {
       .exec();
 
     if (!updated) {
-      throw new NotFoundException('المحتوى المطلوب غير موجود');
+      throw new NotFoundException("المحتوى المطلوب غير موجود");
     }
     return updated;
   }
@@ -235,7 +236,28 @@ export class EducationalContentService {
   async removeContent(id: string): Promise<void> {
     const result = await this.lessonExamModel.findByIdAndDelete(id).exec();
     if (!result) {
-      throw new NotFoundException('المحتوى المطلوب غير موجود');
+      throw new NotFoundException("المحتوى المطلوب غير موجود");
     }
+  }
+
+  // ================================================== //
+  // ==================== STATS ======================= //
+  // ================================================== //
+
+  async getStats() {
+    const [stagesCount, monthsCount, lessonsCount, examsCount] =
+      await Promise.all([
+        this.stageModel.countDocuments(),
+        this.monthModel.countDocuments(),
+        this.lessonExamModel.countDocuments({ type: ContentType.LESSON }),
+        this.lessonExamModel.countDocuments({ type: ContentType.EXAM }),
+      ]);
+
+    return {
+      stages: stagesCount,
+      months: monthsCount,
+      lessons: lessonsCount,
+      exams: examsCount,
+    };
   }
 }
