@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo, Aref_Ruqaa } from "next/font/google";
-import LayoutWrapper from "@/app/layout-wrapper";
+import SiteChrome from "./educational-content/module/site-chrome";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       className={`${cairo.variable} ${arefRuqaa.variable}`}
     >
       <body className="min-h-screen flex flex-col bg-background text-text-main font-cairo antialiased selection:bg-primary selection:text-white">
-        <LayoutWrapper>{children}</LayoutWrapper>
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

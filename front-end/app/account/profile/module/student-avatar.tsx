@@ -1,28 +1,22 @@
 "use client";
 
-import NiceAvatar from "react-nice-avatar";
-import { AVATAR_FALLBACK_NAME, defaultAvatarConfig, isAvatarImage, parseAvatarConfig } from "@/lib/avatar";
+import { AVATAR_FALLBACK_NAME, resolveAvatarSrc } from "@/lib/avatar";
 
 export default function StudentAvatar({
   avatar,
   seed = AVATAR_FALLBACK_NAME,
+  role,
 }: {
   avatar: string;
   seed?: string;
+  role?: string;
 }) {
-  const config = parseAvatarConfig(avatar);
-  if (config) {
-    return <NiceAvatar style={{ width: "100%", height: "100%" }} shape="circle" {...config} />;
-  }
-  if (isAvatarImage(avatar)) {
-    return (
-      <div
-        className="w-full h-full bg-cover bg-center"
-        style={{ backgroundImage: `url('${avatar}')` }}
-        role="img"
-        aria-label="الصورة الرمزية"
-      />
-    );
-  }
-  return <NiceAvatar style={{ width: "100%", height: "100%" }} shape="circle" {...defaultAvatarConfig(seed)} />;
+  const src =
+    role === "TEACHER" ? "/teacher-image.png" : resolveAvatarSrc(avatar, seed).src;
+
+  return (
+    <div className="w-full h-full rounded-full overflow-hidden bg-primary-light">
+      <img src={src} alt="الصورة الرمزية" className="w-full h-full object-cover" />
+    </div>
+  );
 }

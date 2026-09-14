@@ -284,7 +284,7 @@ export default function HomePage() {
             className="relative w-full aspect-4/5 max-w-sm mx-auto md:mx-0"
           >
             <Image
-              src="/images/teacher-image.png"
+              src="/teacher-image.png"
               alt="الأستاذ سمير محمد أبو المجد"
               fill
               className="object-cover rounded-2xl border border-primary"

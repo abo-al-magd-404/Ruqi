@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, KeyRound, LogOut, CheckCircle2, Camera } from "lucide-react";
+import { Settings, KeyRound, LogOut, Camera } from "lucide-react";
 import { logoutUser } from "@/lib/account/auth";
 import { getProfile, updateStudentProfile } from "@/lib/account/profile";
 import { getEducationalStages } from "@/lib/educational-content/stages";
-import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { UserProfile } from "@/lib/types/account";
 import type { EducationalStage } from "@/lib/types/educational-content";
 import Loading from "@/app/loading";
@@ -34,7 +33,6 @@ export default function StudentProfile() {
     stage: "",
     avatar: "",
   });
-  const [subscribedMonthNames, setSubscribedMonthNames] = useState<Record<string, string>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -144,22 +142,6 @@ export default function StudentProfile() {
         if (!active) return;
         setProfile(profileData);
         setStages(stagesData);
-
-        const subscribed = profileData?.subscribedMonths ?? [];
-        if (profileData?.role === "STUDENT" && subscribed.length > 0) {
-          const titleMap: Record<string, string> = {};
-          await Promise.all(
-            subscribed.map(async (id) => {
-              try {
-                const month = await getEducationalMonthById(id);
-                titleMap[id] = month?.title ?? "";
-              } catch {
-                titleMap[id] = "";
-              }
-            }),
-          );
-          if (active) setSubscribedMonthNames(titleMap);
-        }
       })
       .catch((err) => {
         if (!active) return;
@@ -211,14 +193,16 @@ export default function StudentProfile() {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 w-full lg:w-auto text-center sm:text-right">
             <button
               type="button"
-              onClick={() => openEditModal("avatar")}
+              onClick={() => (role === "TEACHER" ? undefined : openEditModal("avatar"))}
               className="relative w-[80px] h-[80px] md:w-[112px] md:h-[112px] rounded-full border-2 border-primary bg-primary-light flex items-center justify-center shrink-0 overflow-hidden group"
-              aria-label="تغيير الصورة الرمزية"
+              aria-label={role === "TEACHER" ? "صورة المدرس" : "تغيير الصورة الرمزية"}
             >
-              <StudentAvatar avatar={avatar ?? ""} seed={name} />
-              <span className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
-                <Camera size={22} className="md:w-[28px] md:h-[28px] text-white" />
-              </span>
+              <StudentAvatar avatar={avatar ?? ""} seed={name} role={role} />
+              {role !== "TEACHER" && (
+                <span className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+                  <Camera size={22} className="md:w-[28px] md:h-[28px] text-white" />
+                </span>
+              )}
             </button>
             <div className="flex flex-col gap-2 sm:gap-3 mt-1 sm:mt-2">
               <h1 className="text-[20px] sm:text-[22px] md:text-[26px] font-extrabold text-text-main leading-tight">
@@ -304,32 +288,6 @@ export default function StudentProfile() {
             </div>
           )}
         </div>
-
-        {role === "STUDENT" && (
-          <div className="flex flex-col gap-3 pt-2">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-primary rounded-full"></span>
-              <h3 className="font-bold text-[16px] text-text-main">الاشتراكات الشهرية</h3>
-            </div>
-            {profile.subscribedMonths.length === 0 ? (
-              <p className="text-[13px] md:text-[14px] text-text-muted font-medium">
-                لا توجد اشتراكات شهرية حالياً.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {profile.subscribedMonths.map((id) => (
-                  <span
-                    key={id}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-success-bg border border-success/30 rounded-control text-success font-bold text-[12px] md:text-[13px]"
-                  >
-                    <CheckCircle2 size={14} />
-                    {subscribedMonthNames[id] || "شهر مشترك"}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {role === "TEACHER" && <AdminDashboard />}

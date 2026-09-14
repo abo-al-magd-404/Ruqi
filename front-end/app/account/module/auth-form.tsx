@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { loginUser, signup, NotVerifiedError } from "@/lib/account/auth";
 import { saveTokens } from "@/lib/tokens/tokens";
-import { savePendingEmail, getPendingEmail } from "@/lib/core/http";
+import { savePendingEmail, getPendingEmail, savePendingName } from "@/lib/core/http";
+import { pendingAvatarStorage, AVATAR_FALLBACK_NAME } from "@/lib/avatar";
+import { updateStudentProfile } from "@/lib/account/profile";
 import { getEducationalStages } from "@/lib/educational-content/stages";
 import type { EducationalStage } from "@/lib/types/educational-content";
 import PasswordField from "./password-field";
+import AvatarPicker from "./AvatarPicker";
 
 type Mode = "login" | "register";
 
@@ -20,6 +23,7 @@ interface FormState {
   phoneNumber: string;
   address: string;
   stage: string;
+  avatar: string;
 }
 
 const INITIAL_FORM: FormState = {
@@ -30,6 +34,7 @@ const INITIAL_FORM: FormState = {
   phoneNumber: "",
   address: "",
   stage: "",
+  avatar: "",
 };
 
 const INPUT_CLASS =
@@ -61,6 +66,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState(false);
   const [needsActivation, setNeedsActivation] = useState(false);
+  const [step, setStep] = useState(0);
 
   const [stages, setStages] = useState<EducationalStage[]>([]);
   const [loadingStages, setLoadingStages] = useState(!isLogin);
@@ -83,6 +89,11 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
     if (needsActivation) setNeedsActivation(false);
   };
 
+  const handleAvatarChange = (avatar: string) => {
+    setForm((prev) => ({ ...prev, avatar }));
+    if (error) setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -101,6 +112,12 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
       return;
     }
 
+    if (!isLogin && step === 0) {
+      setError(null);
+      setStep(1);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -108,6 +125,13 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
       if (isLogin) {
         const { tokens } = await loginUser({ email: form.email, password: form.password });
         saveTokens(tokens);
+        const pending = pendingAvatarStorage().get();
+        if (pending) {
+          try {
+            await updateStudentProfile({ avatar: pending });
+            pendingAvatarStorage().clear();
+          } catch {}
+        }
         router.push("/account/profile");
       } else {
         await signup({
@@ -119,6 +143,8 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           stage: form.stage,
         });
         savePendingEmail(form.email);
+        savePendingName(form.name);
+        pendingAvatarStorage().set(form.avatar.trim() || form.name.trim() || AVATAR_FALLBACK_NAME);
         router.push(`/account/verify-email?email=${form.email}`);
       }
     } catch (err) {
@@ -167,16 +193,29 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           </svg>
 
           <h1 className="text-[24px] md:text-[28px] font-extrabold text-text-main text-center mb-1">
-            {isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
+            {isLogin ? "تسجيل الدخول" : step === 0 ? "إنشاء حساب جديد" : "اختر صورتك الرمزية"}
           </h1>
           <p className="text-center text-[13px] md:text-[14px] font-medium text-text-muted">
             {isLogin
               ? "مرحباً بك مجدداً في محراب العلم والمعرفة"
-              : "انضم إلى نخبة الطلاب في منصة التعليم العربية الأرقى"}
+              : step === 0
+                ? "انضم إلى نخبة الطلاب في منصة التعليم العربية الأرقى"
+                : "صورة تمثل شخصيتك داخل المنصة — يمكنك تغييرها لاحقاً من حسابك"}
           </p>
         </div>
 
         {!isLogin && (
+          <div className="flex items-center justify-center gap-2 mb-6" dir="ltr">
+            <span
+              className={`h-1.5 rounded-full transition-all ${step === 0 ? "w-8 bg-primary" : "w-3 bg-border"}`}
+            ></span>
+            <span
+              className={`h-1.5 rounded-full transition-all ${step === 1 ? "w-8 bg-primary" : "w-3 bg-border"}`}
+            ></span>
+          </div>
+        )}
+
+        {!isLogin && step === 0 && (
           <FormField
             label="الاسم الكامل"
             name="name"
@@ -188,31 +227,35 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           />
         )}
 
-        <FormField
-          label="البريد الإلكتروني"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          required
-          placeholder={isLogin ? "yourGmail@gmail.com" : "example@gmail.com"}
-          error={emailError}
-        />
+        {(isLogin || step === 0) && (
+          <FormField
+            label="البريد الإلكتروني"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            placeholder={isLogin ? "yourGmail@gmail.com" : "example@gmail.com"}
+            error={emailError}
+          />
+        )}
         {emailError && (
           <p className="text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
             البريد الإلكتروني المدخل غير صحيح، يرجى التحقق من الصيغة.
           </p>
         )}
 
-        <PasswordField
-          label="كلمة المرور"
-          name="password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          placeholder={isLogin ? "ادخل كلمة السر" : "*******"}
-          showStrength={!isLogin}
-        />
+        {(isLogin || step === 0) && (
+          <PasswordField
+            label="كلمة المرور"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            required
+            placeholder={isLogin ? "ادخل كلمة السر" : "*******"}
+            showStrength={!isLogin}
+          />
+        )}
 
         {isLogin && (
           <div className="mb-6 text-left -mt-3">
@@ -225,7 +268,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           </div>
         )}
 
-        {!isLogin && (
+        {!isLogin && step === 0 && (
           <PasswordField
             label="تأكيد كلمة المرور"
             name="confirmPassword"
@@ -236,7 +279,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           />
         )}
 
-        {!isLogin && (
+        {!isLogin && step === 0 && (
           <>
             <FormField
               label="رقم الهاتف"
@@ -282,6 +325,17 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           </>
         )}
 
+        {!isLogin && step === 1 && (
+          <div className="flex flex-col items-center gap-3 mb-5">
+            <AvatarPicker
+              value={form.avatar}
+              fallbackName={form.name || AVATAR_FALLBACK_NAME}
+              previewSize={112}
+              onChange={handleAvatarChange}
+            />
+          </div>
+        )}
+
         {error && !emailError && (
           <p className="text-sm text-danger bg-danger-bg border border-danger/30 rounded-lg p-3 mb-6 text-center font-medium">
             {error}
@@ -303,13 +357,44 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         )}
 
         <div className="flex flex-col items-center gap-5 mt-2">
-          <button
-            type="submit"
-            disabled={loading || (!isLogin && loadingStages)}
-            className="w-full h-[52px] md:h-[58px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
-          >
-            {loading ? (isLogin ? "جاري الدخول..." : "جاري الإنشاء...") : isLogin ? "تسجيل الدخول" : "إنشاء الحساب"}
-          </button>
+          {isLogin && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-[52px] md:h-[58px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
+            >
+              {loading ? "جاري الدخول..." : "تسجيل الدخول"}
+            </button>
+          )}
+
+          {!isLogin && step === 0 && (
+            <button
+              type="submit"
+              disabled={loading || loadingStages}
+              className="w-full h-[52px] md:h-[58px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
+            >
+              التالي: الصورة الرمزية
+            </button>
+          )}
+
+          {!isLogin && step === 1 && (
+            <div className="flex flex-col gap-3 w-full">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-[52px] md:h-[58px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
+              >
+                {loading ? "جاري الإنشاء..." : "إنشاء الحساب"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setError(null); setStep(0); }}
+                className="w-full h-[48px] bg-transparent border border-border text-text-muted font-bold text-[14px] rounded-xl hover:bg-surface-secondary transition-colors"
+              >
+                رجوع
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center gap-1">
             <span className="text-text-muted font-medium text-[13px] md:text-[14px]">

@@ -8,6 +8,7 @@ import {
 export { API_BASE_URL };
 
 const PENDING_EMAIL_KEY = "ruqi_pending_email";
+const PENDING_NAME_KEY = "ruqi_pending_name";
 
 export function savePendingEmail(email: string) {
   if (typeof window !== "undefined") {
@@ -18,6 +19,29 @@ export function savePendingEmail(email: string) {
 export function getPendingEmail(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(PENDING_EMAIL_KEY);
+}
+
+export function clearPendingEmail() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(PENDING_EMAIL_KEY);
+  }
+}
+
+export function savePendingName(name: string) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PENDING_NAME_KEY, name);
+  }
+}
+
+export function getPendingName(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(PENDING_NAME_KEY);
+}
+
+export function clearPendingName() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(PENDING_NAME_KEY);
+  }
 }
 
 // ============= HTTP Helpers =============

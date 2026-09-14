@@ -12,7 +12,7 @@ The RUQI front-end is a **Next.js (App Router)** application that delivers the e
 
 - **Student journey:** browse educational stages → months → sequential lessons/exams, watch videos, read explanations, submit MCQ homework, take timed exams, track progress, view the leaderboard.
 - **Teacher journey:** full content management dashboard — create/edit/delete/reorder stages, months, lessons, and exams with an MCQ builder.
-- **Account suite:** signup, email OTP verification, login, forgot/reset password, profile editing, custom avatars, and month subscriptions.
+- **Account suite:** 2-step signup (data → avatar picker), email OTP verification, login, forgot/reset password, profile editing, and fully customizable avatars.
 
 All UI text, error messages, dates, and layout are **Arabic-first and RTL-native**; the design is light-mode with the premium gold/off-white brand palette and the Cairo typeface.
 
@@ -28,7 +28,7 @@ All UI text, error messages, dates, and layout are **Arabic-first and RTL-native
 | Tailwind CSS | v4 | Styling (`@tailwindcss/postcss`, design tokens in `globals.css`) |
 | Framer Motion | 13.x | Page/element animations |
 | Lucide React | 1.x | Icons |
-| react-nice-avatar | 1.5.0 | Profile avatar editor (config stored as JSON) |
+| @dicebear/core + @dicebear/styles | 10.x | DiceBear avatars (Marbles style, seed-based) |
 
 ---
 
@@ -37,8 +37,7 @@ All UI text, error messages, dates, and layout are **Arabic-first and RTL-native
 ```
 front-end/
 ├── app/                                 # App Router routes
-│   ├── layout.tsx                       # Root layout: <html lang="ar" dir="rtl"> + Cairo font
-│   ├── layout-wrapper.tsx               # Navbar / Footer shell
+│   ├── layout.tsx                       # Root layout: <html lang="ar" dir="rtl"> + Cairo font + <SiteChrome>
 │   ├── globals.css                      # Design tokens + component classes
 │   ├── page.tsx                         # Home (/) — hero + platform stats
 │   ├── loading.tsx                      # Branded loading screen
@@ -53,29 +52,35 @@ front-end/
 │   │   │   └── assignment/{page,result,review}/  # Homework MCQ flow
 │   │   ├── exam/[contentId]/
 │   │   │   ├── page.tsx                 # Exam overview
-│   │   │   ├── take/page.tsx            # Timed exam screen
-│   │   │   └── {result,review}/         # Exam result & review
-│   │   └── module/                      # teacher-dashboard + hooks + modals + sections
+│   │   │   ├── take/page.tsx            # Timed exam screen (chrome hidden)
+│   │   │   └── {result,review}/         # Exam result & review (chrome hidden)
+│   │   └── module/                      # dashboard/sections/modals hooks + site-chrome
+│   │                                    #  (site-chrome hides Navbar/Footer on exam & assignment screens)
 │   │
 │   ├── account/
 │   │   ├── page.tsx                     # Auth landing (login / register)
 │   │   ├── {login,register,verify-email,forgot-password}/page.tsx
 │   │   ├── reset-password/page.tsx
+│   │   ├── choose-avatar/page.tsx       # Optional standalone avatar picker (GuestGuard)
 │   │   ├── profile/page.tsx             # Profile + progress + teacher dashboard
-│   │   └── module/                      # auth-form, password-field, GuestGuard
-│   │       └── profile/module/          # profile, avatar editor, modals
+│   │   └── module/                      # auth-form (2-step signup incl. avatar), AvatarPicker, password-field, GuestGuard
+│   │       └── profile/module/          # profile, avatar rendering, modals
 │   │
 │   ├── leaderboard/page.tsx             # Rankings (/leaderboard)
 │   └── support/page.tsx                 # Support request
 │
-├── components/                          # Shared chrome (Navbar, Footer)
+├── components/                          # Shared chrome — Navbar & Footer only
+│                                         #  (one file each; nothing else lives here)
+│
+├── public/
+│   └── teacher-image.png                # Static photo shown for TEACHER accounts (not an avatar)
 │
 ├── lib/                                 # Client-side logic & API clients
 │   ├── tokens/tokens.ts                 # Access/refresh token storage + refresh rotation
-│   ├── core/http.ts                     # authedFetch, authedJson, error helpers
+│   ├── core/http.ts                     # authedFetch, authedJson, error helpers + signup "pending" name/email
 │   ├── account/                         # auth + profile API clients
 │   ├── educational-content/             # stages, months, content, stats API clients
-│   ├── avatar.ts                        # react-nice-avatar helpers
+│   ├── avatar.ts                        # DiceBear (Marbles) avatar engine (single source of truth)
 │   ├── progress.ts                      # Student progress (localStorage)
 │   ├── leaderboard.ts                   # Leaderboard API client
 │   ├── password.ts                      # Password strength scoring
@@ -126,6 +131,27 @@ API_BASE_URL_ENV=http://localhost:8000
 - After login/refresh, **access + refresh tokens** are stored in `localStorage` under `ruqi_access_token` / `ruqi_refresh_token` (`lib/tokens/tokens.ts`).
 - `lib/core/http.ts` exposes `authedFetch` / `authedJson`, which attach `Authorization: Bearer <token>` and automatically retry once with a refreshed token on `401`.
 - Guests are redirected via `account/module/GuestGuard.tsx`; authenticated users via `isAuthenticated()`.
+
+---
+
+## 🖼️ Avatars
+
+`lib/avatar.ts` is the **single source of truth** for the avatar system (DiceBear **Marbles**, v10):
+
+- **Options** — `AvatarOptions { seed, sphereColor, topVariant, eyesVariant, mouthVariant }` with exported
+  `MARBLES_PALETTE` (15 colors) and `MARBLES_TOP/EYES/MOUTH_VARIANTS` literals (ui: `AvatarPicker`).
+- **Rendering** — `avatarDataUri()` renders SVG **client-side and caches it**; `resolveAvatarSrc()` decides
+  image-vs-dicebear for a stored value. No network round-trip for avatars.
+- **Storage format** — a plain **seed** string when uncustomized; a **DiceBear SVG URL** when any option is
+  customized (`avatarStringFromOptions()` / `parseAvatarValue()` handle both directions).
+- **Customization UI** — `AvatarPicker` (in `app/account/module/`) with color swatches, hair/hat, eyes and mouth
+  thumbnail rows, a seed field, and a shuffle button; used by the 2nd signup step and the profile editor.
+- **Roles** — `STUDENT` accounts get a Marbles avatar; `TEACHER` accounts always render the static photo
+  `/teacher-image.png` (their real picture, **not** an avatar).
+
+> **Pending-avatar flow (front-end only).** The signup API does not accept an `avatar` field, so the avatar chosen
+> during the 2nd signup step is kept in `localStorage` (`ruqi_pending_avatar`, via `pendingAvatarStorage()`) and
+> applied automatically on first login through `updateStudentProfile({ avatar })` — no backend change required.
 
 ---
 
