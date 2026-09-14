@@ -9,6 +9,7 @@ import { savePendingEmail, getPendingEmail, savePendingName, clearPendingEmail, 
 import { pendingAvatarStorage } from "@/lib/avatar";
 import { updateStudentProfile } from "@/lib/account/profile";
 import { getEducationalStages } from "@/lib/educational-content/stages";
+import { evaluatePassword } from "@/lib/password";
 import type { EducationalStage } from "@/lib/types/educational-content";
 import PasswordField from "./password-field";
 
@@ -35,23 +36,63 @@ const INITIAL_FORM: FormState = {
 };
 
 const INPUT_CLASS =
-  "w-full h-[52px] rounded-xl border-[1.5px] border-border bg-surface px-4 text-text-main placeholder-text-muted outline-none text-[14px] md:text-[15px] transition-all text-right";
+  "w-full h-[52px] rounded-xl border-[1.5px] bg-surface px-4 text-text-main placeholder-text-muted outline-none text-[14px] md:text-[15px] transition-all text-right";
+
+type FieldTone = "default" | "success" | "error";
 
 function FormField({
   label,
-  error,
+  tone = "default",
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: boolean }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; tone?: FieldTone }) {
+  const borderClass =
+    tone === "error"
+      ? "border-danger focus:border-danger"
+      : tone === "success"
+        ? "border-success focus:border-success"
+        : "border-border focus:border-primary";
   return (
     <div className="block mb-5">
       <label className="block text-[13px] md:text-[14px] font-semibold text-text-main mb-2 text-right">{label}</label>
       <input
-        className={`${INPUT_CLASS} ${error ? "border-danger" : "border-border focus:border-primary"}`}
+        className={`${INPUT_CLASS} ${borderClass}`}
         dir="rtl"
         {...props}
       />
     </div>
   );
+}
+
+const EGYPTIAN_PHONE_RE = /^01[0125][0-9]{8}$/;
+const ARABIC_CHAR_RE = /[\u0621-\u064A]/;
+const ARABIC_NAME_RE = /^[\u0621-\u064A\s]+$/;
+const ARABIC_ADDRESS_RE = /^[\u0621-\u064A0-9\u0660-\u0669\s\-/,،()]+$/;
+
+function normalizePhone(value: string): string {
+  return value.replace(/[\s-]/g, "").replace(/^(\+|00)?20/, "0");
+}
+
+function isValidEgyptianPhone(value: string): boolean {
+  return EGYPTIAN_PHONE_RE.test(normalizePhone(value));
+}
+
+function isValidArabicText(value: string, allowDigits = false): boolean {
+  if (!ARABIC_CHAR_RE.test(value)) return false;
+  return allowDigits ? ARABIC_ADDRESS_RE.test(value) : ARABIC_NAME_RE.test(value);
+}
+
+function isFilled(value: string): boolean {
+  return value.trim().length > 0;
+}
+
+function toneOf(raw: string, valid: boolean): FieldTone {
+  if (!isFilled(raw)) return "default";
+  return valid ? "success" : "error";
+}
+
+function isPasswordValid(password: string): boolean {
+  const checks = evaluatePassword(password);
+  return checks.minLength && checks.caseMix && checks.number && checks.special;
 }
 
 export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
@@ -93,14 +134,36 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
       return;
     }
 
-    if (!isLogin && form.password !== form.confirmPassword) {
-      setError("كلمتا المرور غير متطابقتين");
-      return;
-    }
+    if (!isLogin) {
+      if (form.password !== form.confirmPassword) {
+        setError("كلمتا المرور غير متطابقتين");
+        return;
+      }
 
-    if (!isLogin && !form.stage) {
-      setError("من فضلك اختر المرحلة الدراسية أولاً");
-      return;
+      if (!form.stage) {
+        setError("من فضلك اختر المرحلة الدراسية أولاً");
+        return;
+      }
+
+      if (!isFilled(form.name) || !isValidArabicText(form.name)) {
+        setError("الاسم يجب أن يكون باللغة العربية");
+        return;
+      }
+
+      if (!isValidEgyptianPhone(form.phoneNumber)) {
+        setError("رقم الهاتف يجب أن يكون رقماً مصرياً صحيحاً (010/011/012/015)");
+        return;
+      }
+
+      if (!isFilled(form.address) || !isValidArabicText(form.address, true)) {
+        setError("العنوان يجب أن يكون باللغة العربية");
+        return;
+      }
+
+      if (!isPasswordValid(form.password)) {
+        setError("كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل وتتضمن حرفاً كبيراً وصغيراً ورقمية ورمزاً خاصاً (#, @, $)");
+        return;
+      }
     }
 
     setLoading(true);
@@ -125,7 +188,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           name: form.name,
           email: form.email,
           password: form.password,
-          phoneNumber: form.phoneNumber,
+          phoneNumber: normalizePhone(form.phoneNumber),
           address: form.address,
           stage: form.stage,
         });
@@ -145,6 +208,25 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
   };
 
   const activationPendingEmail = getPendingEmail();
+
+  const fieldValidity = isLogin
+    ? null
+    : {
+        name: isValidArabicText(form.name),
+        address: isValidArabicText(form.address, true),
+        phone: isValidEgyptianPhone(form.phoneNumber),
+        password: isPasswordValid(form.password),
+      };
+
+  const showNameMsg = fieldValidity !== null && isFilled(form.name) && !fieldValidity.name;
+  const showPhoneMsg = fieldValidity !== null && isFilled(form.phoneNumber) && !fieldValidity.phone;
+  const showAddressMsg = fieldValidity !== null && isFilled(form.address) && !fieldValidity.address;
+  const showPasswordMsg =
+    fieldValidity !== null && isFilled(form.password) && !fieldValidity.password && form.password !== form.confirmPassword;
+
+  const confirmFilled = isFilled(form.confirmPassword);
+  const passwordFilled = isFilled(form.password);
+  const passwordsMatch = passwordFilled && confirmFilled && form.password === form.confirmPassword;
 
   return (
     <div
@@ -189,15 +271,23 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         </div>
 
         {!isLogin && (
-          <FormField
-            label="الاسم الكامل"
-            name="name"
-            type="text"
-            value={form.name}
-            onChange={handleChange}
-            required
-            placeholder="أدخل اسمك الثلاثي"
-          />
+          <>
+            <FormField
+              label="الاسم الكامل"
+              name="name"
+              type="text"
+              value={form.name}
+              onChange={handleChange}
+              required
+              placeholder="أدخل اسمك الثلاثي"
+              tone={fieldValidity ? toneOf(form.name, fieldValidity.name) : "default"}
+            />
+            {showNameMsg && (
+              <p className="flex items-center gap-1 text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
+                الاسم يجب أن يكون باللغة العربية
+              </p>
+            )}
+          </>
         )}
 
         <FormField
@@ -208,7 +298,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           onChange={handleChange}
           required
           placeholder={isLogin ? "yourGmail@gmail.com" : "example@gmail.com"}
-          error={emailError}
+          tone={emailError ? "error" : "default"}
         />
         {emailError && (
           <p className="text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
@@ -224,7 +314,14 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
           required
           placeholder={isLogin ? "ادخل كلمة السر" : "*******"}
           showStrength={!isLogin}
+          tone={fieldValidity ? toneOf(form.password, fieldValidity.password) : "default"}
         />
+
+        {showPasswordMsg && (
+          <p className="text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
+            كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل وتتضمن حرفاً كبيراً وصغيراً ورقمية ورمزاً خاصاً
+          </p>
+        )}
 
         {isLogin && (
           <div className="mb-6 text-left -mt-3">
@@ -238,14 +335,28 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         )}
 
         {!isLogin && (
-          <PasswordField
-            label="تأكيد كلمة المرور"
-            name="confirmPassword"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            required
-            placeholder="أعد كتابة كلمة المرور للتأكيد"
-          />
+          <>
+            <PasswordField
+              label="تأكيد كلمة المرور"
+              name="confirmPassword"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              required
+              placeholder="أعد كتابة كلمة المرور للتأكيد"
+              tone={!confirmFilled ? "default" : passwordsMatch ? "success" : "error"}
+            />
+            {confirmFilled && (
+              passwordsMatch ? (
+                <p className="flex items-center gap-1 text-success text-[12px] font-semibold -mt-4 mb-5 text-right">
+                  كلمتا المرور متطابقتان
+                </p>
+              ) : (
+                <p className="flex items-center gap-1 text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
+                  كلمتا المرور غير متطابقتين
+                </p>
+              )
+            )}
+          </>
         )}
 
         {!isLogin && (
@@ -257,8 +368,14 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
               value={form.phoneNumber}
               onChange={handleChange}
               required
-              placeholder="01xxxxxxxx"
+              placeholder="010xxxxxxx"
+              tone={fieldValidity ? toneOf(form.phoneNumber, fieldValidity.phone) : "default"}
             />
+            {showPhoneMsg && (
+              <p className="text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
+                رقم الهاتف يجب أن يكون رقماً مصرياً صحيحاً (010/011/012/015)
+              </p>
+            )}
             <FormField
               label="العنوان"
               name="address"
@@ -267,7 +384,13 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
               onChange={handleChange}
               required
               placeholder="مثال: دمنهور"
+              tone={fieldValidity ? toneOf(form.address, fieldValidity.address) : "default"}
             />
+            {showAddressMsg && (
+              <p className="text-danger text-[12px] font-semibold -mt-4 mb-5 text-right">
+                العنوان يجب أن يكون باللغة العربية
+              </p>
+            )}
 
             <div className="block mb-5">
               <label className="block text-[13px] md:text-[14px] font-semibold text-text-main mb-2 text-right">

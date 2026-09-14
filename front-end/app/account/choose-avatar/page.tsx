@@ -33,16 +33,16 @@ function ChooseAvatar() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative overflow-hidden font-cairo">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-6 sm:py-10 relative overflow-hidden font-cairo">
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('/path-to-islamic-pattern.svg')] bg-repeat"></div>
 
       <div
-        className="relative z-10 w-full max-w-[520px] bg-surface rounded-[24px] border border-border p-8 sm:p-10 md:p-12 shadow-[0_16px_48px_-4px_rgba(84,70,58,0.0588)] flex flex-col items-center"
+        className="relative z-10 w-full max-w-[520px] bg-surface rounded-[24px] border border-border p-6 sm:p-8 md:p-10 shadow-[0_16px_48px_-4px_rgba(84,70,58,0.0588)] flex flex-col items-center"
         dir="rtl"
       >
-        <div className="flex flex-col items-center justify-center mb-6 text-center">
+        <div className="flex flex-col items-center justify-center mb-4 text-center">
           <svg
-            className="w-full max-w-[420px] h-[14px] md:h-[18px] mb-6"
+            className="w-full max-w-[420px] h-[12px] md:h-[14px] mb-4"
             viewBox="0 0 504 18"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -57,13 +57,11 @@ function ChooseAvatar() {
             <rect x="273" y="8.5" width="60" height="1" fill="#D4AF37" />
           </svg>
 
-          <h1 className="text-[24px] md:text-[28px] font-extrabold text-text-main mb-3">
+          <h1 className="text-[22px] md:text-[26px] font-extrabold text-text-main mb-2">
             اختر صورتك الرمزية
           </h1>
           <p className="text-center text-[13px] md:text-[14px] font-medium text-text-muted leading-relaxed max-w-[380px]">
-            خصّص صورتك الرمزية لتُمثّلك في حسابك ولوحة المتفوقين من خلال اختيار اللون
-            والشكل والملامح، ويمكنك تغييرها لاحقاً من حسابك.
-            {name ? ` أهلاً بك، ${name}!` : ""}
+            اختر اللون والشكل الذي يُعبّر عنك {name ? `، أهلاً بك ${name}!` : ""}
           </p>
         </div>
 
@@ -71,7 +69,7 @@ function ChooseAvatar() {
           <AvatarPicker
             value={avatar}
             fallbackName={name || AVATAR_FALLBACK_NAME}
-            previewSize={160}
+            previewSize={132}
             onChange={setAvatar}
           />
         </div>
@@ -80,7 +78,7 @@ function ChooseAvatar() {
           type="button"
           onClick={handleContinue}
           disabled={saving}
-          className="mt-6 w-full h-[54px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
+          className="mt-5 w-full h-[50px] bg-primary rounded-xl text-text-main font-bold text-[15px] md:text-[16px] shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center"
         >
           {saving ? "جاري الحفظ..." : "حفظ والمتابعة"}
         </button>
@@ -92,7 +90,7 @@ function ChooseAvatar() {
             clearPendingName();
             router.push("/account/login");
           }}
-          className="mt-4 text-[13px] md:text-[14px] text-text-muted font-semibold hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
+          className="mt-3 text-[13px] md:text-[14px] text-text-muted font-semibold hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
         >
           تخطّي الآن — سأختارها لاحقاً
         </button>

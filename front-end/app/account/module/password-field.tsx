@@ -1,12 +1,19 @@
 import { evaluatePassword, getPasswordStrength, PASSWORD_STRENGTH_LABELS, PasswordStrengthLevel } from "@/lib/password";
 import { useState } from "react";
 
+type FieldTone = "default" | "success" | "error";
+
 export default function PasswordField({
   label,
   showStrength,
   value,
+  tone = "default",
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; showStrength?: boolean }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  label: string;
+  showStrength?: boolean;
+  tone?: FieldTone;
+}) {
   const [showPassword, setShowPassword] = useState(false);
 
   const password = typeof value === "string" ? value : Array.isArray(value) ? value.join("") : String(value ?? "");
@@ -26,15 +33,21 @@ export default function PasswordField({
   const trackColor = "#e2ddd5";
   const mutedColor = "#736c65";
   const complexEnough = checks.caseMix && checks.number && checks.special;
-const INPUT_CLASS =
-  "w-full h-[52px] rounded-xl border-[1.5px] border-border bg-surface px-4 text-text-main placeholder-text-muted focus:border-primary outline-none text-[14px] md:text-[15px] transition-all text-right";
+  const borderClass =
+    tone === "error"
+      ? "border-danger focus:border-danger"
+      : tone === "success"
+        ? "border-success focus:border-success"
+        : "border-border focus:border-primary";
+  const INPUT_CLASS =
+    "w-full h-[52px] rounded-xl border-[1.5px] bg-surface px-4 text-text-main placeholder-text-muted outline-none text-[14px] md:text-[15px] transition-all text-right";
 
   return (
     <div className="block mb-6">
       <label>
         <span className="block text-[13px] md:text-[14px] font-semibold text-text-main mb-2 text-right">{label}</span>
         <div className="relative">
-          <input type={showPassword ? "text" : "password"} className={`${INPUT_CLASS} pl-14`} dir="rtl" {...props} />
+          <input type={showPassword ? "text" : "password"} className={`${INPUT_CLASS} pl-14 ${borderClass}`} dir="rtl" {...props} />
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}

@@ -49,7 +49,7 @@ export default function AvatarPicker({
     avatarDataUri({ ...opts, seed, ...override }, 56);
 
   return (
-    <div className="w-full flex flex-col items-center gap-5 py-2 max-w-full">
+    <div className="w-full flex flex-col items-center gap-4 py-0 max-w-full">
       <div
         className="rounded-full border-2 border-primary bg-primary-light shrink-0 overflow-hidden"
         style={{ width: previewSize, height: previewSize }}
@@ -81,7 +81,7 @@ export default function AvatarPicker({
         <span className="text-[12px] font-semibold text-text-muted">الرمز</span>
         <div
           dir="ltr"
-          className="flex gap-2 overflow-x-auto py-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="avatar-strip flex gap-2 overflow-x-auto py-1.5 [-webkit-overflow-scrolling:touch]"
         >
           {GLYPHS_SHAPE_VARIANTS.map((variant) => (
             <button

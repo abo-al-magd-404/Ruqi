@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const HIDDEN_CHROME_RE =
-  /^\/educational-content\/exam\/[^/]+\/(take|result|review)(\/|$)|^\/educational-content\/content\/[^/]+\/assignment(\/(result|review))?(\/|$)/;
+  /^\/educational-content\/exam\/[^/]+\/(take|result|review)(\/|$)|^\/educational-content\/content\/[^/]+\/assignment(\/(result|review))?(\/|$)|^\/account\/choose-avatar(\/|$)/;
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

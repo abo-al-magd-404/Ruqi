@@ -219,4 +219,23 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .avatar-strip {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) var(--color-surface-secondary);
+  }
+  .avatar-strip::-webkit-scrollbar {
+    height: 6px;
+  }
+  .avatar-strip::-webkit-scrollbar-track {
+    background: var(--color-surface-secondary);
+    border-radius: 9999px;
+  }
+  .avatar-strip::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 9999px;
+  }
+  .avatar-strip::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-hover);
+  }
 }
