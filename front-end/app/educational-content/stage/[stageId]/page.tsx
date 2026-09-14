@@ -110,7 +110,6 @@ export default function StageMonthsPage({ params }: { params: Promise<{ stageId:
                     </p>
 
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
-                      <span className="font-bold text-[13px] md:text-[14px] text-text-muted">الاشتراك:</span>
                       <span className="font-extrabold text-[15px] md:text-[16px] text-primary bg-primary-light border border-primary-border px-3 py-1 rounded-lg">
                         {month.price === 0 ? "مجاني" : `${month.price} ج.م`}
                       </span>

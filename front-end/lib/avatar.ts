@@ -217,11 +217,114 @@ export function resolveAvatarSrc(
   if (parsed) {
     return { isImage: false, src: avatarDataUri(parsed), seed: parsed.seed };
   }
+  const legacy = legacyAvatarOptions(avatar);
+  if (legacy) {
+    return { isImage: false, src: avatarDataUri(legacy), seed: legacy.seed };
+  }
   if (isAvatarImage(avatar)) {
     return { isImage: true, src: avatar as string, seed: fallbackSeed };
   }
   const seed = isAvatarSeed(avatar) ? (avatar as string) : fallbackSeed;
   return { isImage: false, src: avatarDataUri(seed), seed };
+}
+
+const LEGACY_TOP_MAP: Record<string, MarblesTopVariant | undefined> = {
+  thick: "shag",
+  mohawk: "spikes",
+  womanLong: "ringlets",
+  long: "ringlets",
+  womanShort: "curl",
+  manShort: "flick",
+  manLong: "swirl",
+  manSides: "afro",
+  curly: "curls",
+  curlyShort: "curl",
+  afro: "afro",
+  bob: "bow",
+  bun: "knot",
+  doubleBun: "knot",
+  puff: "tuft",
+  flatTop: "tuft",
+  pompadour: "swirl",
+};
+
+const LEGACY_EYES_MAP: Record<string, MarblesEyesVariant | undefined> = {
+  smile: "happy",
+  oval: "oval",
+  shadow: "closed",
+};
+
+const LEGACY_MOUTH_MAP: Record<string, MarblesMouthVariant | undefined> = {
+  laugh: "grin",
+  smile: "smile",
+  peace: "line",
+  smirk: "smirk",
+};
+
+function hashSeed(input: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const match = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!match) return null;
+  const value = parseInt(match[1], 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+function nearestPaletteColor(hex: string): string | undefined {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return undefined;
+  let best: string | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const candidate of MARBLES_PALETTE) {
+    const candidateRgb = hexToRgb(candidate);
+    if (!candidateRgb) continue;
+    const distance =
+      (rgb[0] - candidateRgb[0]) ** 2 +
+      (rgb[1] - candidateRgb[1]) ** 2 +
+      (rgb[2] - candidateRgb[2]) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+function legacyAvatarOptions(avatar: string | null | undefined): AvatarOptions | null {
+  if (!avatar) return null;
+  const trimmed = avatar.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  let cfg: Record<string, unknown>;
+  try {
+    cfg = JSON.parse(trimmed) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  if (!cfg || typeof cfg !== "object") return null;
+
+  const opts: AvatarOptions = { seed: hashSeed(trimmed) };
+
+  const faceColor = typeof cfg.faceColor === "string" ? cfg.faceColor : undefined;
+  if (faceColor) opts.sphereColor = nearestPaletteColor(faceColor);
+
+  const hairStyle = typeof cfg.hairStyle === "string" ? cfg.hairStyle : undefined;
+  if (hairStyle && LEGACY_TOP_MAP[hairStyle]) opts.topVariant = LEGACY_TOP_MAP[hairStyle];
+
+  const eyeStyle = typeof cfg.eyeStyle === "string" ? cfg.eyeStyle : undefined;
+  if (eyeStyle && LEGACY_EYES_MAP[eyeStyle]) opts.eyesVariant = LEGACY_EYES_MAP[eyeStyle];
+
+  const mouthStyle = typeof cfg.mouthStyle === "string" ? cfg.mouthStyle : undefined;
+  if (mouthStyle && LEGACY_MOUTH_MAP[mouthStyle]) opts.mouthVariant = LEGACY_MOUTH_MAP[mouthStyle];
+
+  return opts;
 }
 
 export function pendingAvatarStorage() {

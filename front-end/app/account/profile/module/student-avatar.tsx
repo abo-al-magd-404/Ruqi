@@ -12,7 +12,7 @@ export default function StudentAvatar({
   role?: string;
 }) {
   const src =
-    role === "TEACHER" ? "/teacher-image.png" : resolveAvatarSrc(avatar, seed).src;
+    role === "TEACHER" ? "/teacher-image.png?v=2" : resolveAvatarSrc(avatar, seed).src;
 
   return (
     <div className="w-full h-full rounded-full overflow-hidden bg-primary-light">
