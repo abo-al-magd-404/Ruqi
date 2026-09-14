@@ -326,7 +326,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         )}
 
         {!isLogin && step === 1 && (
-          <div className="flex flex-col items-center gap-3 mb-5">
+          <div className="flex flex-col gap-3 mb-5 max-w-full overflow-hidden">
             <AvatarPicker
               value={form.avatar}
               fallbackName={form.name || AVATAR_FALLBACK_NAME}

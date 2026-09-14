@@ -180,7 +180,7 @@ export default function StudentProfile() {
     );
   }
 
-  const { name, studentId, email, phoneNumber, stage, role, avatar } = profile;
+  const { name, studentId, email, phoneNumber, address, stage, role, avatar } = profile;
   const stageTitle = stages.find((s) => s._id === stage)?.title || stage;
 
   return (
@@ -287,6 +287,12 @@ export default function StudentProfile() {
               </span>
             </div>
           )}
+          <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none">
+            <span className="text-[12px] md:text-[13px] text-text-muted">العنوان</span>
+            <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words">
+              {address || "—"}
+            </span>
+          </div>
         </div>
       </div>
 

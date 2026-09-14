@@ -50,7 +50,7 @@ export default function AvatarPicker({
     avatarDataUri({ ...opts, seed: opts.seed || fallback, ...override }, 56);
 
   return (
-    <div className="flex flex-col items-center gap-5 py-2">
+    <div className="w-full flex flex-col items-center gap-5 py-2 max-w-full overflow-hidden">
       <div
         className="rounded-full border-2 border-primary bg-primary-light shrink-0 overflow-hidden"
         style={{ width: previewSize, height: previewSize }}
