@@ -144,8 +144,8 @@ API_BASE_URL_ENV=http://localhost:8000
   image-vs-dicebear for a stored value. No network round-trip for avatars.
 - **Storage format** — a plain **seed** string when uncustomized; a **DiceBear SVG URL** when any option is
   customized (`avatarStringFromOptions()` / `parseAvatarValue()` handle both directions).
-- **Customization UI** — `AvatarPicker` (in `app/account/module/`) with color swatches, a horizontal row of the 35
-  glyph shapes, a seed field, and a shuffle button; used by the 2nd signup step and the profile editor.
+- **Customization UI** — `AvatarPicker` (in `app/account/module/`) with centered color swatches, a symmetric grid of
+  the 35 glyph shapes (no horizontal scroll), and a shuffle button; used by the 2nd signup step and the profile editor.
 - **Roles** — `STUDENT` accounts get a Glyphs avatar; `TEACHER` accounts always render the static photo
   `/teacher-image.png` (their real picture, **not** an avatar).
 

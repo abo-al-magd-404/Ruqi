@@ -266,28 +266,28 @@ export default function StudentProfile() {
 
         <div className="w-full h-px bg-border"></div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
             <span className="text-[12px] md:text-[13px] text-text-muted">البريد الإلكتروني</span>
             <span className="text-[14px] md:text-[16px] font-bold text-text-main break-all" dir="ltr">
               {email}
             </span>
           </div>
-          <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none">
+          <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
             <span className="text-[12px] md:text-[13px] text-text-muted">رقم الهاتف</span>
             <span className="text-[14px] md:text-[16px] font-bold text-text-main" dir="ltr">
               {phoneNumber || "—"}
             </span>
           </div>
           {role === "STUDENT" && (
-            <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none sm:col-span-2 lg:col-span-1">
+            <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
               <span className="text-[12px] md:text-[13px] text-text-muted">المرحلة الدراسية</span>
               <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words">
                 {stageTitle || "—"}
               </span>
             </div>
           )}
-          <div className="flex flex-col gap-1 p-3 sm:p-0 bg-surface-secondary sm:bg-transparent rounded-lg sm:rounded-none">
+          <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
             <span className="text-[12px] md:text-[13px] text-text-muted">العنوان</span>
             <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words">
               {address || "—"}

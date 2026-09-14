@@ -29,17 +29,16 @@ export default function AvatarPicker({
   onChange: (avatar: string) => void;
 }) {
   const opts = optionsOf(value, fallbackName);
-  const fallback = fallbackName || AVATAR_FALLBACK_NAME;
+  const seed = opts.seed || fallbackName || AVATAR_FALLBACK_NAME;
 
-  const update = (next: AvatarOptions) =>
-    onChange(avatarStringFromOptions({ ...next, seed: next.seed.trim() || fallback }));
+  const update = (next: AvatarOptions) => onChange(avatarStringFromOptions(next));
 
   const toggleColor = (color: string) => {
-    update({ ...opts, glyphColor: opts.glyphColor === color ? undefined : color });
+    update({ ...opts, seed, glyphColor: opts.glyphColor === color ? undefined : color });
   };
 
   const toggleShape = (variant: GlyphsShapeVariant) => {
-    update({ ...opts, shapeVariant: opts.shapeVariant === variant ? undefined : variant });
+    update({ ...opts, seed, shapeVariant: opts.shapeVariant === variant ? undefined : variant });
   };
 
   const randomize = () => {
@@ -47,10 +46,10 @@ export default function AvatarPicker({
   };
 
   const renderThumb = (override: Partial<AvatarOptions>) =>
-    avatarDataUri({ ...opts, seed: opts.seed || fallback, ...override }, 56);
+    avatarDataUri({ ...opts, seed, ...override }, 56);
 
   return (
-    <div className="w-full flex flex-col items-center gap-5 py-2 max-w-full overflow-hidden">
+    <div className="w-full flex flex-col items-center gap-5 py-2 max-w-full">
       <div
         className="rounded-full border-2 border-primary bg-primary-light shrink-0 overflow-hidden"
         style={{ width: previewSize, height: previewSize }}
@@ -58,20 +57,9 @@ export default function AvatarPicker({
         <img src={avatarDataUri(opts, previewSize)} alt="معاينة الصورة الرمزية" className="w-full h-full" />
       </div>
 
-      <div className="w-full flex flex-col gap-1.5">
-        <label className="text-[12px] font-semibold text-text-muted">البذرة (Seed)</label>
-        <input
-          type="text"
-          value={opts.seed}
-          onChange={(e) => update({ ...opts, seed: e.target.value })}
-          placeholder={fallback}
-          className="w-full h-[46px] rounded-xl border-[1.5px] border-border bg-background px-4 text-text-main text-[14px] outline-none focus:border-primary transition-colors text-center"
-        />
-      </div>
-
       <div className="w-full flex flex-col gap-2">
         <span className="text-[12px] font-semibold text-text-muted">لون الرمز</span>
-        <div className="flex flex-wrap gap-2" dir="ltr">
+        <div className="flex flex-wrap justify-center gap-2" dir="ltr">
           {GLYPHS_PALETTE.map((color) => (
             <button
               key={color}
@@ -89,16 +77,19 @@ export default function AvatarPicker({
         </div>
       </div>
 
-      <div className="w-full flex flex-col gap-2">
+      <div className="w-full flex flex-col gap-3">
         <span className="text-[12px] font-semibold text-text-muted">الرمز</span>
-        <div className="flex gap-2 overflow-x-auto pb-1 px-0.5" dir="ltr">
+        <div
+          dir="ltr"
+          className="flex gap-2 overflow-x-auto py-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {GLYPHS_SHAPE_VARIANTS.map((variant) => (
             <button
               key={variant}
               type="button"
               onClick={() => toggleShape(variant)}
               title={variant}
-              className={`shrink-0 w-[52px] h-[52px] rounded-xl overflow-hidden border-2 transition-all bg-surface ${
+              className={`shrink-0 w-12 h-12 sm:w-[52px] sm:h-[52px] rounded-xl overflow-hidden border-2 transition-all bg-surface ${
                 opts.shapeVariant === variant
                   ? "border-primary ring-2 ring-primary/30"
                   : "border-border hover:border-primary/60"
@@ -122,10 +113,6 @@ export default function AvatarPicker({
         <Shuffle size={18} />
         توليد عشوائي
       </button>
-
-      <p className="text-[11px] text-text-muted font-medium text-center max-w-[320px]">
-        اختر لون الرمز وشكله، أو اضغط «توليد عشوائي» — البذرة تحدد هوية الصورة وتجمع الخيارات
-      </p>
     </div>
   );
 }
