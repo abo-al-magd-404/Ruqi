@@ -12,7 +12,7 @@ The RUQI front-end is a **Next.js (App Router)** application that delivers the e
 
 - **Student journey:** browse educational stages → months → sequential lessons/exams, watch videos, read explanations, submit MCQ homework, take timed exams, track progress, view the leaderboard.
 - **Teacher journey:** full content management dashboard — create/edit/delete/reorder stages, months, lessons, and exams with an MCQ builder.
-- **Account suite:** 2-step signup (data → avatar picker), email OTP verification, login, forgot/reset password, profile editing, and fully customizable avatars.
+- **Account suite:** signup (data), email OTP verification, post-OTP avatar setup, login, forgot/reset password, profile editing, and fully customizable avatars.
 
 All UI text, error messages, dates, and layout are **Arabic-first and RTL-native**; the design is light-mode with the premium gold/off-white brand palette and the Cairo typeface.
 
@@ -61,7 +61,7 @@ front-end/
 │   │   ├── page.tsx                     # Auth landing (login / register)
 │   │   ├── {login,register,verify-email,forgot-password}/page.tsx
 │   │   ├── reset-password/page.tsx
-│   │   ├── choose-avatar/page.tsx       # Optional standalone avatar picker (GuestGuard)
+│   │   ├── choose-avatar/page.tsx       # First-avatar step (post-OTP, GuestGuard)
 │   │   ├── profile/page.tsx             # Profile + progress + teacher dashboard
 │   │   └── module/                      # auth-form (2-step signup incl. avatar), AvatarPicker, password-field, GuestGuard
 │   │       └── profile/module/          # profile, avatar rendering, modals
@@ -145,13 +145,14 @@ API_BASE_URL_ENV=http://localhost:8000
 - **Storage format** — a plain **seed** string when uncustomized; a **DiceBear SVG URL** when any option is
   customized (`avatarStringFromOptions()` / `parseAvatarValue()` handle both directions).
 - **Customization UI** — `AvatarPicker` (in `app/account/module/`) with centered color swatches, a symmetric grid of
-  the 35 glyph shapes (no horizontal scroll), and a shuffle button; used by the 2nd signup step and the profile editor.
+  the 35 glyph shapes, and a shuffle button; used by the "first avatar" step (after OTP) and the profile editor.
 - **Roles** — `STUDENT` accounts get a Glyphs avatar; `TEACHER` accounts always render the static photo
   `/teacher-image.png` (their real picture, **not** an avatar).
 
-> **Pending-avatar flow (front-end only).** The signup API does not accept an `avatar` field, so the avatar chosen
-> during the 2nd signup step is kept in `localStorage` (`ruqi_pending_avatar`, via `pendingAvatarStorage()`) and
-> applied automatically on first login through `updateStudentProfile({ avatar })` — no backend change required.
+> **First-avatar flow (front-end only).** The signup API does not accept an `avatar` field, so the avatar is **not**
+> chosen during signup. Signup (data only) → OTP verification → `/account/choose-avatar` → the chosen glyph is kept in
+> `localStorage` (`ruqi_pending_avatar`, via `pendingAvatarStorage()`) and applied automatically on first login through
+> `updateStudentProfile({ avatar })` — no backend change required.
 
 ---
 

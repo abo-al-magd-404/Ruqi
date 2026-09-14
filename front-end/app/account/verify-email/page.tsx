@@ -119,7 +119,7 @@ export default function VerifyOTP() {
 
     try {
       await verifyAccount({ email, otp: code });
-      router.push("/account/login");
+      router.push("/account/choose-avatar");
     } catch (err) {
       setError(err instanceof Error ? err.message : "الرمز غير صحيح أو منتهي الصلاحية، يرجى المحاولة مرة أخرى.");
     } finally {

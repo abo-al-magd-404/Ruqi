@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import AvatarPicker from "../module/AvatarPicker";
 import GuestGuard from "../module/GuestGuard";
 import {
@@ -86,12 +85,17 @@ function ChooseAvatar() {
           {saving ? "جاري الحفظ..." : "حفظ والمتابعة"}
         </button>
 
-        <Link
-          href="/account/login"
-          className="mt-4 text-[13px] md:text-[14px] text-text-muted font-semibold hover:text-primary transition-colors"
+        <button
+          type="button"
+          onClick={() => {
+            clearPendingEmail();
+            clearPendingName();
+            router.push("/account/login");
+          }}
+          className="mt-4 text-[13px] md:text-[14px] text-text-muted font-semibold hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
         >
           تخطّي الآن — سأختارها لاحقاً
-        </Link>
+        </button>
       </div>
     </div>
   );
