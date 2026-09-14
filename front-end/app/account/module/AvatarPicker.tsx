@@ -6,15 +6,11 @@ import {
   avatarStringFromOptions,
   parseAvatarValue,
   randomAvatarOptions,
-  MARBLES_PALETTE,
-  MARBLES_TOP_VARIANTS,
-  MARBLES_EYES_VARIANTS,
-  MARBLES_MOUTH_VARIANTS,
+  GLYPHS_PALETTE,
+  GLYPHS_SHAPE_VARIANTS,
   AVATAR_FALLBACK_NAME,
   type AvatarOptions,
-  type MarblesTopVariant,
-  type MarblesEyesVariant,
-  type MarblesMouthVariant,
+  type GlyphsShapeVariant,
 } from "@/lib/avatar";
 
 function optionsOf(value: string, fallbackName: string): AvatarOptions {
@@ -39,19 +35,11 @@ export default function AvatarPicker({
     onChange(avatarStringFromOptions({ ...next, seed: next.seed.trim() || fallback }));
 
   const toggleColor = (color: string) => {
-    update({ ...opts, sphereColor: opts.sphereColor === color ? undefined : color });
+    update({ ...opts, glyphColor: opts.glyphColor === color ? undefined : color });
   };
 
-  const toggleTop = (variant: MarblesTopVariant) => {
-    update({ ...opts, topVariant: opts.topVariant === variant ? undefined : variant });
-  };
-
-  const toggleEyes = (variant: MarblesEyesVariant) => {
-    update({ ...opts, eyesVariant: opts.eyesVariant === variant ? undefined : variant });
-  };
-
-  const toggleMouth = (variant: MarblesMouthVariant) => {
-    update({ ...opts, mouthVariant: opts.mouthVariant === variant ? undefined : variant });
+  const toggleShape = (variant: GlyphsShapeVariant) => {
+    update({ ...opts, shapeVariant: opts.shapeVariant === variant ? undefined : variant });
   };
 
   const randomize = () => {
@@ -62,7 +50,7 @@ export default function AvatarPicker({
     avatarDataUri({ ...opts, seed: opts.seed || fallback, ...override }, 56);
 
   return (
-    <div className="flex flex-col items-center gap-4 py-2">
+    <div className="flex flex-col items-center gap-5 py-2">
       <div
         className="rounded-full border-2 border-primary bg-primary-light shrink-0 overflow-hidden"
         style={{ width: previewSize, height: previewSize }}
@@ -82,16 +70,16 @@ export default function AvatarPicker({
       </div>
 
       <div className="w-full flex flex-col gap-2">
-        <span className="text-[12px] font-semibold text-text-muted">لون الطابع</span>
+        <span className="text-[12px] font-semibold text-text-muted">لون الرمز</span>
         <div className="flex flex-wrap gap-2" dir="ltr">
-          {MARBLES_PALETTE.map((color) => (
+          {GLYPHS_PALETTE.map((color) => (
             <button
               key={color}
               type="button"
               onClick={() => toggleColor(color)}
               aria-label={`لون ${color}`}
-              className={`w-8 h-8 rounded-full border-2 transition-all ${
-                opts.sphereColor === color
+              className={`w-9 h-9 rounded-full border-2 transition-all ${
+                opts.glyphColor === color
                   ? "border-primary ring-2 ring-primary/40 scale-110"
                   : "border-border hover:border-primary/60"
               }`}
@@ -102,78 +90,22 @@ export default function AvatarPicker({
       </div>
 
       <div className="w-full flex flex-col gap-2">
-        <span className="text-[12px] font-semibold text-text-muted">الشعر / القبعة</span>
+        <span className="text-[12px] font-semibold text-text-muted">الرمز</span>
         <div className="flex gap-2 overflow-x-auto pb-1 px-0.5" dir="ltr">
-          {MARBLES_TOP_VARIANTS.map((variant) => (
+          {GLYPHS_SHAPE_VARIANTS.map((variant) => (
             <button
               key={variant}
               type="button"
-              onClick={() => toggleTop(variant)}
+              onClick={() => toggleShape(variant)}
               title={variant}
               className={`shrink-0 w-[52px] h-[52px] rounded-xl overflow-hidden border-2 transition-all bg-surface ${
-                opts.topVariant === variant
+                opts.shapeVariant === variant
                   ? "border-primary ring-2 ring-primary/30"
                   : "border-border hover:border-primary/60"
               }`}
             >
               <img
-                src={renderThumb({ topVariant: variant })}
-                alt={variant}
-                className="w-full h-full"
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-full flex flex-col gap-2">
-        <span className="text-[12px] font-semibold text-text-muted">العيون</span>
-        <div className="flex gap-2 overflow-x-auto pb-1 px-0.5" dir="ltr">
-          {MARBLES_EYES_VARIANTS.map((variant) => (
-            <button
-              key={variant}
-              type="button"
-              onClick={() => toggleEyes(variant)}
-              title={variant}
-              className={`shrink-0 w-[52px] h-[52px] rounded-xl overflow-hidden border-2 transition-all bg-surface ${
-                opts.eyesVariant === variant
-                  ? "border-primary ring-2 ring-primary/30"
-                  : "border-border hover:border-primary/60"
-              }`}
-            >
-              <img
-                src={avatarDataUri(
-                  { ...opts, seed: opts.seed || fallback, eyesVariant: variant },
-                  56,
-                )}
-                alt={variant}
-                className="w-full h-full"
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-full flex flex-col gap-2">
-        <span className="text-[12px] font-semibold text-text-muted">الفم</span>
-        <div className="flex gap-2 overflow-x-auto pb-1 px-0.5" dir="ltr">
-          {MARBLES_MOUTH_VARIANTS.map((variant) => (
-            <button
-              key={variant}
-              type="button"
-              onClick={() => toggleMouth(variant)}
-              title={variant}
-              className={`shrink-0 w-[52px] h-[52px] rounded-xl overflow-hidden border-2 transition-all bg-surface ${
-                opts.mouthVariant === variant
-                  ? "border-primary ring-2 ring-primary/30"
-                  : "border-border hover:border-primary/60"
-              }`}
-            >
-              <img
-                src={avatarDataUri(
-                  { ...opts, seed: opts.seed || fallback, mouthVariant: variant },
-                  56,
-                )}
+                src={renderThumb({ shapeVariant: variant })}
                 alt={variant}
                 className="w-full h-full"
               />
@@ -192,7 +124,7 @@ export default function AvatarPicker({
       </button>
 
       <p className="text-[11px] text-text-muted font-medium text-center max-w-[320px]">
-        اختر اللون والشكل والعيون والفم، أو اضغط «توليد عشوائي» — البذرة تحدد هوية الصورة وتجمع الخيارات
+        اختر لون الرمز وشكله، أو اضغط «توليد عشوائي» — البذرة تحدد هوية الصورة وتجمع الخيارات
       </p>
     </div>
   );

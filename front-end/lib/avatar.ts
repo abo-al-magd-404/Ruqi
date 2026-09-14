@@ -1,101 +1,76 @@
 import { Style, Avatar } from "@dicebear/core";
-import marbles from "@dicebear/styles/marbles.json" with { type: "json" };
+import glyphs from "@dicebear/styles/glyphs.json" with { type: "json" };
 
 export const AVATAR_FALLBACK_NAME = "رقي";
 
-const AVATAR_STYLE = new Style(marbles);
+const AVATAR_STYLE = new Style(glyphs);
 const DATA_URI_CACHE = new Map<string, string>();
 
-export const MARBLES_PALETTE = [
-  "#fe9596",
-  "#fe9a6e",
-  "#fc9f13",
-  "#dbb313",
-  "#b3c414",
-  "#68d54e",
-  "#18d79b",
-  "#17d2c7",
-  "#17cde9",
-  "#5ac3fe",
-  "#8eb8fe",
-  "#aeadfe",
-  "#d19dfe",
-  "#fe81ef",
-  "#fe8fba",
+export const GLYPHS_PALETTE = [
+  "#76a7ff",
+  "#525fa3",
+  "#8c8c8c",
+  "#75c675",
+  "#ffaa64",
+  "#ff4d6f",
+  "#af61f2",
 ] as const;
 
-export const MARBLES_TOP_VARIANTS = [
-  "sunhat",
-  "cap",
-  "headphones",
-  "beanie",
-  "afro",
-  "spikes",
-  "crimp",
-  "garland",
-  "shag",
-  "curl",
-  "curls",
-  "ringlets",
-  "zigzag",
-  "flick",
-  "tuft",
-  "swirl",
-  "antenna",
-  "cowlick",
-  "bow",
-  "knot",
+export const GLYPHS_SHAPE_VARIANTS = [
+  "variant01",
+  "variant02",
+  "variant03",
+  "variant04",
+  "variant05",
+  "variant06",
+  "variant07",
+  "variant08",
+  "variant09",
+  "variant10",
+  "variant11",
+  "variant12",
+  "variant13",
+  "variant14",
+  "variant15",
+  "variant16",
+  "variant17",
+  "variant18",
+  "variant19",
+  "variant20",
+  "variant21",
+  "variant22",
+  "variant23",
+  "variant24",
+  "variant25",
+  "variant26",
+  "variant27",
+  "variant28",
+  "variant29",
+  "variant30",
+  "variant31",
+  "variant32",
+  "variant33",
+  "variant34",
+  "variant35",
 ] as const;
 
-export const MARBLES_EYES_VARIANTS = [
-  "dots",
-  "wide",
-  "closed",
-  "happy",
-  "wink",
-  "sleepy",
-  "squint",
-  "uneven",
-  "oval",
-] as const;
-
-export const MARBLES_MOUTH_VARIANTS = [
-  "smile",
-  "grin",
-  "small",
-  "smirk",
-  "line",
-  "wavy",
-  "jagged",
-  "open",
-  "pout",
-  "cat",
-  "tongue",
-] as const;
-
-export type MarblesTopVariant = (typeof MARBLES_TOP_VARIANTS)[number];
-export type MarblesEyesVariant = (typeof MARBLES_EYES_VARIANTS)[number];
-export type MarblesMouthVariant = (typeof MARBLES_MOUTH_VARIANTS)[number];
+export type GlyphsShapeVariant = (typeof GLYPHS_SHAPE_VARIANTS)[number];
 
 export interface AvatarOptions {
   seed: string;
-  sphereColor?: string;
-  topVariant?: MarblesTopVariant;
-  eyesVariant?: MarblesEyesVariant;
-  mouthVariant?: MarblesMouthVariant;
+  glyphColor?: string;
+  shapeVariant?: GlyphsShapeVariant;
 }
 
 function cacheKey(opts: AvatarOptions, size: number): string {
-  return `${size}|${opts.seed}|${opts.sphereColor ?? ""}|${opts.topVariant ?? ""}|${opts.eyesVariant ?? ""}|${opts.mouthVariant ?? ""}`;
+  return `${size}|${opts.seed}|${opts.glyphColor ?? ""}|${opts.shapeVariant ?? ""}`;
 }
 
 function avatarStyleOptions(opts: AvatarOptions) {
   return {
     seed: opts.seed.trim() || AVATAR_FALLBACK_NAME,
-    ...(opts.sphereColor ? { sphereColor: [opts.sphereColor] } : {}),
-    ...(opts.topVariant ? { topVariant: opts.topVariant } : {}),
-    ...(opts.eyesVariant ? { eyesVariant: opts.eyesVariant } : {}),
-    ...(opts.mouthVariant ? { mouthVariant: opts.mouthVariant } : {}),
+    ...(opts.glyphColor ? { glyphColor: [opts.glyphColor] } : {}),
+    ...(opts.shapeVariant ? { shapeVariant: opts.shapeVariant } : {}),
   };
 }
 
@@ -120,19 +95,13 @@ export function avatarUrl(options: AvatarOptions | string): string {
   const params = new URLSearchParams({
     seed: opts.seed.trim() || AVATAR_FALLBACK_NAME,
   });
-  if (opts.sphereColor) params.set("sphereColor", opts.sphereColor.replace("#", ""));
-  if (opts.topVariant) params.set("topVariant", opts.topVariant);
-  if (opts.eyesVariant) params.set("eyesVariant", opts.eyesVariant);
-  if (opts.mouthVariant) params.set("mouthVariant", opts.mouthVariant);
-  return `https://api.dicebear.com/10.x/marbles/svg?${params.toString()}`;
+  if (opts.glyphColor) params.set("glyphColor", opts.glyphColor.replace("#", ""));
+  if (opts.shapeVariant) params.set("shapeVariant", opts.shapeVariant);
+  return `https://api.dicebear.com/10.x/glyphs/svg?${params.toString()}`;
 }
 
 export function avatarStringFromOptions(opts: AvatarOptions): string {
-  const hasCustom =
-    Boolean(opts.sphereColor) ||
-    Boolean(opts.topVariant) ||
-    Boolean(opts.eyesVariant) ||
-    Boolean(opts.mouthVariant);
+  const hasCustom = Boolean(opts.glyphColor) || Boolean(opts.shapeVariant);
   const seed = opts.seed.trim() || AVATAR_FALLBACK_NAME;
   return hasCustom ? avatarUrl({ ...opts, seed }) : seed;
 }
@@ -141,14 +110,12 @@ export function randomAvatarOptions(): AvatarOptions {
   const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
   return {
     seed: Math.random().toString(36).slice(2, 10),
-    sphereColor: pick(MARBLES_PALETTE),
-    ...(Math.random() < 0.85 ? { topVariant: pick(MARBLES_TOP_VARIANTS) } : {}),
-    ...(Math.random() < 0.85 ? { eyesVariant: pick(MARBLES_EYES_VARIANTS) } : {}),
-    ...(Math.random() < 0.85 ? { mouthVariant: pick(MARBLES_MOUTH_VARIANTS) } : {}),
+    glyphColor: pick(GLYPHS_PALETTE),
+    shapeVariant: pick(GLYPHS_SHAPE_VARIANTS),
   };
 }
 
-const DICEBEAR_URL_RE = /^https?:\/\/api\.dicebear\.com\/10\.x\/marbles\/svg\?/i;
+const DICEBEAR_URL_RE = /^https?:\/\/api\.dicebear\.com\/\d+\.x\/glyphs\/svg\?/i;
 
 export function parseAvatarValue(value: string | null | undefined): AvatarOptions | null {
   if (!value) return null;
@@ -163,16 +130,12 @@ export function parseAvatarValue(value: string | null | undefined): AvatarOption
       return null;
     }
     const seed = searchParams.get("seed")?.trim() || AVATAR_FALLBACK_NAME;
-    const sphereColor = searchParams.get("sphereColor");
-    const topVariant = searchParams.get("topVariant");
-    const eyesVariant = searchParams.get("eyesVariant");
-    const mouthVariant = searchParams.get("mouthVariant");
+    const glyphColor = searchParams.get("glyphColor");
+    const shapeVariant = searchParams.get("shapeVariant");
     return {
       seed,
-      ...(sphereColor ? { sphereColor: `#${sphereColor}` } : {}),
-      ...(topVariant ? { topVariant: topVariant as MarblesTopVariant } : {}),
-      ...(eyesVariant ? { eyesVariant: eyesVariant as MarblesEyesVariant } : {}),
-      ...(mouthVariant ? { mouthVariant: mouthVariant as MarblesMouthVariant } : {}),
+      ...(glyphColor ? { glyphColor: `#${glyphColor}` } : {}),
+      ...(shapeVariant ? { shapeVariant: shapeVariant as GlyphsShapeVariant } : {}),
     };
   }
 
@@ -228,39 +191,6 @@ export function resolveAvatarSrc(
   return { isImage: false, src: avatarDataUri(seed), seed };
 }
 
-const LEGACY_TOP_MAP: Record<string, MarblesTopVariant | undefined> = {
-  thick: "shag",
-  mohawk: "spikes",
-  womanLong: "ringlets",
-  long: "ringlets",
-  womanShort: "curl",
-  manShort: "flick",
-  manLong: "swirl",
-  manSides: "afro",
-  curly: "curls",
-  curlyShort: "curl",
-  afro: "afro",
-  bob: "bow",
-  bun: "knot",
-  doubleBun: "knot",
-  puff: "tuft",
-  flatTop: "tuft",
-  pompadour: "swirl",
-};
-
-const LEGACY_EYES_MAP: Record<string, MarblesEyesVariant | undefined> = {
-  smile: "happy",
-  oval: "oval",
-  shadow: "closed",
-};
-
-const LEGACY_MOUTH_MAP: Record<string, MarblesMouthVariant | undefined> = {
-  laugh: "grin",
-  smile: "smile",
-  peace: "line",
-  smirk: "smirk",
-};
-
 function hashSeed(input: string): string {
   let hash = 2166136261;
   for (let i = 0; i < input.length; i++) {
@@ -282,7 +212,7 @@ function nearestPaletteColor(hex: string): string | undefined {
   if (!rgb) return undefined;
   let best: string | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
-  for (const candidate of MARBLES_PALETTE) {
+  for (const candidate of GLYPHS_PALETTE) {
     const candidateRgb = hexToRgb(candidate);
     if (!candidateRgb) continue;
     const distance =
@@ -313,16 +243,7 @@ function legacyAvatarOptions(avatar: string | null | undefined): AvatarOptions |
   const opts: AvatarOptions = { seed: hashSeed(trimmed) };
 
   const faceColor = typeof cfg.faceColor === "string" ? cfg.faceColor : undefined;
-  if (faceColor) opts.sphereColor = nearestPaletteColor(faceColor);
-
-  const hairStyle = typeof cfg.hairStyle === "string" ? cfg.hairStyle : undefined;
-  if (hairStyle && LEGACY_TOP_MAP[hairStyle]) opts.topVariant = LEGACY_TOP_MAP[hairStyle];
-
-  const eyeStyle = typeof cfg.eyeStyle === "string" ? cfg.eyeStyle : undefined;
-  if (eyeStyle && LEGACY_EYES_MAP[eyeStyle]) opts.eyesVariant = LEGACY_EYES_MAP[eyeStyle];
-
-  const mouthStyle = typeof cfg.mouthStyle === "string" ? cfg.mouthStyle : undefined;
-  if (mouthStyle && LEGACY_MOUTH_MAP[mouthStyle]) opts.mouthVariant = LEGACY_MOUTH_MAP[mouthStyle];
+  if (faceColor) opts.glyphColor = nearestPaletteColor(faceColor);
 
   return opts;
 }

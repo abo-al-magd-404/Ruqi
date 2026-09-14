@@ -28,7 +28,7 @@ All UI text, error messages, dates, and layout are **Arabic-first and RTL-native
 | Tailwind CSS | v4 | Styling (`@tailwindcss/postcss`, design tokens in `globals.css`) |
 | Framer Motion | 13.x | Page/element animations |
 | Lucide React | 1.x | Icons |
-| @dicebear/core + @dicebear/styles | 10.x | DiceBear avatars (Marbles style, seed-based) |
+| @dicebear/core + @dicebear/styles | 10.x | DiceBear avatars (Glyphs style, seed-based) |
 
 ---
 
@@ -80,7 +80,7 @@ front-end/
 │   ├── core/http.ts                     # authedFetch, authedJson, error helpers + signup "pending" name/email
 │   ├── account/                         # auth + profile API clients
 │   ├── educational-content/             # stages, months, content, stats API clients
-│   ├── avatar.ts                        # DiceBear (Marbles) avatar engine (single source of truth)
+│   ├── avatar.ts                        # DiceBear (Glyphs) avatar engine (single source of truth)
 │   ├── progress.ts                      # Student progress (localStorage)
 │   ├── leaderboard.ts                   # Leaderboard API client
 │   ├── password.ts                      # Password strength scoring
@@ -136,17 +136,17 @@ API_BASE_URL_ENV=http://localhost:8000
 
 ## 🖼️ Avatars
 
-`lib/avatar.ts` is the **single source of truth** for the avatar system (DiceBear **Marbles**, v10):
+`lib/avatar.ts` is the **single source of truth** for the avatar system (DiceBear **Glyphs**, v10):
 
-- **Options** — `AvatarOptions { seed, sphereColor, topVariant, eyesVariant, mouthVariant }` with exported
-  `MARBLES_PALETTE` (15 colors) and `MARBLES_TOP/EYES/MOUTH_VARIANTS` literals (ui: `AvatarPicker`).
+- **Options** — `AvatarOptions { seed, glyphColor, shapeVariant }` with exported
+  `GLYPHS_PALETTE` (7 colors) and `GLYPHS_SHAPE_VARIANTS` (35 glyph literals) (ui: `AvatarPicker`).
 - **Rendering** — `avatarDataUri()` renders SVG **client-side and caches it**; `resolveAvatarSrc()` decides
   image-vs-dicebear for a stored value. No network round-trip for avatars.
 - **Storage format** — a plain **seed** string when uncustomized; a **DiceBear SVG URL** when any option is
   customized (`avatarStringFromOptions()` / `parseAvatarValue()` handle both directions).
-- **Customization UI** — `AvatarPicker` (in `app/account/module/`) with color swatches, hair/hat, eyes and mouth
-  thumbnail rows, a seed field, and a shuffle button; used by the 2nd signup step and the profile editor.
-- **Roles** — `STUDENT` accounts get a Marbles avatar; `TEACHER` accounts always render the static photo
+- **Customization UI** — `AvatarPicker` (in `app/account/module/`) with color swatches, a horizontal row of the 35
+  glyph shapes, a seed field, and a shuffle button; used by the 2nd signup step and the profile editor.
+- **Roles** — `STUDENT` accounts get a Glyphs avatar; `TEACHER` accounts always render the static photo
   `/teacher-image.png` (their real picture, **not** an avatar).
 
 > **Pending-avatar flow (front-end only).** The signup API does not accept an `avatar` field, so the avatar chosen
