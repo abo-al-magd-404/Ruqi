@@ -2,7 +2,7 @@
 
 > **Purpose:** Frontend integration reference for the RUQI Platform APIs.
 > **API Version:** `v1`
-> **Base URL:** `https://app-6a995274.deploy.meerasolution.com`
+> **Base URL:** `https://app-6aa80d99.deploy.meerasolution.com`
 > **Content-Type:** `application/json`
 > **Response/Error Language:** Arabic
 
