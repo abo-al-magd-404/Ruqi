@@ -139,7 +139,7 @@ export function useTeacherDashboard() {
     }
     try {
       const data = await getContentByMonth(monthId);
-      setContent([...data].sort((a, b) => a.order - b.order));
+      setContent([...data.items].sort((a, b) => a.order - b.order));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "حدث خطأ أثناء تحميل المحتوى");
@@ -364,7 +364,7 @@ export function useTeacherDashboard() {
           payload.examQuestions = validQuestions;
           payload.passPercentage = data.passPercentage;
         }
-        await updateContent(editingContent._id, payload);
+        await updateContent(editingContent._id, editingContent.type, payload);
       }
       await loadContent(selectedMonthId);
       setContentModalOpen(false);
@@ -405,7 +405,7 @@ export function useTeacherDashboard() {
         await deleteMonth(deleteTarget.month._id);
         if (selectedStageId) await loadMonths(selectedStageId);
       } else {
-        await deleteContent(deleteTarget.content._id);
+        await deleteContent(deleteTarget.content._id, deleteTarget.content.type);
         if (selectedMonthId) await loadContent(selectedMonthId);
       }
       closeConfirm();

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getEducationalMonths } from "@/lib/educational-content/months";
 import { getEducationalStageById } from "@/lib/educational-content/stages";
 import type { EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
+import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
 export default function StageMonthsPage({ params }: { params: Promise<{ stageId: string }> }) {
   const resolvedParams = use(params);
@@ -55,22 +56,7 @@ export default function StageMonthsPage({ params }: { params: Promise<{ stageId:
     >
       <main className="flex flex-col items-start px-4 sm:px-2 lg:px-0 gap-8 md:gap-12 w-full max-w-[1200px]">
         <div className="flex flex-col items-start gap-4 w-full">
-          <div className="flex flex-row items-center gap-2 flex-wrap">
-            <Link
-              href="/educational-content"
-              className="font-bold text-[12px] md:text-[14px] text-text-muted hover:text-primary transition-colors"
-            >
-              المراحل التعليمية
-            </Link>
-            <span className="text-[12px] md:text-[14px] text-text-muted">&gt;</span>
-            {stageDetails ? (
-              <span className="font-bold text-[12px] md:text-[14px] text-text-muted">{stageDetails.title}</span>
-            ) : (
-              <span className="w-16 h-4 bg-border animate-pulse rounded"></span>
-            )}
-            <span className="text-[12px] md:text-[14px] text-text-muted">&gt;</span>
-            <span className="font-bold text-[12px] md:text-[14px] text-primary">الشهور الدراسية</span>
-          </div>
+          <ContentBreadcrumb />
 
           <div className="flex flex-col items-start gap-3 w-full mt-2 md:mt-4">
             <div className="flex flex-row items-center gap-3">

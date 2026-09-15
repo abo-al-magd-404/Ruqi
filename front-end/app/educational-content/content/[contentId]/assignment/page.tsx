@@ -4,12 +4,12 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Circle, Play, ShieldAlert } from "lucide-react";
-import { markLessonCompleted } from "@/lib/progress";
 import { getMonthContent, getContentById } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
-import { getEducationalStageById } from "@/lib/educational-content/stages";
-import type { ContentDetails, ContentItem, ContentQuestion, EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
+import type { ContentDetails, ContentItem, ContentQuestion, EducationalMonth } from "@/lib/types/educational-content";
+import { markLessonCompleted } from "@/lib/progress";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
+import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
 function isExactSet(chosen: number[], correct: number[]): boolean {
   if (chosen.length !== correct.length) return false;
@@ -24,9 +24,9 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
 
   const [content, setContent] = useState<ContentDetails | null>(null);
   const [month, setMonth] = useState<EducationalMonth | null>(null);
-  const [stage, setStage] = useState<EducationalStage | null>(null);
   const [monthContentList, setMonthContentList] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<Record<number, number[]>>({});
@@ -41,22 +41,20 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
         if (!active) return;
         setContent(contentData);
 
+        if (contentData?.locked) {
+          if (active) setIsLocked(true);
+          return;
+        }
+
         if (contentData && contentData.month) {
-          const [monthItems, monthData] = await Promise.all([
+          const [monthContent, monthData] = await Promise.all([
             getMonthContent(contentData.month),
             getEducationalMonthById(contentData.month),
           ]);
           if (!active) return;
 
-          setMonthContentList([...monthItems].sort((a, b) => a.order - b.order));
+          setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
-
-          if (monthData && monthData.stage) {
-            try {
-              const stageData = await getEducationalStageById(monthData.stage);
-              if (active) setStage(stageData);
-            } catch {}
-          }
         }
       } catch {
         if (active) setContent(null);
@@ -76,6 +74,32 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
     return (
       <div className="flex justify-center items-center w-full min-h-screen bg-background">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo"
+        dir="rtl"
+      >
+        <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الواجب غير متاح</h3>
+        <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
+          أنت غير مشترك في هذا الشهر. اشترك لفتح الواجبات التطبيقية ومتابعة خطتك الدراسية.
+        </p>
+        <Link
+          href="/account"
+          className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-[15px] hover:bg-primary-hover transition-colors flex items-center justify-center"
+        >
+          الانتقال إلى حسابي
+        </Link>
+        <Link
+          href="/educational-content"
+          className="h-[48px] px-8 mt-3 bg-transparent border border-border rounded-control text-text-muted font-bold text-[15px] hover:bg-surface-secondary transition-colors flex items-center justify-center"
+        >
+          تصفح المراحل التعليمية
+        </Link>
       </div>
     );
   }
@@ -141,18 +165,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
       dir="rtl"
     >
       <main className="flex flex-col items-start gap-6 md:gap-8 w-full max-w-[1280px] flex-1">
-        <nav className="flex flex-row items-center justify-start   gap-1.5 sm:gap-2 w-full text-[12px] sm:text-[14px] pt-15 text-text-muted flex-wrap">
-          <span className="font-bold text-primary">{stage?.title || content.month || "المرحلة"}</span>
-          <span className="text-[10px] sm:text-[12px]">&gt;</span>
-          <Link
-            href={month ? `/educational-content/month/${month._id}` : "#"}
-            className="hover:text-primary transition-colors"
-          >
-            {month?.title || "محتوى الشهر"}
-          </Link>
-          <span className="text-[10px] sm:text-[12px]">&gt;</span>
-          <span className="font-medium text-text-muted">{content.title}</span>
-        </nav>
+        <ContentBreadcrumb />
 
         <div className="flex flex-col lg:flex-row items-start gap-8 md:gap-10 w-full mb-10">
           <div className="flex flex-col items-start gap-6 md:gap-8 flex-1 w-full min-w-0">

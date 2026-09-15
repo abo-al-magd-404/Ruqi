@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getEducationalStages } from "@/lib/educational-content/stages";
 import type { EducationalStage } from "@/lib/types/educational-content";
+import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
 export default function ContentPage() {
   const [stages, setStages] = useState<EducationalStage[]>([]);
@@ -41,18 +42,8 @@ export default function ContentPage() {
   return (
     <div className="w-full min-h-screen bg-background flex flex-col items-center overflow-hidden py-20 px-4 md:px-8">
       <main className="flex flex-col items-start px-4 sm:px-2 lg:px-0 gap-8 md:gap-12 w-full max-w-300">
-        <div className="flex flex-col items-start gap-4 w-full">
-          <div className="flex flex-row items-center gap-2 flex-wrap">
-            <span className="font-bold text-[12px] md:text-[14px] text-text-muted">
-              المحتوى التعليمي
-            </span>
-            <span className="text-[12px] md:text-[14px] text-text-muted">
-              &gt;
-            </span>
-            <span className="font-bold text-[12px] md:text-[14px] text-primary">
-              المراحل التعليمية
-            </span>
-          </div>
+<div className="flex flex-col items-start gap-4 w-full">
+          <ContentBreadcrumb />
 
           <div className="flex flex-col items-start gap-3 w-full mt-2 md:mt-4">
             <div className="flex flex-row items-center gap-3">

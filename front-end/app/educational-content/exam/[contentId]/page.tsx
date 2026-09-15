@@ -6,10 +6,10 @@ import { ClipboardList, Timer, Trophy, PlayCircle, Play, Check, Circle } from "l
 import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
-import { getEducationalStageById } from "@/lib/educational-content/stages";
-import type { ContentDetails, ContentItem, EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
+import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
+import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
 const EXAM_DURATION_MINUTES = 30;
 
@@ -19,9 +19,9 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
 
   const [content, setContent] = useState<ContentDetails | null>(null);
   const [month, setMonth] = useState<EducationalMonth | null>(null);
-  const [stage, setStage] = useState<EducationalStage | null>(null);
   const [monthContentList, setMonthContentList] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -33,22 +33,20 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
         if (!active) return;
         setContent(contentData);
 
+        if (contentData?.locked) {
+          if (active) setIsLocked(true);
+          return;
+        }
+
         if (contentData && contentData.month) {
-          const [monthItems, monthData] = await Promise.all([
+          const [monthContent, monthData] = await Promise.all([
             getMonthContent(contentData.month),
             getEducationalMonthById(contentData.month),
           ]);
           if (!active) return;
 
-          setMonthContentList([...monthItems].sort((a, b) => a.order - b.order));
+          setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
-
-          if (monthData && monthData.stage) {
-            try {
-              const stageData = await getEducationalStageById(monthData.stage);
-              if (active) setStage(stageData);
-            } catch {}
-          }
         }
       } catch {
         if (active) setContent(null);
@@ -66,6 +64,32 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
 
   if (isLoading) {
     return <Loading />;
+  }
+
+  if (isLocked) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo"
+        dir="rtl"
+      >
+        <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الاختبار غير متاح</h3>
+        <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
+          أنت غير مشترك في هذا الشهر. اشترك لفتح الاختبارات ومتابعة خطتك الدراسية.
+        </p>
+        <Link
+          href="/account"
+          className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-[15px] hover:bg-primary-hover transition-colors flex items-center justify-center"
+        >
+          الانتقال إلى حسابي
+        </Link>
+        <Link
+          href="/educational-content"
+          className="h-[48px] px-8 mt-3 bg-transparent border border-border rounded-control text-text-muted font-bold text-[15px] hover:bg-surface-secondary transition-colors flex items-center justify-center"
+        >
+          تصفح المراحل التعليمية
+        </Link>
+      </div>
+    );
   }
 
   if (!content) {
@@ -105,18 +129,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
       dir="rtl"
     >
       <main className="flex flex-col items-start gap-6 md:gap-8 w-full max-w-[1280px] flex-1">
-        <nav className="flex flex-row items-center justify-start gap-1.5 sm:gap-2 w-full text-[12px] sm:text-[14px] text-text-muted flex-wrap">
-          <span className="font-bold text-primary">{stage?.title || content.month || "المرحلة"}</span>
-          <span className="text-[10px] sm:text-[12px]">&gt;</span>
-          <Link
-            href={month ? `/educational-content/month/${month._id}` : "#"}
-            className="hover:text-primary transition-colors"
-          >
-            {month?.title || "محتوى الشهر"}
-          </Link>
-          <span className="text-[10px] sm:text-[12px]">&gt;</span>
-          <span className="font-medium text-text-muted">{content.title}</span>
-        </nav>
+        <ContentBreadcrumb />
 
         <div className="flex flex-col lg:flex-row items-start gap-8 md:gap-10 w-full mb-10">
           <div className="flex flex-col gap-6 md:gap-8 flex-1 w-full min-w-0">

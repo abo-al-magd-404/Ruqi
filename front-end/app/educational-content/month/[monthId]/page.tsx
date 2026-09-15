@@ -2,12 +2,14 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Lock, Sparkles, Check } from "lucide-react";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import { getMonthContent, getContentById } from "@/lib/educational-content/content";
 import { getEducationalStageById } from "@/lib/educational-content/stages";
 import type { EducationalMonth, ContentItem, EducationalStage, ContentDetails } from "@/lib/types/educational-content";
 import { getProgress, getMonthSummary } from "@/lib/progress";
+import { getProfile } from "@/lib/account/profile";
+import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
 export default function MonthContentPage({ params }: { params: Promise<{ monthId: string }> }) {
   const resolvedParams = use(params);
@@ -25,13 +27,21 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
 
     const fetchData = async () => {
       try {
-        const [monthData, contentData] = await Promise.all([
+        const [monthData, contentResp, profile] = await Promise.all([
           getEducationalMonthById(monthId),
           getMonthContent(monthId),
+          getProfile().catch(() => null),
         ]);
 
-        const sortedContent = [...contentData].sort((a, b) => a.order - b.order);
-        setMonthDetails(monthData);
+        const sortedContent = [...contentResp.items].sort((a, b) => a.order - b.order);
+        const userSubscribed =
+          profile?.subscribedMonths?.some((id) => String(id) === String(monthId)) === true;
+        const locked =
+          contentResp.locked === true ||
+          monthData?.locked === true ||
+          sortedContent.some((item) => item.locked === true) ||
+          !userSubscribed;
+        setMonthDetails({ ...monthData, locked });
         setContentList(sortedContent);
         setLoadError(null);
 
@@ -73,6 +83,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
   }, [monthId]);
 
   const hasContent = contentList.length > 0;
+  const monthIsLocked =
+    monthDetails?.locked === true || contentList.some((item) => item.locked === true);
 
   const progress = getMonthSummary(contentList);
   const progressPercentage = progress.percentage;
@@ -84,31 +96,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
       dir="rtl"
     >
       <main className="flex flex-col items-start gap-6 md:gap-10 w-full max-w-[1200px]">
-        <nav
-          className="flex flex-row pt-10 items-center gap-2 w-full text-xs md:text-sm text-text-muted flex-wrap"
-          aria-label="مسار التنقل"
-        >
-          <Link href="/educational-content" className="font-bold text-primary transition-colors">
-            المحتوى التعليمي
-          </Link>
-          <span className="text-text-muted">&gt;</span>
-          {stageDetails ? (
-            <Link
-              href={`/educational-content/stage/${stageDetails._id}`}
-              className="font-medium text-text-muted hover:text-primary transition-colors"
-            >
-              {stageDetails.title}
-            </Link>
-          ) : (
-            <span className="font-medium text-text-muted">المرحلة</span>
-          )}
-          <span className="text-text-muted">&gt;</span>
-          {monthDetails ? (
-            <span className="font-medium text-text-muted">{monthDetails.title}</span>
-          ) : (
-            <span className="w-16 h-3.5 bg-border animate-pulse rounded" />
-          )}
-        </nav>
+        <ContentBreadcrumb />
 
         <section className="w-full bg-surface border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.06)] rounded-card overflow-hidden">
           <div className="flex flex-col lg:flex-row items-stretch justify-between p-6 md:p-10 gap-8">
@@ -123,6 +111,17 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                     {monthDetails.price} ج.م
                   </span>
                 )}
+                {monthIsLocked ? (
+                  <span className="inline-flex items-center gap-1.5 bg-danger-bg text-danger font-bold text-xs px-3 py-1.5 rounded-control">
+                    <Lock size={13} />
+                    غير مشترك
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 bg-success-bg text-success font-bold text-xs px-3 py-1.5 rounded-control">
+                    <Check size={13} />
+                    مشترك
+                  </span>
+                )}
               </div>
 
               <h1 className="font-extrabold text-2xl md:text-3xl lg:text-[32px] text-text-main leading-tight">
@@ -134,7 +133,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
               </p>
             </div>
 
-            <div className="w-full lg:w-[320px] flex flex-col justify-center gap-3  p-5 md:p-6 order-2 lg:order-2 shrink-0">
+            <div className="w-full lg:w-[320px] flex flex-col justify-center gap-3 p-5 md:p-6 order-2 lg:order-2 shrink-0">
               <div className="flex justify-between items-center w-full">
                 <span className="font-bold text-sm text-text-main">{progressPercentage}٪ مكتمل</span>
                 <span className="font-bold text-sm text-primary">نسبة إنجاز الشهر</span>
@@ -163,66 +162,109 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
             </div>
           ) : hasContent ? (
             <div className="flex flex-col gap-4 w-full">
+              {monthIsLocked && (
+                <div className="flex items-center gap-3 p-4 bg-surface-secondary border border-primary-border rounded-card text-text-muted text-sm font-bold">
+                  <Lock size={18} className="text-primary shrink-0" />
+                  <span>
+                    أنت غير مشترك في هذا الشهر — المحتوى متاح بعد الاشتراك
+                  </span>
+                </div>
+              )}
               {contentList.map((item, index) => {
                 const isLesson = item.type === "LESSON";
                 const itemCompleted = Boolean(getProgress()[item._id]);
+                const itemLocked = monthIsLocked || item.locked === true;
                 const href = isLesson
                   ? `/educational-content/content/${item._id}`
                   : `/educational-content/exam/${item._id}`;
-                return (
-                  <Link href={href} key={item._id} className="block group w-full">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 md:p-6 bg-surface rounded-card shadow-sm border border-border group-hover:border-primary group-hover:shadow-md transition-all duration-300 gap-4">
-                      <div className="flex items-center gap-4 flex-grow w-full sm:w-auto">
-                        <span className="font-black text-2xl text-primary opacity-60">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                        <div className="flex flex-col gap-2 flex-grow min-w-0 text-right">
-                          <h3 className="font-extrabold text-base md:text-lg text-text-main group-hover:text-primary transition-colors">
-                            {item.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
+
+                const row = (
+                  <div
+                    className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 md:p-6 bg-surface rounded-card shadow-sm border border-border gap-4 ${
+                      monthIsLocked
+                        ? "opacity-75"
+                        : "group-hover:border-primary group-hover:shadow-md transition-all duration-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 flex-grow w-full sm:w-auto">
+                      <span
+                        className={`font-black text-2xl ${
+                          monthIsLocked ? "text-text-muted" : "text-primary opacity-60"
+                        }`}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="flex flex-col gap-2 flex-grow min-w-0 text-right">
+                        <h3
+                          className={`font-extrabold text-base md:text-lg ${
+                            monthIsLocked
+                              ? "text-text-muted"
+                              : "text-text-main group-hover:text-primary transition-colors"
+                          }`}
+                        >
+                          {item.title}
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
+                            {item.type === "EXAM" ? "اختبار" : "درس"}
+                          </span>
+                          {detailsMap[item._id]?.videoUrl && (
                             <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
-                              {item.type === "EXAM" ? "اختبار" : "درس"}
+                              فيديو
                             </span>
-                            {detailsMap[item._id]?.videoUrl && (
-                              <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
-                                فيديو
-                              </span>
-                            )}
-                            {detailsMap[item._id]?.writtenExplanation && (
-                              <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
-                                شرح تفصيلي
-                              </span>
-                            )}
-                            {(detailsMap[item._id]?.homework?.length || 0) > 0 && (
-                              <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
-                                واجب تطبيقي
-                              </span>
-                            )}
-                            {(detailsMap[item._id]?.examQuestions?.length || 0) > 0 && (
-                              <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
-                                أسئلة تقييمية
-                              </span>
-                            )}
-                          </div>
+                          )}
+                          {detailsMap[item._id]?.writtenExplanation && (
+                            <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
+                              شرح تفصيلي
+                            </span>
+                          )}
+                          {(detailsMap[item._id]?.homework?.length || 0) > 0 && (
+                            <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
+                              واجب تطبيقي
+                            </span>
+                          )}
+                          {(detailsMap[item._id]?.examQuestions?.length || 0) > 0 && (
+                            <span className="text-xs font-medium px-2.5 py-1 bg-background border border-border rounded-control text-text-muted">
+                              أسئلة تقييمية
+                            </span>
+                          )}
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-3 shrink-0 sm:order-last">
-                        {itemCompleted ? (
-                          <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-success-bg text-success rounded-full text-xs font-bold">
-                            <span>مكتمل</span>
-                            <span className="w-5 h-5 flex items-center justify-center bg-success/10 rounded-full">
-                              ✓
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-background border border-border text-primary rounded-full text-xs font-bold">
-                            <span>قيد التقدم</span>
-                          </div>
-                        )}
-                      </div>
                     </div>
+
+                    <div className="flex items-center gap-3 shrink-0 sm:order-last">
+                      {itemLocked ? (
+                        <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-danger-bg text-danger rounded-full text-xs font-bold">
+                          <Lock size={14} />
+                          <span>غير مشترك</span>
+                        </div>
+                      ) : itemCompleted ? (
+                        <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-success-bg text-success rounded-full text-xs font-bold">
+                          <span>مكتمل</span>
+                          <span className="w-5 h-5 flex items-center justify-center bg-success/10 rounded-full">
+                            ✓
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-background border border-border text-text-muted rounded-full text-xs font-bold">
+                          <span>غير مشترك</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+
+                if (itemLocked) {
+                  return (
+                    <div key={item._id} className="block w-full cursor-not-allowed" aria-disabled="true">
+                      {row}
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link href={href} key={item._id} className="block group w-full">
+                    {row}
                   </Link>
                 );
               })}

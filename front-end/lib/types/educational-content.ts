@@ -25,6 +25,7 @@ export interface Month {
   price: number;
   stage: string;
   order: number;
+  locked?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -39,6 +40,7 @@ export interface LessonExam {
   image?: string | null;
   month: string;
   order: number;
+  locked?: boolean;
   videoUrl?: string;
   writtenExplanation?: string;
   homework?: ContentQuestion[];
@@ -48,13 +50,22 @@ export interface LessonExam {
   updatedAt?: string;
 }
 
-export type ContentItem = Pick<LessonExam, "_id" | "title" | "description" | "type" | "order">;
+export type ContentItem = Pick<
+  LessonExam,
+  "_id" | "title" | "description" | "type" | "order"
+> & { locked?: boolean };
+
+export interface MonthContent {
+  locked: boolean;
+  items: LessonExam[];
+}
 
 export interface ContentDetails {
   _id: string;
   title: string;
   description?: string;
   type: "LESSON" | "EXAM";
+  locked?: boolean;
   videoUrl?: string;
   writtenExplanation?: string;
   homework?: Question[];

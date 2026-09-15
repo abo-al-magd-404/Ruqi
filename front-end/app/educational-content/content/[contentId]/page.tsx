@@ -7,11 +7,11 @@ import { Play, Check, Circle, ChevronDown, ChevronUp } from "lucide-react";
 import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
-import { getEducationalStageById } from "@/lib/educational-content/stages";
-import type { ContentDetails, ContentItem, EducationalMonth, EducationalStage } from "@/lib/types/educational-content";
+import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
 import { markLessonCompleted } from "@/lib/progress";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
+import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
 export default function ContentDetailsPage({ params }: { params: Promise<{ contentId: string }> }) {
   const router = useRouter();
@@ -20,9 +20,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
 
   const [content, setContent] = useState<ContentDetails | null>(null);
   const [month, setMonth] = useState<EducationalMonth | null>(null);
-  const [stage, setStage] = useState<EducationalStage | null>(null);
   const [monthContentList, setMonthContentList] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [step, setStep] = useState<"video" | "explanation">("video");
 
@@ -39,24 +39,22 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
           return;
         }
 
+        if (contentData?.locked) {
+          if (active) setIsLocked(true);
+          return;
+        }
+
         setContent(contentData);
         markLessonCompleted(contentId);
 
         if (contentData && contentData.month) {
-          const [monthItems, monthData] = await Promise.all([
+          const [monthContent, monthData] = await Promise.all([
             getMonthContent(contentData.month),
             getEducationalMonthById(contentData.month),
           ]);
           if (!active) return;
-          setMonthContentList([...monthItems].sort((a, b) => a.order - b.order));
+          setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
-
-          if (monthData && monthData.stage) {
-            try {
-              const stageData = await getEducationalStageById(monthData.stage);
-              if (active) setStage(stageData);
-            } catch {}
-          }
         }
       } catch {
         if (active) {
@@ -78,6 +76,29 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
 
   if (isLoading) {
     return <Loading />;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo" dir="rtl">
+        <h3 className="font-extrabold text-2xl text-text-main mb-3">هذا الدرس غير متاح</h3>
+        <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
+          أنت غير مشترك في هذا الشهر. اشترك لفتح المحتوى ومتابعة خطتك الدراسية.
+        </p>
+        <Link
+          href="/account"
+          className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-base hover:bg-primary-hover transition-colors flex items-center justify-center"
+        >
+          الانتقال إلى حسابي
+        </Link>
+        <Link
+          href="/educational-content"
+          className="h-[48px] px-8 mt-3 bg-transparent border border-border rounded-control text-text-muted font-bold text-base hover:bg-surface-secondary transition-colors flex items-center justify-center"
+        >
+          تصفح المراحل التعليمية
+        </Link>
+      </div>
+    );
   }
 
   if (!content) {
@@ -120,26 +141,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   return (
     <div className="w-full min-h-screen bg-background flex flex-col items-center py-12 md:py-20 px-4 md:px-20 relative font-cairo" dir="rtl">
       <main className="flex flex-col items-start gap-8 w-full max-w-[1280px] flex-1">
-        
-        <nav className="flex flex-row items-center pt-10 justify-start gap-2 w-full text-xs md:text-sm text-text-muted flex-wrap" aria-label="مسار التنقل">
-          {stage ? (
-            <Link href={`/educational-content/stage/${stage._id}`} className="font-bold text-primary hover:underline transition-colors">
-              {stage.title}
-            </Link>
-          ) : (
-            <span className="font-bold text-primary">{content.month || "المرحلة"}</span>
-          )}
-          <span>&gt;</span>
-          {month ? (
-            <Link href={`/educational-content/month/${month._id}`} className=" text-text-muted hover:text-primary hover:underline transition-colors">
-              {month.title}
-            </Link>
-          ) : (
-            <span>{content.month || "محتوى الشهر"}</span>
-          )}
-          <span>&gt;</span>
-          <span className="font-medium text-text-muted">{content.title}</span>
-        </nav>
+        <ContentBreadcrumb />
 
         <div className="flex flex-col lg:flex-row items-start gap-10 w-full mb-10">
           
