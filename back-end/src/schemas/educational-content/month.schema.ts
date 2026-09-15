@@ -5,7 +5,7 @@ import { EducationalStage } from "./educational-stage.schema";
 
 export type MonthDocument = HydratedDocument<Month>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: "Months" })
 export class Month implements IMonth {
   @Prop({ required: true, trim: true })
   title: string;

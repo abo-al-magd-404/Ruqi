@@ -8,6 +8,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { UsersSeeder } from "./seeds/users.seeder";
 import { User, UserSchema } from "./schemas";
 import { UsersModule } from "./modules/users/users.module";
+import { EducationalContentModule } from "./modules/educational-content/educational-content.module";
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -35,6 +36,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
     AuthModule,
     UsersModule,
+    EducationalContentModule,
   ],
 
   controllers: [],

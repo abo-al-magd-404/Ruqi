@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { Collection, HydratedDocument } from "mongoose";
 import { IEducationalStage } from "../../common";
 
 export type EducationalStageDocument = HydratedDocument<EducationalStage>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: "EducationalStages" })
 export class EducationalStage implements IEducationalStage {
   @Prop({ required: true, trim: true })
   title: string;
