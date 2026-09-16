@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { ContentType } from "../../enums";
 import { IQuestion } from "./question.interface";
 
+
 export interface ILesson {
   _id: Types.ObjectId;
   type: ContentType.LESSON;

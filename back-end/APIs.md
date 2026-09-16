@@ -2,7 +2,7 @@
 
 ## 1. Base Configuration
 
-### Base URL
+### Production Base URL
 
 ```text
 https://app-6aa80d99.deploy.meerasolution.com
@@ -14,9 +14,9 @@ https://app-6aa80d99.deploy.meerasolution.com
 http://localhost:8000
 ```
 
-### Headers
+### Authentication Header
 
-For authenticated requests:
+All protected endpoints require:
 
 ```http
 Authorization: Bearer <accessToken>
@@ -36,7 +36,7 @@ Content-Type: application/json
 
 ### Access Token
 
-Used to authenticate protected endpoints:
+Used to access protected endpoints:
 
 ```http
 Authorization: Bearer <accessToken>
@@ -44,7 +44,7 @@ Authorization: Bearer <accessToken>
 
 ### Refresh Token
 
-Used with:
+Used to generate a new Access Token through:
 
 ```http
 POST /auth/get-new-access-token
@@ -62,9 +62,7 @@ The Refresh Token is sent in the request body.
 
 Creates a new student account.
 
-### Authentication
-
-Public.
+**Authentication:** Public
 
 ### Request Body
 
@@ -79,13 +77,18 @@ Public.
 }
 ```
 
+### Behavior
+
+- Creates a new account with the `STUDENT` role.
+- Generates a student ID.
+- Sends a verification OTP to the user's email.
+- The account remains pending until verification.
+
 ### Success
 
-**201 Created**
-
-A verification OTP is sent to the user's email.
-
-New accounts are created with the `STUDENT` role.
+```text
+201 Created
+```
 
 ---
 
@@ -95,9 +98,7 @@ New accounts are created with the `STUDENT` role.
 
 Resends the account verification OTP.
 
-### Authentication
-
-Public.
+**Authentication:** Public
 
 ### Request Body
 
@@ -109,9 +110,9 @@ Public.
 
 ### Success
 
-**200 OK**
-
-The endpoint applies an OTP resend cooldown.
+```text
+200 OK
+```
 
 ---
 
@@ -119,11 +120,9 @@ The endpoint applies an OTP resend cooldown.
 
 ### `POST /auth/verify-account`
 
-Verifies the user's account using the received OTP.
+Verifies the user's account using the OTP.
 
-### Authentication
-
-Public.
+**Authentication:** Public
 
 ### Request Body
 
@@ -134,11 +133,15 @@ Public.
 }
 ```
 
+### Behavior
+
+After successful verification, the account status changes to active.
+
 ### Success
 
-**200 OK**
-
-The account becomes active after successful verification.
+```text
+200 OK
+```
 
 ---
 
@@ -146,11 +149,9 @@ The account becomes active after successful verification.
 
 ### `POST /auth/login`
 
-Authenticates the user and returns authentication tokens.
+Authenticates a user.
 
-### Authentication
-
-Public.
+**Authentication:** Public
 
 ### Request Body
 
@@ -163,12 +164,15 @@ Public.
 
 ### Success
 
-**200 OK**
+```text
+200 OK
+```
 
-Returns the authenticated user information and:
+Returns authentication information, including:
 
 - Access Token
 - Refresh Token
+- User information
 
 ---
 
@@ -178,9 +182,7 @@ Returns the authenticated user information and:
 
 Requests a password-reset OTP.
 
-### Authentication
-
-Public.
+**Authentication:** Public
 
 ### Request Body
 
@@ -192,9 +194,9 @@ Public.
 
 ### Success
 
-**200 OK**
-
-A password-reset OTP is sent to the user's email.
+```text
+200 OK
+```
 
 ---
 
@@ -202,11 +204,9 @@ A password-reset OTP is sent to the user's email.
 
 ### `POST /auth/reset-password`
 
-Resets the user's password using the OTP.
+Resets the user's password.
 
-### Authentication
-
-Public.
+**Authentication:** Public
 
 ### Request Body
 
@@ -218,13 +218,17 @@ Public.
 }
 ```
 
+### Behavior
+
+- Changes the user's password.
+- Invalidates the stored Refresh Token.
+- Requires the user to log in again.
+
 ### Success
 
-**200 OK**
-
-The password is changed and the existing refresh-token session is invalidated.
-
-The user must log in again.
+```text
+200 OK
+```
 
 ---
 
@@ -232,11 +236,9 @@ The user must log in again.
 
 ### `POST /auth/get-new-access-token`
 
-Generates a new Access Token using the Refresh Token.
+Generates new authentication tokens using the Refresh Token.
 
-### Authentication
-
-Refresh Token required.
+**Authentication:** Refresh Token
 
 ### Request Body
 
@@ -246,16 +248,17 @@ Refresh Token required.
 }
 ```
 
+### Behavior
+
+- Validates the Refresh Token.
+- Generates a new Access Token.
+- Rotates the Refresh Token.
+
 ### Success
 
-**200 OK**
-
-Returns a new:
-
-- Access Token
-- Refresh Token
-
-The Refresh Token is rotated after successful validation.
+```text
+200 OK
+```
 
 ---
 
@@ -265,47 +268,41 @@ The Refresh Token is rotated after successful validation.
 
 Logs out the currently authenticated user.
 
-### Authentication
-
-Required.
-
-```http
-Authorization: Bearer <accessToken>
-```
+**Authentication:** Required
 
 ### Success
 
-**200 OK**
+```text
+200 OK
+```
 
-The stored Refresh Token is invalidated.
+### Behavior
+
+Invalidates the stored Refresh Token.
 
 ---
 
 # 4. User APIs
 
-## 4.1 Get My Profile
+## 4.1 Get Current User
 
 ### `GET /users/me`
 
-Returns the profile of the currently authenticated user.
+Returns the profile of the authenticated user.
 
-### Authentication
+**Authentication:** Required
 
-Required.
+**Roles:** All roles
 
-Works for:
-
-- STUDENT
-- TEACHER
-- ADMIN
+- `STUDENT`
+- `TEACHER`
+- `ADMIN`
 
 ### Success
 
-**200 OK**
-
-Returns the authenticated user's account information.
-
-Sensitive authentication fields are excluded from the response.
+```text
+200 OK
+```
 
 ---
 
@@ -313,33 +310,591 @@ Sensitive authentication fields are excluded from the response.
 
 ### `PATCH /users/student/profile`
 
-Updates the currently authenticated student's profile.
+Updates the authenticated student's profile.
 
-### Authentication
+**Authentication:** Required
 
-Required.
+**Role:** `STUDENT`
 
-### Role
+### Supported Fields
 
-`STUDENT` only.
+The accepted fields are defined by `UpdateStudentProfileDto`.
 
-### Request Body
+Possible fields include:
 
-The request accepts the fields defined by `UpdateStudentProfileDto`.
-
-The password, when provided, is hashed before being stored.
+- Name
+- Password
+- Avatar
+- Phone number
+- Address
+- Educational stage
 
 ### Success
 
-**200 OK**
-
-Returns the updated student profile.
+```text
+200 OK
+```
 
 ---
 
-# 5. Educational Content
+# 5. Admin APIs
 
-Educational content is organized as:
+All endpoints under `/admin` require:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+**Required role:** `ADMIN`
+
+The controller applies:
+
+```text
+JwtAuthGuard
+RolesGuard
+Roles(UserRole.ADMIN)
+```
+
+Therefore, only authenticated administrators can access these endpoints.
+
+---
+
+# 6. Admin — Student Management
+
+## 6.1 Get All Students
+
+### `GET /admin/students`
+
+Returns all registered students.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Behavior
+
+The response:
+
+- Retrieves users with the `STUDENT` role only.
+- Excludes sensitive authentication fields.
+- Populates the student's educational stage.
+- Populates the student's subscribed months.
+- Sorts students by creation date in descending order.
+
+### Excluded Fields
+
+The following fields are excluded from the response:
+
+```text
+password
+hashedRefreshToken
+emailOtp
+emailOtpExpiresAt
+emailOtpLastSentAt
+```
+
+### Populated Stage Fields
+
+```text
+title
+```
+
+### Populated Subscription Fields
+
+```text
+title
+description
+price
+order
+```
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم جلب بيانات الطلاب بنجاح",
+  "students": []
+}
+```
+
+---
+
+## 6.2 Get Student by Student ID
+
+### `GET /admin/students/:studentId`
+
+Retrieves a specific student using the generated `studentId`.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Behavior
+
+- Searches only users with the `STUDENT` role.
+- Excludes sensitive authentication fields.
+- Populates the student's stage.
+- Populates the student's subscribed months.
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم جلب بيانات الطالب بنجاح",
+  "student": {}
+}
+```
+
+### Errors
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+---
+
+## 6.3 Update Student Data
+
+### `PATCH /admin/students/:studentId`
+
+Updates a student's account information.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Request Body
+
+The accepted fields are defined by `UpdateStudentDto`.
+
+Example:
+
+```json
+{
+  "name": "Ahmed Mohamed",
+  "phoneNumber": "01000000000",
+  "address": "Damanhur",
+  "stage": "STAGE_ID",
+  "password": "newPassword123"
+}
+```
+
+### Behavior
+
+#### Educational Stage
+
+If a stage is provided:
+
+1. Validates the MongoDB ObjectId.
+2. Checks that the educational stage exists.
+3. Converts the stage ID into a MongoDB ObjectId.
+4. Updates the student's stage.
+
+#### Password
+
+If a password is provided, it is hashed using bcrypt before being stored.
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم تحديث بيانات الطالب بنجاح",
+  "student": {}
+}
+```
+
+### Errors
+
+```text
+400 Bad Request
+معرف المرحلة الدراسية غير صالح
+```
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+```text
+404 Not Found
+المرحلة الدراسية غير موجودة
+```
+
+---
+
+## 6.4 Update Student Status
+
+### `PATCH /admin/students/:studentId/status`
+
+Updates the status of a student's account.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Request Body
+
+The accepted status is defined by `UpdateStudentStatusDto`.
+
+Example:
+
+```json
+{
+  "status": "SUSPENDED"
+}
+```
+
+### Behavior
+
+Updates the student's account status.
+
+The available values depend on the `UserStatus` enum used by the backend.
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم تحديث حالة حساب الطالب بنجاح",
+  "student": {}
+}
+```
+
+### Errors
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+---
+
+# 7. Admin — Student Subscriptions
+
+## 7.1 Get Student's Subscribed Months
+
+### `GET /admin/students/:studentId/subscribed-months`
+
+Returns the months subscribed to by a specific student.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Returned Student Fields
+
+```text
+studentId
+name
+subscribedMonths
+```
+
+### Populated Month Fields
+
+```text
+title
+description
+price
+stage
+order
+```
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم جلب الأشهر المشترك بها الطالب بنجاح",
+  "student": {
+    "studentId": "STUDENT_ID",
+    "name": "Ahmed Ali",
+    "subscribedMonths": []
+  }
+}
+```
+
+### Errors
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+---
+
+## 7.2 Add a Month to Student Subscriptions
+
+### `POST /admin/students/:studentId/subscribed-months`
+
+Adds a month to the student's subscriptions.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Request Body
+
+```json
+{
+  "monthId": "MONTH_OBJECT_ID"
+}
+```
+
+### Validation and Behavior
+
+The backend checks the following:
+
+1. The month ID is a valid MongoDB ObjectId.
+2. The student exists and has the `STUDENT` role.
+3. The student is associated with an educational stage.
+4. The month exists.
+5. The month belongs to the same educational stage as the student.
+6. The student is not already subscribed to the month.
+
+The month is added using `$addToSet`.
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم إضافة الشهر إلى اشتراكات الطالب بنجاح",
+  "student": {}
+}
+```
+
+### Errors
+
+```text
+400 Bad Request
+معرف الشهر غير صالح
+```
+
+```text
+400 Bad Request
+الطالب غير مرتبط بمرحلة دراسية
+```
+
+```text
+400 Bad Request
+لا يمكن إضافة شهر من مرحلة دراسية مختلفة عن مرحلة الطالب
+```
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+```text
+404 Not Found
+الشهر غير موجود
+```
+
+```text
+409 Conflict
+الطالب مشترك بالفعل في هذا الشهر
+```
+
+---
+
+## 7.3 Remove a Month from Student Subscriptions
+
+### `DELETE /admin/students/:studentId/subscribed-months`
+
+Removes a month from the student's subscriptions.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Request Body
+
+```json
+{
+  "monthId": "MONTH_OBJECT_ID"
+}
+```
+
+### Validation and Behavior
+
+The backend checks the following:
+
+1. The month ID is a valid MongoDB ObjectId.
+2. The student exists and has the `STUDENT` role.
+3. The month is included in the student's subscriptions.
+
+The month is removed using `$pull`.
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم حذف الشهر من اشتراكات الطالب بنجاح",
+  "student": {}
+}
+```
+
+### Errors
+
+```text
+400 Bad Request
+معرف الشهر غير صالح
+```
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+```text
+404 Not Found
+هذا الشهر غير موجود ضمن اشتراكات الطالب
+```
+
+---
+
+## 7.4 Subscription Data Structure
+
+The student's `subscribedMonths` field contains references to the `Month` documents.
+
+Example:
+
+```json
+{
+  "subscribedMonths": ["MONTH_OBJECT_ID_1", "MONTH_OBJECT_ID_2"]
+}
+```
+
+When returned through the Admin APIs, the month references are populated with selected month information.
+
+---
+
+# 8. Admin — Delete Student
+
+## 8.1 Delete Student Account
+
+### `DELETE /admin/students/:studentId`
+
+Deletes a student account.
+
+**Authentication:** Required
+
+**Role:** `ADMIN`
+
+### Path Parameter
+
+```text
+studentId = Student's generated ID
+```
+
+### Behavior
+
+- Searches for the student using `studentId`.
+- Ensures the account belongs to the `STUDENT` role.
+- Deletes the student's user document.
+
+### Success
+
+```text
+200 OK
+```
+
+### Response Structure
+
+```json
+{
+  "message": "تم حذف حساب الطالب بنجاح"
+}
+```
+
+### Errors
+
+```text
+404 Not Found
+الطالب غير موجود
+```
+
+---
+
+# 9. Educational Content
+
+Educational content is organized as follows:
 
 ```text
 Educational Stage
@@ -348,307 +903,175 @@ Educational Stage
         └── Exam
 ```
 
+The platform contains 12 educational stages:
+
+- 3 General Middle School stages
+- 3 Azhar Middle School stages
+- 3 General Secondary School stages
+- 3 Azhar Secondary School stages
+
 ---
 
-# 6. Educational Stages
+# 10. Educational Stages APIs
 
-## 6.1 Get All Educational Stages
+## 10.1 Get All Stages
 
 ### `GET /educational-content/stages`
 
-Returns all educational stages ordered by their `order` field.
+**Authentication:** Public
 
-### Authentication
-
-Public.
-
-### Success
-
-**200 OK**
+Returns all educational stages ordered by the `order` field.
 
 ---
 
-## 6.2 Get One Educational Stage
+## 10.2 Get Stage by ID
 
 ### `GET /educational-content/stages/:id`
 
-Returns a single educational stage.
+**Authentication:** Public
 
-### Authentication
-
-Public.
-
-### Path Parameter
-
-```text
-id = Educational Stage ID
-```
-
-### Success
-
-**200 OK**
+Returns one educational stage.
 
 ### Errors
 
-- `404 Not Found` — المرحلة الدراسية غير موجودة
+```text
+404 Not Found
+المرحلة الدراسية غير موجودة
+```
 
 ---
 
-## 6.3 Create Educational Stage
+## 10.3 Create Stage
 
 ### `POST /educational-content/stages`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Creates a new educational stage.
-
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**201 Created**
-
-If `order` is not provided, an order is automatically assigned.
 
 ---
 
-## 6.4 Update Educational Stage
+## 10.4 Update Stage
 
 ### `PATCH /educational-content/stages/:id`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Updates an educational stage.
-
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
-
-### Errors
-
-- `404 Not Found` — المرحلة الدراسية غير موجودة
 
 ---
 
-## 6.5 Delete Educational Stage
+## 10.5 Delete Stage
 
 ### `DELETE /educational-content/stages/:id`
 
-Deletes an educational stage.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Behavior
-
-Deleting a stage also deletes:
-
-- Its months
-- Lessons belonging to those months
-- Exams belonging to those months
-
-### Success
-
-**200 OK**
+Deletes a stage and its related months, lessons, and exams.
 
 ---
 
-## 6.6 Reorder Educational Stages
+## 10.6 Reorder Stages
 
 ### `PATCH /educational-content/stages/reorder`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Updates the order of educational stages.
-
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
 
 ---
 
-# 7. Educational Months
+# 11. Educational Months APIs
 
-## 7.1 Get All Months of a Stage
+## 11.1 Get Months by Stage
 
 ### `GET /educational-content/months/stage/:stageId`
 
-Returns all months belonging to an educational stage.
+**Authentication:** Optional
 
-### Authentication
+Returns the months belonging to a specific stage.
 
-Optional.
-
-### Behavior
-
-Each month contains a `locked` field.
-
-A month is accessible when:
-
-- The user is a `TEACHER` or `ADMIN`, or
-- The month exists in the student's `subscribedMonths`.
-
-Guests receive locked months.
-
-### Success
-
-**200 OK**
+The response can contain the `locked` property based on the authenticated user's access.
 
 ---
 
-## 7.2 Get One Month
+## 11.2 Get Month by ID
 
 ### `GET /educational-content/months/:id`
 
+**Authentication:** Optional
+
 Returns one month.
-
-### Authentication
-
-Optional.
-
-### Behavior
-
-The response contains the `locked` field.
-
-### Success
-
-**200 OK**
-
-### Errors
-
-- `404 Not Found` — الشهر غير موجود
 
 ---
 
-## 7.3 Create Month
+## 11.3 Create Month
 
 ### `POST /educational-content/months`
 
-Creates a new month.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**201 Created**
+Creates a month.
 
 ---
 
-## 7.4 Update Month
+## 11.4 Update Month
 
 ### `PATCH /educational-content/months/:id`
 
-Updates an existing month.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
-
-### Errors
-
-- `404 Not Found` — الشهر غير موجود
+Updates a month.
 
 ---
 
-## 7.5 Delete Month
+## 11.5 Delete Month
 
 ### `DELETE /educational-content/months/:id`
 
-Deletes a month.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Behavior
-
-Deleting a month also deletes:
-
-- Lessons belonging to the month
-- Exams belonging to the month
-
-### Success
-
-**200 OK**
+Deletes the month and its related lessons and exams.
 
 ---
 
-## 7.6 Reorder Months
+## 11.6 Reorder Months
 
 ### `PATCH /educational-content/months/reorder`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Updates the order of months.
-
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
 
 ---
 
-# 8. Lessons
+# 12. Lessons APIs
 
-## 8.1 Get All Lessons of a Month
+## 12.1 Get Lessons by Month
 
 ### `GET /educational-content/lessons/month/:monthId`
 
-Returns all lessons belonging to a month.
+**Authentication:** Optional
 
-### Authentication
+Returns lessons belonging to a month.
 
-Optional.
-
-### Behavior
-
-If the month is unlocked, the complete lesson data is returned.
-
-If the month is locked, only public lesson information is returned with:
+Locked content returns public information with:
 
 ```json
 {
@@ -656,372 +1079,174 @@ If the month is locked, only public lesson information is returned with:
 }
 ```
 
-### Success
-
-**200 OK**
-
 ---
 
-## 8.2 Get One Lesson
+## 12.2 Get Lesson by ID
 
 ### `GET /educational-content/lessons/:id`
 
+**Authentication:** Optional
+
 Returns one lesson.
-
-### Authentication
-
-Optional.
-
-### Behavior
-
-Locked lessons return only public lesson information and:
-
-```json
-{
-  "locked": true
-}
-```
-
-### Success
-
-**200 OK**
-
-### Errors
-
-- `404 Not Found` — الدرس غير موجود
 
 ---
 
-## 8.3 Create Lesson
+## 12.3 Create Lesson
 
 ### `POST /educational-content/lessons`
 
-Creates a new lesson.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
+Creates a lesson.
 
-### Role
-
-`TEACHER` only.
-
-### Ordering
-
-If `order` is not provided, the lesson is placed after the last lesson or exam in the same month.
-
-Lessons and exams share the same ordering sequence.
-
-### Success
-
-**201 Created**
+Lessons and exams share the same `order` sequence within a month.
 
 ---
 
-## 8.4 Update Lesson
+## 12.4 Update Lesson
 
 ### `PATCH /educational-content/lessons/:id`
 
-Updates an existing lesson.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
+Updates a lesson.
 
 ---
 
-## 8.5 Delete Lesson
+## 12.5 Delete Lesson
 
 ### `DELETE /educational-content/lessons/:id`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Deletes a lesson.
-
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
 
 ---
 
-# 9. Exams
+# 13. Exams APIs
 
-## 9.1 Get All Exams of a Month
+## 13.1 Get Exams by Month
 
 ### `GET /educational-content/exams/month/:monthId`
 
-Returns all exams belonging to a month.
+**Authentication:** Optional
 
-### Authentication
-
-Optional.
-
-### Behavior
-
-If the month is unlocked, the complete exam data is returned.
-
-If the month is locked, only public exam information is returned with:
-
-```json
-{
-  "locked": true
-}
-```
-
-### Success
-
-**200 OK**
+Returns exams belonging to a month.
 
 ---
 
-## 9.2 Get One Exam
+## 13.2 Get Exam by ID
 
 ### `GET /educational-content/exams/:id`
 
+**Authentication:** Optional
+
 Returns one exam.
-
-### Authentication
-
-Optional.
-
-### Behavior
-
-Locked exams return only public exam information and:
-
-```json
-{
-  "locked": true
-}
-```
-
-### Success
-
-**200 OK**
-
-### Errors
-
-- `404 Not Found` — الاختبار غير موجود
 
 ---
 
-## 9.3 Create Exam
+## 13.3 Create Exam
 
 ### `POST /educational-content/exams`
 
-Creates a new exam.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Ordering
-
-If `order` is not provided, the exam is placed after the last lesson or exam in the same month.
-
-### Success
-
-**201 Created**
+Creates an exam.
 
 ---
 
-## 9.4 Update Exam
+## 13.4 Update Exam
 
 ### `PATCH /educational-content/exams/:id`
 
-Updates an existing exam.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
+Updates an exam.
 
 ---
 
-## 9.5 Delete Exam
+## 13.5 Delete Exam
 
 ### `DELETE /educational-content/exams/:id`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Deletes an exam.
-
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
 
 ---
 
-# 10. Combined Month Content
+# 14. Combined Month Content
 
-## 10.1 Get All Content of a Month
+## 14.1 Get Month Content
 
 ### `GET /educational-content/content/month/:monthId`
 
-Returns all lessons and exams belonging to a month.
+**Authentication:** Optional
 
-### Authentication
+Returns the lessons and exams of a month in a combined list.
 
-Optional.
-
-Lessons and exams are combined and sorted by their shared `order` field.
-
-### Unlocked Month
-
-```json
-{
-  "locked": false,
-  "items": []
-}
-```
-
-### Locked Month
-
-```json
-{
-  "locked": true,
-  "items": []
-}
-```
-
-Locked items contain only their public information.
+The items are sorted by the shared `order` field.
 
 ---
 
-## 10.2 Reorder Month Content
+## 14.2 Reorder Month Content
 
 ### `PATCH /educational-content/content/reorder`
 
+**Authentication:** Required
+
+**Role:** `TEACHER`
+
 Reorders lessons and exams together.
 
-### Authentication
-
-Required.
-
-### Role
-
-`TEACHER` only.
-
-### Rules
-
-- Content IDs cannot be duplicated.
-- Order values cannot be duplicated.
-- All submitted content must exist.
-- All submitted content must belong to the same month.
-
-### Success
-
-**200 OK**
-
-### Errors
-
-- `400 Bad Request` — invalid ordering or content from different months
-- `404 Not Found` — one or more content items do not exist
+The submitted content must belong to the same month.
 
 ---
 
-# 11. Educational Content Statistics
+# 15. Educational Statistics
 
 ## `GET /educational-content/stats`
 
-Returns educational content statistics.
+**Authentication:** Required
 
-### Authentication
+**Role:** `TEACHER`
 
-Required.
+Returns statistics about the educational content, such as:
 
-### Role
-
-`TEACHER` only.
-
-### Success
-
-**200 OK**
-
-### Response
-
-```json
-{
-  "stages": 12,
-  "months": 36,
-  "lessons": 100,
-  "exams": 20
-}
-```
-
-The values are calculated dynamically from the database.
+- Number of stages
+- Number of months
+- Number of lessons
+- Number of exams
 
 ---
 
-# 12. Progress APIs
+# 16. Progress APIs
 
-All Progress APIs are restricted to authenticated students.
+All Progress APIs require:
 
-### Authentication
+**Authentication:** Required
 
-Required.
-
-```http
-Authorization: Bearer <accessToken>
-```
-
-### Role
-
-`STUDENT` only.
+**Role:** `STUDENT`
 
 ---
 
-# 13. Lesson Progress
-
-## 13.1 Update Lesson Progress
+## 16.1 Update Lesson Progress
 
 ### `PATCH /progress/lessons/:lessonId`
 
 Updates the student's progress for a lesson.
-
-### Authentication
-
-Required.
-
-### Role
-
-`STUDENT`
-
-### Path Parameter
-
-```text
-lessonId = Lesson ID
-```
 
 ### Request Body
 
@@ -1031,89 +1256,144 @@ lessonId = Lesson ID
 }
 ```
 
-The `type` determines which lesson component is completed.
-
-Supported progress types include:
-
-- `VIDEO`
-- `EXPLANATION`
-- `BOOK`
-
-### Behavior
-
-#### Video
-
-When completed:
+Supported types:
 
 ```text
-videoCompleted = true
-videoPoints = 10
+VIDEO
+EXPLANATION
+BOOK
 ```
 
-#### Explanation
+### Progress Types
 
-When completed:
-
-```text
-explanationCompleted = true
-explanationPoints = 10
-```
-
-#### Book
-
-The lesson must contain a required book note.
-
-When completed:
-
-```text
-bookCompleted = true
-```
+| Type          | Behavior                         | Points |
+| ------------- | -------------------------------- | -----: |
+| `VIDEO`       | Marks video as completed         |     10 |
+| `EXPLANATION` | Marks explanation as completed   |     10 |
+| `BOOK`        | Marks required book as completed |      0 |
 
 ### Success
 
-**200 OK**
-
-Returns the updated lesson progress.
+```text
+200 OK
+```
 
 ---
 
-## 13.2 Get Lesson Progress
+## 16.2 Get Lesson Progress
 
 ### `GET /progress/lessons/:lessonId`
 
-Returns the current student's progress for a lesson.
+Returns the student's progress for a lesson.
 
-### Authentication
+If no progress record exists, default progress data is returned.
 
-Required.
+---
 
-### Role
+## 16.3 Submit Homework
 
-`STUDENT`
+### `POST /progress/lessons/:lessonId/homework`
 
-### Success
+Submits homework answers.
 
-**200 OK**
-
-If no progress record exists yet, the API returns default progress values.
-
-Example:
+### Request Body
 
 ```json
 {
-  "data": {
-    "lesson": "LESSON_ID",
-    "videoCompleted": false,
-    "explanationCompleted": false,
-    "homeworkCompleted": false,
-    "bookCompleted": false,
-    "videoPoints": 0,
-    "explanationPoints": 0,
-    "homeworkPoints": 0,
-    "totalPoints": 0,
-    "completed": false
-  }
+  "answers": [[0], [1, 2], [3]]
 }
+```
+
+Each array represents the selected options for one question.
+
+### Scoring
+
+- Each completely correct question receives one point.
+- The submitted answer set must exactly match the correct answer set.
+- The best homework score is retained.
+- Homework is marked as submitted even if the score is zero.
+
+---
+
+## 16.4 Get Exam Progress
+
+### `GET /progress/exams/:examId`
+
+Returns the student's progress for an exam.
+
+---
+
+## 16.5 Submit Exam
+
+### `POST /progress/exams/:examId/submit`
+
+Submits exam answers.
+
+### Request Body
+
+```json
+{
+  "answers": [[0], [1, 2], [3]]
+}
+```
+
+### Response Data
+
+The response contains:
+
+- Number of correct answers
+- Total questions
+- Points
+- Bonus points
+- Total points
+- Percentage
+- Passed status
+- Best points
+
+### Passing Rule
+
+The exam is passed when:
+
+```text
+percentage >= exam.passPercentage
+```
+
+A perfect exam receives the configured bonus points.
+
+---
+
+## 16.6 Get Month Progress
+
+### `GET /progress/months/:monthId`
+
+Returns the student's complete progress for a month.
+
+The response contains:
+
+- Lessons progress
+- Exams progress
+- Total points
+- Lesson points
+- Exam points
+- Total lessons
+- Completed lessons
+- Total exams
+- Completed exams
+
+---
+
+# 17. Lesson Completion Rules
+
+A lesson is marked as completed when all required components are completed:
+
+```text
+Video
+AND
+Explanation
+AND
+Homework (if available)
+AND
+Book (if required)
 ```
 
 For lessons without homework:
@@ -1130,530 +1410,117 @@ bookCompleted = true
 
 ---
 
-# 14. Homework
+# 18. Roles and Permissions
 
-## 14.1 Submit Homework
-
-### `POST /progress/lessons/:lessonId/homework`
-
-Submits answers for the homework belonging to a lesson.
-
-### Authentication
-
-Required.
-
-### Role
-
-`STUDENT`
-
-### Path Parameter
-
-```text
-lessonId = Lesson ID
-```
-
-### Request Body
-
-```json
-{
-  "answers": [[0], [1, 2], [3]]
-}
-```
-
-Each item represents the selected answers for the corresponding question.
-
-Multiple answers can be submitted for a question.
-
-### Validation
-
-The number of submitted answers must exactly match the number of homework questions.
-
-### Scoring
-
-A question receives one point only when the submitted answer set exactly matches the correct answer set.
-
-For example:
-
-```text
-Correct:   [1, 2]
-Submitted: [1, 2]
-Result:    1 point
-```
-
-```text
-Correct:   [1, 2]
-Submitted: [1]
-Result:    0 points
-```
-
-The student's best homework score is retained.
-
-### Success
-
-**200 OK**
-
-Example response structure:
-
-```json
-{
-  "message": "تم تسليم الواجب بنجاح",
-  "data": {
-    "correctAnswers": 5,
-    "totalQuestions": 10,
-    "points": 5,
-    "bestPoints": 5,
-    "totalPoints": 25,
-    "completed": true
-  }
-}
-```
+| Feature                           | Guest | Student | Teacher | Admin |
+| --------------------------------- | ----: | ------: | ------: | ----: |
+| View public stages                |     ✓ |       ✓ |       ✓ |     ✓ |
+| View public educational structure |     ✓ |       ✓ |       ✓ |     ✓ |
+| View subscribed months            |     — |       ✓ |       ✓ |     ✓ |
+| Access all educational months     |     — |       — |       ✓ |     ✓ |
+| Manage educational content        |     — |       — |       ✓ |     — |
+| View educational statistics       |     — |       — |       ✓ |     — |
+| View own profile                  |     — |       ✓ |       ✓ |     ✓ |
+| Update student profile            |     — |       ✓ |       — |     — |
+| Manage students                   |     — |       — |       — |     ✓ |
+| Update student status             |     — |       — |       — |     ✓ |
+| Manage student subscriptions      |     — |       — |       — |     ✓ |
+| Delete student account            |     — |       — |       — |     ✓ |
+| View own progress                 |     — |       ✓ |       — |     — |
+| Submit homework                   |     — |       ✓ |       — |     — |
+| Submit exams                      |     — |       ✓ |       — |     — |
 
 ---
 
-# 15. Exam Progress
+# 19. Authentication and Authorization Summary
 
-## 15.1 Get Exam Progress
-
-### `GET /progress/exams/:examId`
-
-Returns the current student's progress for an exam.
-
-### Authentication
-
-Required.
-
-### Role
-
-`STUDENT`
-
-### Success
-
-**200 OK**
-
-If the student has not submitted the exam yet, default progress is returned.
-
-Example:
-
-```json
-{
-  "data": {
-    "exam": "EXAM_ID",
-    "correctAnswers": 0,
-    "totalQuestions": 10,
-    "points": 0,
-    "bonusPoints": 0,
-    "totalPoints": 0,
-    "passed": false
-  }
-}
-```
+| Endpoint Group                 | Authentication      | Required Role |
+| ------------------------------ | ------------------- | ------------- |
+| `/auth/*`                      | Depends on endpoint | —             |
+| `GET /users/me`                | Required            | Any           |
+| `PATCH /users/student/profile` | Required            | STUDENT       |
+| `/admin/*`                     | Required            | ADMIN         |
+| Educational GET endpoints      | Optional/Public     | —             |
+| Educational content management | Required            | TEACHER       |
+| `/progress/*`                  | Required            | STUDENT       |
 
 ---
 
-## 15.2 Submit Exam
+# 20. HTTP Status Codes
 
-### `POST /progress/exams/:examId/submit`
-
-Submits answers for an exam.
-
-### Authentication
-
-Required.
-
-### Role
-
-`STUDENT`
-
-### Request Body
-
-```json
-{
-  "answers": [[0], [1, 2], [3]]
-}
-```
-
-Each item represents the selected answers for the corresponding question.
-
-Multiple answers can be submitted for a question.
-
-### Validation
-
-The number of submitted answers must exactly match the number of exam questions.
-
-### Scoring
-
-Each completely correct question receives one point.
-
-The API also calculates:
-
-- `points`
-- `bonusPoints`
-- `totalPoints`
-- `percentage`
-- `passed`
-
-A perfect exam receives the configured bonus points.
-
-The student's best total exam score is retained.
-
-### Passing
-
-The exam is considered passed when:
-
-```text
-percentage >= exam.passPercentage
-```
-
-### Success
-
-**200 OK**
-
-Example response structure:
-
-```json
-{
-  "message": "تم تسليم الاختبار بنجاح",
-  "data": {
-    "correctAnswers": 8,
-    "totalQuestions": 10,
-    "points": 8,
-    "bonusPoints": 0,
-    "totalPoints": 8,
-    "percentage": 80,
-    "passed": true,
-    "bestPoints": 8
-  }
-}
-```
+| Status Code        | Meaning                               |
+| ------------------ | ------------------------------------- |
+| `200 OK`           | Request completed successfully        |
+| `201 Created`      | Resource created successfully         |
+| `400 Bad Request`  | Invalid request data                  |
+| `401 Unauthorized` | Missing or invalid authentication     |
+| `403 Forbidden`    | User does not have the required role  |
+| `404 Not Found`    | Requested resource does not exist     |
+| `409 Conflict`     | Resource conflicts with existing data |
 
 ---
 
-# 16. Month Progress
+# 21. Frontend Integration Rules
 
-## `GET /progress/months/:monthId`
+## Authentication
 
-Returns the complete progress of the current student for a month.
-
-### Authentication
-
-Required.
-
-### Role
-
-`STUDENT`
-
-### Response Structure
-
-The response contains:
-
-- Month ID
-- Lessons progress
-- Exams progress
-- Overall summary
-
-### Lesson Progress
-
-Each lesson contains:
-
-```json
-{
-  "lesson": "LESSON_ID",
-  "title": "Lesson title",
-  "order": 1,
-  "videoCompleted": true,
-  "explanationCompleted": true,
-  "homeworkCompleted": true,
-  "bookCompleted": true,
-  "videoPoints": 10,
-  "explanationPoints": 10,
-  "homeworkPoints": 5,
-  "totalPoints": 25,
-  "completed": true
-}
-```
-
-### Exam Progress
-
-Each exam contains:
-
-```json
-{
-  "exam": "EXAM_ID",
-  "title": "Exam title",
-  "order": 2,
-  "correctAnswers": 8,
-  "totalQuestions": 10,
-  "points": 8,
-  "bonusPoints": 0,
-  "totalPoints": 8,
-  "passed": true
-}
-```
-
-### Summary
-
-```json
-{
-  "summary": {
-    "totalPoints": 33,
-    "lessonPoints": 25,
-    "examPoints": 8,
-    "totalLessons": 5,
-    "completedLessons": 4,
-    "totalExams": 2,
-    "completedExams": 1
-  }
-}
-```
-
----
-
-# 17. Progress Scoring
-
-## Lesson Points
-
-The current lesson scoring system is:
-
-| Activity    |                 Points |
-| ----------- | ---------------------: |
-| Video       |                     10 |
-| Explanation |                     10 |
-| Homework    | 1 per correct question |
-| Book        | Completion requirement |
-
-The lesson's `totalPoints` is calculated as:
-
-```text
-videoPoints
-+ explanationPoints
-+ homeworkPoints
-```
-
-Book completion is a completion requirement and does not directly add points to `totalPoints`.
-
----
-
-## Lesson Completion
-
-A lesson is marked as completed when all required components are completed:
-
-```text
-Video
-AND
-Explanation
-AND
-Homework (if available)
-AND
-Book (if required)
-```
-
-Therefore:
-
-### Lesson without homework
-
-Homework is automatically considered completed.
-
-### Lesson without a required book
-
-Book completion is automatically considered completed.
-
----
-
-## Exam Points
-
-Exam scoring is based on the number of completely correct questions.
-
-The API calculates:
-
-```text
-points
-bonusPoints
-totalPoints
-percentage
-passed
-```
-
-The exact bonus behavior is determined by the backend exam-progress logic.
-
----
-
-# 18. Progress Data Flow
-
-The frontend can use the Progress APIs as follows:
-
-```text
-Student opens Lesson
-        ↓
-GET /progress/lessons/:lessonId
-        ↓
-Display current progress
-        ↓
-Student completes video
-        ↓
-PATCH /progress/lessons/:lessonId
-        ↓
-Student reads explanation
-        ↓
-PATCH /progress/lessons/:lessonId
-        ↓
-Student completes book if required
-        ↓
-PATCH /progress/lessons/:lessonId
-        ↓
-Student submits homework
-        ↓
-POST /progress/lessons/:lessonId/homework
-        ↓
-Lesson becomes completed when all required items are completed
-```
-
-For exams:
-
-```text
-Student opens Exam
-        ↓
-GET /progress/exams/:examId
-        ↓
-Display previous/best progress
-        ↓
-Student submits answers
-        ↓
-POST /progress/exams/:examId/submit
-        ↓
-Calculate score
-        ↓
-Determine passed status
-```
-
----
-
-# 19. Roles & Access Summary
-
-| Resource                       | Guest | Student | Teacher | Admin |
-| ------------------------------ | ----: | ------: | ------: | ----: |
-| Public stages                  |     ✓ |       ✓ |       ✓ |     ✓ |
-| Public educational structure   |     ✓ |       ✓ |       ✓ |     ✓ |
-| Subscribed months              |     — |       ✓ |       ✓ |     ✓ |
-| All educational months         |     — |       — |       ✓ |     ✓ |
-| Educational content management |     — |       — |       ✓ |     — |
-| Educational statistics         |     — |       — |       ✓ |     — |
-| Student profile                |     — |       ✓ |       — |     — |
-| Student progress               |     — |       ✓ |       — |     — |
-| Lesson progress submission     |     — |       ✓ |       — |     — |
-| Homework submission            |     — |       ✓ |       — |     — |
-| Exam submission                |     — |       ✓ |       — |     — |
-
----
-
-# 20. Authentication & Authorization Summary
-
-| Endpoint                                          | Authentication | Role    |
-| ------------------------------------------------- | -------------- | ------- |
-| `POST /auth/signup`                               | Public         | —       |
-| `POST /auth/resend-otp`                           | Public         | —       |
-| `POST /auth/verify-account`                       | Public         | —       |
-| `POST /auth/login`                                | Public         | —       |
-| `POST /auth/forget-password`                      | Public         | —       |
-| `POST /auth/reset-password`                       | Public         | —       |
-| `POST /auth/get-new-access-token`                 | Refresh Token  | —       |
-| `POST /auth/logout`                               | Required       | Any     |
-| `GET /users/me`                                   | Required       | Any     |
-| `PATCH /users/student/profile`                    | Required       | STUDENT |
-| `GET /educational-content/stages`                 | Public         | —       |
-| `GET /educational-content/stages/:id`             | Public         | —       |
-| `POST /educational-content/stages`                | Required       | TEACHER |
-| `PATCH /educational-content/stages/:id`           | Required       | TEACHER |
-| `DELETE /educational-content/stages/:id`          | Required       | TEACHER |
-| `PATCH /educational-content/stages/reorder`       | Required       | TEACHER |
-| `GET /educational-content/months/stage/:stageId`  | Optional       | —       |
-| `GET /educational-content/months/:id`             | Optional       | —       |
-| `POST /educational-content/months`                | Required       | TEACHER |
-| `PATCH /educational-content/months/:id`           | Required       | TEACHER |
-| `DELETE /educational-content/months/:id`          | Required       | TEACHER |
-| `PATCH /educational-content/months/reorder`       | Required       | TEACHER |
-| `GET /educational-content/lessons/month/:monthId` | Optional       | —       |
-| `GET /educational-content/lessons/:id`            | Optional       | —       |
-| `POST /educational-content/lessons`               | Required       | TEACHER |
-| `PATCH /educational-content/lessons/:id`          | Required       | TEACHER |
-| `DELETE /educational-content/lessons/:id`         | Required       | TEACHER |
-| `GET /educational-content/exams/month/:monthId`   | Optional       | —       |
-| `GET /educational-content/exams/:id`              | Optional       | —       |
-| `POST /educational-content/exams`                 | Required       | TEACHER |
-| `PATCH /educational-content/exams/:id`            | Required       | TEACHER |
-| `DELETE /educational-content/exams/:id`           | Required       | TEACHER |
-| `GET /educational-content/content/month/:monthId` | Optional       | —       |
-| `PATCH /educational-content/content/reorder`      | Required       | TEACHER |
-| `GET /educational-content/stats`                  | Required       | TEACHER |
-| `PATCH /progress/lessons/:lessonId`               | Required       | STUDENT |
-| `GET /progress/lessons/:lessonId`                 | Required       | STUDENT |
-| `POST /progress/lessons/:lessonId/homework`       | Required       | STUDENT |
-| `GET /progress/exams/:examId`                     | Required       | STUDENT |
-| `POST /progress/exams/:examId/submit`             | Required       | STUDENT |
-| `GET /progress/months/:monthId`                   | Required       | STUDENT |
-
----
-
-# 21. HTTP Status Codes
-
-| Status             | Meaning                                            |
-| ------------------ | -------------------------------------------------- |
-| `200 OK`           | Successful request                                 |
-| `201 Created`      | Resource successfully created                      |
-| `400 Bad Request`  | Invalid request data                               |
-| `401 Unauthorized` | Missing or invalid authentication                  |
-| `403 Forbidden`    | Authenticated user does not have the required role |
-| `404 Not Found`    | Requested resource does not exist                  |
-| `409 Conflict`     | Resource conflicts with existing data              |
-
----
-
-# 22. Frontend Integration Rules
-
-### Authentication
-
-Send the Access Token using:
+Use the Access Token in the Authorization header:
 
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-### Refresh Flow
+## Refresh Token Flow
 
 When the Access Token expires:
 
 1. Send the Refresh Token to:
 
-```http
-POST /auth/get-new-access-token
+   ```http
+   POST /auth/get-new-access-token
+   ```
+
+2. Receive the new tokens.
+
+3. Replace the old Access Token and Refresh Token.
+
+4. Retry the original request.
+
+## Admin Student Identification
+
+Admin student-management endpoints use the generated `studentId`, not the student's MongoDB `_id`.
+
+Example:
+
+```text
+/admin/students/STUDENT_ID
 ```
 
-2. Receive the new Access Token and Refresh Token.
-3. Replace the old tokens.
-4. Retry the original authenticated request.
+## Subscription Management
 
-### Optional Authentication
+When adding or removing a month, send the MongoDB ID of the month:
 
-Educational GET endpoints marked as `Optional` can be requested without authentication.
+```json
+{
+  "monthId": "MONTH_OBJECT_ID"
+}
+```
 
-When the user is logged in, send the Access Token so the backend can determine the user's educational-content access.
+## Locked Educational Content
 
-### Locked Content
+The frontend must use the `locked` property returned by the backend.
 
-The frontend should rely on the backend `locked` property.
+Do not expose restricted lesson or exam data on the client side.
 
-Do not attempt to reconstruct or expose locked lesson/exam content on the client side.
+## Progress APIs
 
-### Progress
+Progress endpoints determine the student from the authenticated JWT.
 
-Progress APIs are student-specific.
-
-The frontend does not send a student ID.
-
-The backend determines the student from the authenticated user's JWT.
+The frontend does not send a student ID when retrieving or updating progress.
 
 ---
 
-# 23. Endpoint Summary
+# 22. Complete Endpoint Summary
 
 ## Authentication
 
@@ -1675,6 +1542,24 @@ GET    /users/me
 PATCH  /users/student/profile
 ```
 
+## Admin — Students
+
+```text
+GET    /admin/students
+GET    /admin/students/:studentId
+PATCH  /admin/students/:studentId
+PATCH  /admin/students/:studentId/status
+DELETE /admin/students/:studentId
+```
+
+## Admin — Subscriptions
+
+```text
+GET    /admin/students/:studentId/subscribed-months
+POST   /admin/students/:studentId/subscribed-months
+DELETE /admin/students/:studentId/subscribed-months
+```
+
 ## Educational Stages
 
 ```text
@@ -1686,7 +1571,7 @@ DELETE /educational-content/stages/:id
 PATCH  /educational-content/stages/reorder
 ```
 
-## Months
+## Educational Months
 
 ```text
 GET    /educational-content/months/stage/:stageId
@@ -1745,30 +1630,28 @@ GET    /progress/months/:monthId
 
 ---
 
-# 24. Important Contract Rules
+# 23. Important Contract Rules
 
-- All IDs are MongoDB ObjectIds.
-- New accounts are created as `STUDENT`.
-- Access Tokens are sent using the Bearer authentication scheme.
-- Refresh Tokens are sent in the refresh endpoint request body.
-- Refresh Tokens are rotated when a new Access Token is generated.
+- All MongoDB IDs must be valid ObjectIds when required.
+- New accounts are created with the `STUDENT` role.
+- Access Tokens use the Bearer authentication scheme.
+- Refresh Tokens are sent in the request body of the refresh endpoint.
+- Refresh Tokens are rotated after successful token renewal.
 - Logout invalidates the stored Refresh Token.
-- Student profile updates are restricted to `STUDENT`.
-- Educational content management is restricted to `TEACHER`.
-- Teachers and admins have access to all educational months.
-- Students can access subscribed months.
-- Educational GET endpoints can use optional authentication.
-- Guests can access public educational structure but receive locked content.
-- Locked lessons and exams expose only their public metadata.
-- Lessons and exams share the same `order` sequence inside a month.
-- Combined month content is sorted using the shared `order` field.
-- Deleting a stage also deletes its months, lessons, and exams.
-- Deleting a month also deletes its lessons and exams.
-- Progress APIs determine the student from the authenticated JWT.
-- Students cannot submit or retrieve another student's progress through these APIs.
-- Homework answers must contain the same number of answer groups as homework questions.
-- Exam answers must contain the same number of answer groups as exam questions.
-- A homework question receives one point only when its complete answer set is correct.
-- Lesson completion depends on completing all required lesson components.
+- Admin endpoints require the `ADMIN` role.
+- Teacher content-management endpoints require the `TEACHER` role.
+- Progress endpoints require the `STUDENT` role.
+- Student-management endpoints use the generated `studentId`.
+- Student subscriptions reference `Month` document IDs.
+- A student can only be subscribed to months belonging to their educational stage.
+- Duplicate subscriptions are rejected.
+- Deleting a stage also deletes its related months, lessons, and exams.
+- Deleting a month also deletes its related lessons and exams.
+- Lessons and exams share the same order sequence within a month.
+- Homework and exam answer arrays must match the number of questions.
+- Homework questions are scored only when the complete answer set is correct.
+- The best homework score is retained.
+- The best exam total score is retained.
+- Lesson completion depends on all required lesson components.
 - Exam passing depends on the configured `passPercentage`.
-- The backend retains the student's best homework and exam scores.
+- The frontend must not expose locked educational content.

@@ -5,6 +5,18 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
+
+import {
+  CreateEducationalStageDto,
+  CreateExamDto,
+  CreateLessonDto,
+  CreateMonthDto,
+  ReorderDto,
+  UpdateEducationalStageDto,
+  UpdateExamDto,
+  UpdateLessonDto,
+  UpdateMonthDto,
+} from "./dto";
 import {
   EducationalStage,
   EducationalStageDocument,
@@ -17,16 +29,7 @@ import {
   User,
   UserDocument,
 } from "../../schemas";
-import {
-  CreateEducationalStageDto,
-  CreateMonthDto,
-  ReorderDto,
-  UpdateEducationalStageDto,
-  UpdateMonthDto,
-} from "./dto";
-import { CreateLessonDto, UpdateLessonDto } from "./dto/lesson.dto";
-import { ContentType, UserRole } from "../../common";
-import { CreateExamDto, UpdateExamDto } from "./dto/exam.dto";
+import { ContentType, UserRole } from "../../common/enums";
 
 @Injectable()
 export class EducationalContentService {

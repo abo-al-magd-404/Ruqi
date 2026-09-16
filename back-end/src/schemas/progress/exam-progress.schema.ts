@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { IExamProgress } from "../../common";
+import { IExamProgress } from "../../common/interfaces";
 import { User } from "../user.schema";
 import { Exam } from "../educational-content";
 

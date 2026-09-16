@@ -10,14 +10,12 @@ import {
 } from "@nestjs/common";
 import type { Request } from "express";
 import { Types } from "mongoose";
-
 import { ProgressService } from "./progress.service";
 import { SubmitAnswersDto, UpdateLessonProgressDto } from "./dto";
-
-import { JwtAuthGuard, RolesGuard } from "./../../common/guards";
-import { Roles } from "./../../common/decorators";
-import { UserRole } from "./../../common/enums";
-import { ParseMongoIdPipe } from "./../../common/pipes";
+import { UserRole } from "../../common/enums";
+import { JwtAuthGuard, RolesGuard } from "../../common/guards";
+import { Roles } from "../../common/decorators";
+import { ParseMongoIdPipe } from "../../common/pipes";
 
 interface AuthenticatedRequest extends Request {
   user: {

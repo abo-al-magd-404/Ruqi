@@ -9,21 +9,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import {
-  EducationalStage,
-  EducationalStageDocument,
-  User,
-  UserDocument,
-} from "../../schemas";
 import { Model, Types } from "mongoose";
-import {
-  generateOtp,
-  generateStudentId,
-  MailService,
-  TokenService,
-  UserRole,
-  UserStatus,
-} from "../../common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import {
@@ -35,6 +21,15 @@ import {
   SignupDto,
   VerifyAccountDto,
 } from "./dto";
+import {
+  EducationalStage,
+  EducationalStageDocument,
+  User,
+  UserDocument,
+} from "../../schemas";
+import { MailService, TokenService } from "../../common/services";
+import { generateOtp, generateStudentId } from "../../common/utils";
+import { UserRole, UserStatus } from "../../common/enums";
 
 @Injectable()
 export class AuthService {
@@ -377,9 +372,11 @@ export class AuthService {
     const { refreshToken } = refreshTokenDto;
 
     let payload: any;
+
     try {
       const refreshSecret =
         this.configService.getOrThrow<string>("jwt.refresh.secret");
+
       payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: refreshSecret,
       });
@@ -390,9 +387,16 @@ export class AuthService {
     }
 
     const user = await this.userModel.findById(payload.sub);
+
     if (!user || !user.hashedRefreshToken) {
       throw new UnauthorizedException(
         "تم إلغاء الجلسة، يرجى تسجيل الدخول مجدداً",
+      );
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new UnauthorizedException(
+        "تم إيقاف حسابك، يرجى التواصل مع الإدارة",
       );
     }
 
@@ -412,6 +416,7 @@ export class AuthService {
     });
 
     const newHashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+
     user.hashedRefreshToken = newHashedRefreshToken;
     await user.save();
 

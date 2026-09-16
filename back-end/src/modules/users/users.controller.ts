@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Patch, Req, UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
-import { JwtAuthGuard, Roles, RolesGuard, UserRole } from "../../common";
 import { UpdateStudentProfileDto } from "./dto";
+import { JwtAuthGuard, RolesGuard } from "../../common/guards";
+import { UserRole } from "../../common/enums";
+import { Roles } from "../../common/decorators";
 
 @Controller("users")
 export class UsersController {

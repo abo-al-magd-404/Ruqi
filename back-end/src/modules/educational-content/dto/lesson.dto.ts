@@ -9,7 +9,7 @@ import {
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
-import { ContentType } from "../../../common";
+import { ContentType } from "../../../common/enums";
 import { QuestionDto } from "./question.dto";
 
 export class CreateLessonDto {

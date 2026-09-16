@@ -1,6 +1,12 @@
-import { IsOptional, IsString, Matches, MinLength } from "class-validator";
+import {
+  IsMongoId,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from "class-validator";
 
-export class UpdateStudentProfileDto {
+export class UpdateStudentDto {
   @IsString()
   @IsOptional()
   avatar?: string;
@@ -24,4 +30,10 @@ export class UpdateStudentProfileDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsMongoId({
+    message: "معرف المرحلة الدراسية غير صالح",
+  })
+  @IsOptional()
+  stage?: string;
 }

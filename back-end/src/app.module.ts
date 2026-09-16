@@ -2,14 +2,15 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { createObserveModule } from "@nestjs/observe";
 import configuration from "./config/configuration";
-import { envValidationSchema } from "./config";
 import { MongooseModule } from "@nestjs/mongoose";
-import { AuthModule } from "./modules/auth/auth.module";
-import { UsersSeeder } from "./seeds/users.seeder";
+import { envValidationSchema } from "./config";
 import { User, UserSchema } from "./schemas";
+import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
 import { EducationalContentModule } from "./modules/educational-content/educational-content.module";
 import { ProgressModule } from "./modules/progress/progress.module";
+import { AdminModule } from "./modules/admin/admin.module";
+import { UsersSeeder } from "./seeds/users.seeder";
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -39,6 +40,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UsersModule,
     EducationalContentModule,
     ProgressModule,
+    AdminModule,
   ],
 
   controllers: [],

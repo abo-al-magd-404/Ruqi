@@ -9,8 +9,8 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
-import { ContentType } from "../../../common";
 import { Type } from "class-transformer";
+import { ContentType } from "../../../common/enums";
 import { QuestionDto } from "./question.dto";
 
 export class CreateExamDto {

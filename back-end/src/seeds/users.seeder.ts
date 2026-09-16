@@ -1,10 +1,10 @@
 import bcrypt from "bcrypt";
 import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { User, UserDocument } from "../schemas";
 import { Model } from "mongoose";
 import { ConfigService } from "@nestjs/config";
-import { UserRole, UserStatus } from "../common";
+import { User, UserDocument } from "../schemas";
+import { UserRole, UserStatus } from "../common/enums";
 
 @Injectable()
 export class UsersSeeder implements OnApplicationBootstrap {

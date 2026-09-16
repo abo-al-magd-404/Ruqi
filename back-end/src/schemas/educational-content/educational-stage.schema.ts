@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Collection, HydratedDocument } from "mongoose";
-import { IEducationalStage } from "../../common";
+import { IEducationalStage } from "../../common/interfaces";
 
 export type EducationalStageDocument = HydratedDocument<EducationalStage>;
 

@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
+import { SubmitAnswersDto, UpdateLessonProgressDto } from "./dto";
 import {
   Exam,
   ExamDocument,
@@ -15,8 +16,8 @@ import {
   LessonProgress,
   LessonProgressDocument,
 } from "../../schemas";
-import { SubmitAnswersDto, UpdateLessonProgressDto } from "./dto";
-import { IQuestion, LessonProgressType } from "../../common";
+import { LessonProgressType } from "../../common/enums";
+import { IQuestion } from "../../common/interfaces";
 
 @Injectable()
 export class ProgressService {

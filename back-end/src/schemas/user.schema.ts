@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { IUser, UserRole, UserStatus } from "../common";
+import { IUser } from "../common/interfaces";
+import { UserRole, UserStatus } from "../common/enums";
 import { EducationalStage, Month } from "./educational-content";
 
 export type UserDocument = HydratedDocument<User>;

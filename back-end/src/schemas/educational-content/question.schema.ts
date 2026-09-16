@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IQuestion } from "../../common";
+import { IQuestion } from "../../common/interfaces";
 
 @Schema({ _id: false })
 export class Question implements IQuestion {

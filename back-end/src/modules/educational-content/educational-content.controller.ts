@@ -14,19 +14,21 @@ import { EducationalContentService } from "./educational-content.service";
 import {
   JwtAuthGuard,
   OptionalJwtAuthGuard,
-  Roles,
   RolesGuard,
-  UserRole,
-} from "../../common";
+} from "../../common/guards";
+import { Roles } from "../../common/decorators";
+import { UserRole } from "../../common/enums";
 import {
   CreateEducationalStageDto,
+  CreateExamDto,
+  CreateLessonDto,
   CreateMonthDto,
   ReorderDto,
   UpdateEducationalStageDto,
+  UpdateExamDto,
+  UpdateLessonDto,
   UpdateMonthDto,
 } from "./dto";
-import { CreateLessonDto, UpdateLessonDto } from "./dto/lesson.dto";
-import { CreateExamDto, UpdateExamDto } from "./dto/exam.dto";
 
 @Controller("educational-content")
 export class EducationalContentController {

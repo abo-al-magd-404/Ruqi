@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { ContentType, ILesson } from "../../common";
+import { ILesson } from "../../common/interfaces";
+import { ContentType } from "../../common/enums";
 import { Month } from "./month.schema";
 import { Question, QuestionSchema } from "./question.schema";
 
