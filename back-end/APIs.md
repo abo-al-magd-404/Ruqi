@@ -5,7 +5,7 @@
 ### Production Base URL
 
 ```text
-https://app-6aa80d99.deploy.meerasolution.com
+https://app-6aabf27b.deploy.meerasolution.com
 ```
 
 ### Local Development
