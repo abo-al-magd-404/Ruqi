@@ -114,7 +114,9 @@ export async function authedJson<T = unknown>(url: string, method: string, body?
   const data = await safeJson(res);
   if (!res.ok) {
     if (res.status === 401) clearTokens();
-    throw new Error(formatApiError(data));
+    const error = new Error(formatApiError(data)) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
   return data as T;
 }

@@ -97,6 +97,8 @@ export default function TeacherDashboard() {
         type={dash.contentType}
         initialTitle={dash.editingContent?.title ?? ""}
         initialDescription={dash.editingContent?.description ?? ""}
+        initialImage={dash.editingContent?.image ?? ""}
+        initialNote={dash.editingContent?.note ?? ""}
         initialVideoUrl={dash.editingContent?.videoUrl ?? ""}
         initialWrittenExplanation={dash.editingContent?.writtenExplanation ?? ""}
         initialPassPercentage={dash.editingContent?.passPercentage ?? 50}

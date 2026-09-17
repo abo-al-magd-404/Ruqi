@@ -14,6 +14,7 @@ import StudentAvatar from "./student-avatar";
 import ChangePasswordModal from "./change-password-modal";
 import LogoutConfirmModal from "./logout-confirm-modal";
 import AdminDashboard from "@/app/educational-content/module/teacher-dashboard";
+import AdminStudentsDashboard from "./admin-dashboard";
 
 export default function StudentProfile() {
   const router = useRouter();
@@ -89,7 +90,6 @@ export default function StudentProfile() {
         name: editForm.name,
         phoneNumber: editForm.phoneNumber,
         address: editForm.address,
-        stage: editForm.stage,
         avatar: editForm.avatar,
       });
       const fresh = await getProfile();
@@ -181,7 +181,7 @@ export default function StudentProfile() {
   }
 
   const { name, studentId, email, phoneNumber, address, stage, role, avatar } = profile;
-  const stageTitle = stages.find((s) => s._id === stage)?.title || stage;
+  const stageTitle = stages.find((s) => s._id === stage)?.title ?? "";
 
   return (
     <div
@@ -289,7 +289,7 @@ export default function StudentProfile() {
             <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
               <span className="text-[12px] md:text-[13px] text-text-muted">المرحلة الدراسية</span>
               <span className="text-[14px] md:text-[16px] font-bold text-text-main break-words">
-                {stageTitle || "—"}
+                {stageTitle || "غير محددة"}
               </span>
             </div>
           )}
@@ -303,6 +303,8 @@ export default function StudentProfile() {
       </div>
 
       {role === "TEACHER" && <AdminDashboard />}
+
+      {role === "ADMIN" && <AdminStudentsDashboard adminName={name} adminEmail={email} />}
 
       <LogoutConfirmModal
         open={showLogoutConfirm}

@@ -1,4 +1,4 @@
-import { API_BASE_URL, authedJson, formatApiError, safeJson } from "../core/http";
+import { API_BASE_URL, authedFetch, authedJson, formatApiError, safeJson } from "../core/http";
 import type {
   ContentDetails,
   ContentPayload,
@@ -13,15 +13,9 @@ import type {
 // ============= Student (Public) =============
 
 export async function getContentByMonth(monthId: string): Promise<MonthContent> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE_URL}/educational-content/content/month/${monthId}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch {
-    throw new Error("تعذر الاتصال بالخادم");
-  }
+  const res = await authedFetch(`${API_BASE_URL}/educational-content/content/month/${monthId}`, {
+    method: "GET",
+  });
 
   const data = await safeJson(res);
   if (!res.ok) {
@@ -39,15 +33,13 @@ export async function getContentById(id: string): Promise<ContentDetails> {
   const candidates = [
     `${API_BASE_URL}/educational-content/lessons/${id}`,
     `${API_BASE_URL}/educational-content/exams/${id}`,
+    `${API_BASE_URL}/educational-content/content/${id}`,
   ];
   let lastError = "تعذر الاتصال بالخادم";
   for (const url of candidates) {
     let res: Response;
     try {
-      res = await fetch(url, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      res = await authedFetch(url, { method: "GET" });
     } catch {
       continue;
     }
@@ -78,13 +70,29 @@ export async function updateContent(
   type: ContentType,
   payload: ContentPayload,
 ): Promise<LessonExam> {
-  const path = type === "LESSON" ? "lessons" : "exams";
-  return authedJson(`${API_BASE_URL}/educational-content/${path}/${id}`, "PATCH", payload);
+  const specific = `${API_BASE_URL}/educational-content/${type === "LESSON" ? "lessons" : "exams"}/${id}`;
+  try {
+    return await authedJson(specific, "PATCH", payload);
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 404) {
+      return authedJson(`${API_BASE_URL}/educational-content/content/${id}`, "PATCH", payload);
+    }
+    throw err;
+  }
 }
 
 export async function deleteContent(id: string, type: ContentType): Promise<{ message: string }> {
-  const path = type === "LESSON" ? "lessons" : "exams";
-  return authedJson(`${API_BASE_URL}/educational-content/${path}/${id}`, "DELETE");
+  const specific = `${API_BASE_URL}/educational-content/${type === "LESSON" ? "lessons" : "exams"}/${id}`;
+  try {
+    return await authedJson(specific, "DELETE");
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 404) {
+      return authedJson(`${API_BASE_URL}/educational-content/content/${id}`, "DELETE");
+    }
+    throw err;
+  }
 }
 
 export async function reorderContent(items: ReorderItem[]): Promise<{ message: string }> {

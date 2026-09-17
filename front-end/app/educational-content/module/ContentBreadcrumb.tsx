@@ -70,7 +70,7 @@ export default function ContentBreadcrumb() {
 
   return (
     <nav
-      className="flex flex-row items-center justify-start pt-15 md:pt-10 gap-2 w-full text-xs md:text-sm text-text-muted flex-wrap"
+      className="flex flex-row items-center justify-start gap-2 w-full text-xs md:text-sm text-text-muted flex-wrap"
       aria-label="مسار التنقل"
     >
       {items.map((item, index) => {

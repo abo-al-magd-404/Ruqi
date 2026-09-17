@@ -7,7 +7,7 @@ import { Check, Circle, Play, ShieldAlert } from "lucide-react";
 import { getMonthContent, getContentById } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { ContentDetails, ContentItem, ContentQuestion, EducationalMonth } from "@/lib/types/educational-content";
-import { markLessonCompleted } from "@/lib/progress";
+import { submitHomework } from "@/lib/progress";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
@@ -31,6 +31,8 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<Record<number, number[]>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -140,17 +142,35 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
     });
   };
 
-  const handleSubmit = () => {
-    let correct = 0;
+  const handleSubmit = async () => {
+    if (submitting) return;
     const total = questions.length;
-    questions.forEach((q, idx) => {
+    const answers = questions.map((_, idx) => {
       const chosen = selectedOptions[idx] ?? [];
-      if (chosen.length > 0 && isExactSet(chosen, q.correctAnswers)) {
-        correct += 1;
-      }
+      return [...chosen].sort((a, b) => a - b);
     });
+
+    let correct = 0;
+    if (total > 0) {
+      questions.forEach((q, idx) => {
+        if (answers[idx].length > 0 && isExactSet(answers[idx], q.correctAnswers)) {
+          correct += 1;
+        }
+      });
+    }
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await submitHomework(contentId, answers);
+      correct = result.correctAnswers;
+    } catch {
+      // غير مصرح للمعلم/الزائر أو تعذر الاتصال — نحسب محليًا للعرض فقط
+    } finally {
+      setSubmitting(false);
+    }
+
     const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
-    markLessonCompleted(contentId);
     try {
       localStorage.setItem(`ruqi_answers_${contentId}`, JSON.stringify(selectedOptions));
     } catch {}
@@ -161,7 +181,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
 
   return (
     <div
-      className="w-full min-h-screen bg-background flex flex-col items-center py-8 sm:py-12 md:py-20 px-4 md:px-8 lg:px-20 relative font-cairo"
+      className="w-full min-h-screen bg-background flex flex-col items-center pt-20 pb-20 lg:pt-24 lg:pb-14 px-4 md:px-8 lg:px-20 relative font-cairo"
       dir="rtl"
     >
       <main className="flex flex-col items-start gap-6 md:gap-8 w-full max-w-[1280px] flex-1">
@@ -242,6 +262,12 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
                 </div>
               )}
 
+              {submitError && (
+                <p className="text-[13px] text-danger bg-danger-bg border border-danger rounded-lg p-3 text-center font-medium">
+                  {submitError}
+                </p>
+              )}
+
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-4 sm:pt-2 w-full border-t border-border mt-2">
                 <button
                   type="button"
@@ -264,9 +290,16 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
                       handleSubmit();
                     }
                   }}
+                  disabled={submitting}
                   className="order-1 sm:order-2 w-full sm:w-auto flex justify-center items-center gap-2 px-6 md:px-8 py-3.5 rounded-xl font-bold text-[14px] sm:text-[15px] text-footer bg-primary hover:bg-primary-hover disabled:opacity-50 shadow-[0_8px_16px_rgba(196,154,69,0.14)] transition-all"
                 >
-                  <span>{currentQuestionIndex >= questions.length - 1 ? "تسليم الواجب" : "السؤال التالي"}</span>
+                  <span>
+                    {submitting
+                      ? "جاري التسليم..."
+                      : currentQuestionIndex >= questions.length - 1
+                        ? "تسليم الواجب"
+                        : "السؤال التالي"}
+                  </span>
                   <span className="mt-0.5">&gt;</span>
                 </button>
               </div>

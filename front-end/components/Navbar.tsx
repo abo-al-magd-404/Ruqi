@@ -24,10 +24,10 @@ export default function Navbar() {
   }, [isMenuOpen]);
 
   const isActive = (href: string) => {
-    if (href === "/account") {
-      return pathname === "/account" || pathname.startsWith("/account/");
+    if (href === "/") {
+      return pathname === "/";
     }
-    return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (

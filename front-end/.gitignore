@@ -8,3 +8,6 @@ build/
 .env
 .vercel
 *.tsbuildinfo
+
+# ملاحظات سياقية للمساعدين (لا تُرفع)
+AI_CONTEXT.md

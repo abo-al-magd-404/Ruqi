@@ -40,7 +40,7 @@ export default function ContentPage() {
   const hasContent = stages.length > 0;
 
   return (
-    <div className="w-full min-h-screen bg-background flex flex-col items-center overflow-hidden py-20 px-4 md:px-8">
+    <div className="w-full min-h-screen bg-background flex flex-col items-center overflow-hidden pt-20 pb-20 lg:pt-24 lg:pb-14 px-4 md:px-8">
       <main className="flex flex-col items-start px-4 sm:px-2 lg:px-0 gap-8 md:gap-12 w-full max-w-300">
 <div className="flex flex-col items-start gap-4 w-full">
           <ContentBreadcrumb />

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Check } from "lucide-react";
 import { getContentById } from "@/lib/educational-content/content";
 import type { ContentDetails, ContentQuestion } from "@/lib/types/educational-content";
-import { markExamCompleted } from "@/lib/progress";
+import { submitExam as submitExamProgress } from "@/lib/progress";
 
 const EXAM_DURATION_SECONDS = 30 * 60;
 
@@ -90,20 +90,25 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
   const [showViolationWarning, setShowViolationWarning] = useState(false);
   const [violationMessage, setViolationMessage] = useState("");
 
-  const submitExam = useCallback(() => {
+  const submitExam = useCallback(async () => {
     const qs = content?.examQuestions || content?.homework || [];
-    let correct = 0;
     const total = qs.length;
+    const answers = qs.map((_, idx) => [...(selectedAnswers[idx] ?? [])].sort((a, b) => a - b));
+    let correct = 0;
     if (total > 0) {
       qs.forEach((q, idx) => {
-        const chosen = selectedAnswers[idx] ?? [];
-        if (chosen.length > 0 && isExactSet(chosen, q.correctAnswers)) {
+        if (answers[idx].length > 0 && isExactSet(answers[idx], q.correctAnswers)) {
           correct += 1;
         }
       });
     }
+    try {
+      const result = await submitExamProgress(contentId, answers);
+      correct = result.correctAnswers;
+    } catch {
+      // غير مصرح للمعلم/الزائر أو تعذر الاتصال — نحسب محليًا للعرض فقط
+    }
     const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
-    markExamCompleted(contentId, scorePct);
     try {
       localStorage.setItem(`exam_${contentId}_answers`, JSON.stringify(selectedAnswers));
       localStorage.setItem(`exam_${contentId}_result`, JSON.stringify({ score: scorePct, correct, total }));

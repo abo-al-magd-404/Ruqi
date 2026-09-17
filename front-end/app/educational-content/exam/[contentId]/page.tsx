@@ -125,7 +125,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
 
   return (
     <div
-      className="w-full min-h-screen bg-background flex flex-col items-center py-12 md:py-20 px-4 md:px-8 lg:px-20 relative font-cairo"
+      className="w-full min-h-screen bg-background flex flex-col items-center pt-20 pb-20 lg:pt-24 lg:pb-14 px-4 md:px-8 lg:px-20 relative font-cairo"
       dir="rtl"
     >
       <main className="flex flex-col items-start gap-6 md:gap-8 w-full max-w-[1280px] flex-1">

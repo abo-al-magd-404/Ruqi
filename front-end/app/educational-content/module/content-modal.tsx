@@ -10,6 +10,8 @@ interface ContentModalProps {
   type: ContentType;
   initialTitle?: string;
   initialDescription?: string;
+  initialImage?: string;
+  initialNote?: string;
   initialVideoUrl?: string;
   initialWrittenExplanation?: string;
   initialPassPercentage?: number;
@@ -19,6 +21,8 @@ interface ContentModalProps {
   onSave: (data: {
     title: string;
     description: string;
+    image: string;
+    note: string;
     videoUrl: string;
     writtenExplanation: string;
     passPercentage: number;
@@ -41,6 +45,8 @@ export default function ContentModal({
   type,
   initialTitle = "",
   initialDescription = "",
+  initialImage = "",
+  initialNote = "",
   initialVideoUrl = "",
   initialWrittenExplanation = "",
   initialPassPercentage = 50,
@@ -53,6 +59,8 @@ export default function ContentModal({
 }: ContentModalProps) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const [image, setImage] = useState(initialImage);
+  const [note, setNote] = useState(initialNote);
   const [videoUrl, setVideoUrl] = useState(initialVideoUrl);
   const [writtenExplanation, setWrittenExplanation] = useState(initialWrittenExplanation);
   const [passPercentage, setPassPercentage] = useState(String(initialPassPercentage));
@@ -64,6 +72,8 @@ export default function ContentModal({
     if (open) {
       setTitle(initialTitle);
       setDescription(initialDescription);
+      setImage(initialImage);
+      setNote(initialNote);
       setVideoUrl(initialVideoUrl);
       setWrittenExplanation(initialWrittenExplanation);
       setPassPercentage(String(initialPassPercentage));
@@ -124,6 +134,8 @@ export default function ContentModal({
     onSave({
       title: title.trim(),
       description: description.trim(),
+      image: image.trim(),
+      note: note.trim(),
       videoUrl: videoUrl.trim(),
       writtenExplanation: writtenExplanation.trim(),
       passPercentage: Number(passPercentage) || 50,
@@ -197,6 +209,18 @@ export default function ContentModal({
             />
           </div>
 
+          <div className="flex flex-col gap-1">
+            <label className="text-[13px] font-semibold text-text-main">رابط الصورة (اختياري)</label>
+            <input
+              type="text"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className={INPUT_CLASS}
+              dir="ltr"
+            />
+          </div>
+
           {type === "LESSON" && (
             <>
               <div className="flex flex-col gap-1">
@@ -217,6 +241,18 @@ export default function ContentModal({
                   onChange={(e) => setWrittenExplanation(e.target.value)}
                   rows={3}
                   placeholder="الشرح النصي للدرس"
+                  className={TEXTAREA_CLASS}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[13px] font-semibold text-text-main">
+                  الكتاب / الملاحظة المطلوبة (اختياري)
+                </label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                  placeholder="المقرر المطلوب مذاكرته من الكتاب"
                   className={TEXTAREA_CLASS}
                 />
               </div>

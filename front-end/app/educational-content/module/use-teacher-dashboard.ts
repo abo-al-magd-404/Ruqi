@@ -175,6 +175,7 @@ export function useTeacherDashboard() {
     dir: -1 | 1,
     setList: (items: T[]) => void,
     apiFn: (items: { id: string; order: number }[]) => Promise<unknown>,
+    reload: () => Promise<void>,
   ) => {
     const target = index + dir;
     if (target < 0 || target >= list.length) return;
@@ -186,17 +187,17 @@ export function useTeacherDashboard() {
     try {
       await apiFn(updated.map((item) => ({ id: item._id, order: item.order })));
     } catch (e) {
-      await loadStages();
+      await reload();
       setError(e instanceof Error ? e.message : "حدث خطأ أثناء إعادة الترتيب");
     }
   };
 
   const moveStage = (index: number, dir: -1 | 1) =>
-    moveItem(stages, index, dir, setStages, reorderStages);
+    moveItem(stages, index, dir, setStages, reorderStages, loadStages);
   const moveMonth = (index: number, dir: -1 | 1) =>
-    moveItem(months, index, dir, setMonths, reorderMonths);
+    moveItem(months, index, dir, setMonths, reorderMonths, () => loadMonths(selectedStageId));
   const moveContent = (index: number, dir: -1 | 1) =>
-    moveItem(content, index, dir, setContent, reorderContent);
+    moveItem(content, index, dir, setContent, reorderContent, () => loadContent(selectedMonthId));
 
   // ============ Stage handlers ============
   const openStageCreate = () => {
@@ -303,15 +304,24 @@ export function useTeacherDashboard() {
 
   const handleContentSave = async (data: ContentFormValues) => {
     if (!selectedMonthId) return;
-    const validQuestions = data.questions.filter(
-      (q) => q.questionText.trim() && q.options.length >= 2 && q.correctAnswers.length >= 1,
+    const meaningfulQuestions = data.questions.filter(
+      (q) =>
+        q.questionText.trim() ||
+        q.options.some((o) => o.trim()) ||
+        q.correctAnswers.length > 0,
     );
-    for (const q of validQuestions) {
+    for (const q of meaningfulQuestions) {
       const qError = validateQuestion(q);
       if (qError) {
         setModalError(qError);
         return;
       }
+    }
+    const validQuestions = meaningfulQuestions;
+
+    if (!data.description.trim()) {
+      setModalError("الوصف إلزامي");
+      return;
     }
 
     if (contentType === "LESSON" && contentModalMode === "create") {
@@ -336,6 +346,7 @@ export function useTeacherDashboard() {
             title: data.title,
             description: data.description,
             month,
+            image: data.image || undefined,
             videoUrl: data.videoUrl,
             writtenExplanation: data.writtenExplanation,
             homework: validQuestions,
@@ -346,6 +357,7 @@ export function useTeacherDashboard() {
             title: data.title,
             description: data.description,
             month,
+            image: data.image || undefined,
             examQuestions: validQuestions,
             passPercentage: data.passPercentage,
           });
@@ -354,12 +366,14 @@ export function useTeacherDashboard() {
         const payload: Record<string, unknown> = {
           title: data.title,
           description: data.description,
+          image: data.image || undefined,
           order: editingContent.order,
         };
         if (editingContent.type === "LESSON") {
           payload.videoUrl = data.videoUrl || undefined;
           payload.writtenExplanation = data.writtenExplanation || undefined;
           payload.homework = validQuestions;
+          payload.note = data.note || undefined;
         } else {
           payload.examQuestions = validQuestions;
           payload.passPercentage = data.passPercentage;

@@ -8,7 +8,7 @@ import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
-import { markLessonCompleted } from "@/lib/progress";
+import { updateLessonProgress } from "@/lib/progress";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
@@ -45,7 +45,6 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
         }
 
         setContent(contentData);
-        markLessonCompleted(contentId);
 
         if (contentData && contentData.month) {
           const [monthContent, monthData] = await Promise.all([
@@ -123,6 +122,14 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
 
   const articleText = content.writtenExplanation || content.description || "";
 
+  const markStep = async (type: "video" | "explanation" | "book") => {
+    try {
+      await updateLessonProgress(contentId, type);
+    } catch {
+      // غير مصرح للمعلم/الزائر أو تعذر الاتصال
+    }
+  };
+
   const handleNextAction = () => {
     setDrawerOpen(false);
     if (content.homework && content.homework.length > 0) {
@@ -139,7 +146,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   };
 
   return (
-    <div className="w-full min-h-screen bg-background flex flex-col items-center py-12 md:py-20 px-4 md:px-20 relative font-cairo" dir="rtl">
+    <div className="w-full min-h-screen bg-background flex flex-col items-center pt-20 pb-20 lg:pt-24 lg:pb-14 px-4 md:px-20 relative font-cairo" dir="rtl">
       <main className="flex flex-col items-start gap-8 w-full max-w-[1280px] flex-1">
         <ContentBreadcrumb />
 
@@ -154,7 +161,13 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
             {step === "video" &&
               (content.videoUrl ? (
                 <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
-                  <video key={content.videoUrl} src={content.videoUrl} controls className="w-full h-full object-cover" />
+                  <video
+                    key={content.videoUrl}
+                    src={content.videoUrl}
+                    controls
+                    onEnded={() => markStep("video")}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ) : (
                 <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex flex-col items-center justify-center relative border border-border">
@@ -181,6 +194,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 type="button"
                 onClick={() => {
                   setStep("explanation");
+                  markStep("explanation");
                   requestAnimationFrame(() => {
                     document
                       .getElementById("explanation-section")
@@ -206,6 +220,25 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 <p className="font-medium text-[15px] text-text-muted leading-[32px] w-full whitespace-pre-wrap break-words">
                   {articleText}
                 </p>
+              </div>
+            )}
+
+            {content.note && (
+              <div className="w-full bg-warning-bg border border-warning/30 rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2">
+                <h3 className="font-bold text-[18px] text-warning flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-warning rounded-full"></span>
+                  الكتاب المطلوب
+                </h3>
+                <p className="font-medium text-[15px] text-warning leading-[32px] w-full whitespace-pre-wrap break-words">
+                  {content.note}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => markStep("book")}
+                  className="self-start h-[46px] px-6 bg-warning text-white font-bold text-[14px] rounded-control transition-opacity hover:opacity-90"
+                >
+                  أنهيت الكتاب
+                </button>
               </div>
             )}
 

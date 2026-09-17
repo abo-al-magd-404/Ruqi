@@ -129,8 +129,8 @@ export default function EditProfileModal({
                 <select
                   name="stage"
                   value={form.stage}
-                  onChange={onChange}
-                  className="w-full h-[48px] rounded-xl border-[1.5px] border-border px-4 text-text-main text-[14px] outline-none focus:border-primary transition-colors bg-background focus:bg-surface appearance-none cursor-pointer"
+                  disabled
+                  className="w-full h-[48px] rounded-xl border-[1.5px] border-border px-4 text-text-muted text-[14px] outline-none bg-background cursor-not-allowed appearance-none"
                 >
                   <option value="" disabled>
                     اختر المرحلة
@@ -141,6 +141,9 @@ export default function EditProfileModal({
                     </option>
                   ))}
                 </select>
+                <span className="text-[11px] text-text-muted">
+                  لتغيير المرحلة الدراسية يرجى التواصل مع إدارة المنصة.
+                </span>
               </div>
             </>
           )}

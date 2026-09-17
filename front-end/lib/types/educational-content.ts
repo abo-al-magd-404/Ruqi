@@ -46,6 +46,7 @@ export interface LessonExam {
   homework?: ContentQuestion[];
   examQuestions?: ContentQuestion[];
   passPercentage?: number;
+  note?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -71,6 +72,8 @@ export interface ContentDetails {
   homework?: Question[];
   examQuestions?: Question[];
   passPercentage?: number;
+  image?: string | null;
+  note?: string | null;
   order: number;
   month: string;
 }
@@ -100,6 +103,7 @@ export interface LessonPayload {
   description: string;
   month: string;
   type: ContentType;
+  image?: string;
   videoUrl?: string;
   writtenExplanation?: string;
   homework?: ContentQuestion[];
@@ -111,6 +115,7 @@ export interface ExamPayload {
   description: string;
   month: string;
   type: ContentType;
+  image?: string;
   examQuestions?: ContentQuestion[];
   passPercentage?: number;
   order?: number;
@@ -126,6 +131,7 @@ export interface ContentPayload {
   passPercentage?: number;
   order?: number;
   image?: string;
+  note?: string;
 }
 
 export interface PlatformStats {

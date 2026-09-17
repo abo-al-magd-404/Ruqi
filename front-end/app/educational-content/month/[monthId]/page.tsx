@@ -7,7 +7,8 @@ import { getEducationalMonthById } from "@/lib/educational-content/months";
 import { getMonthContent, getContentById } from "@/lib/educational-content/content";
 import { getEducationalStageById } from "@/lib/educational-content/stages";
 import type { EducationalMonth, ContentItem, EducationalStage, ContentDetails } from "@/lib/types/educational-content";
-import { getProgress, getMonthSummary } from "@/lib/progress";
+import { getMonthProgress } from "@/lib/progress";
+import type { MonthProgress } from "@/lib/types/progress";
 import { getProfile } from "@/lib/account/profile";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
@@ -16,9 +17,10 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
   const monthId = resolvedParams.monthId;
 
   const [monthDetails, setMonthDetails] = useState<EducationalMonth | null>(null);
-  const [stageDetails, setStageDetails] = useState<EducationalStage | null>(null);
+  const [, setStageDetails] = useState<EducationalStage | null>(null);
   const [contentList, setContentList] = useState<ContentItem[]>([]);
   const [detailsMap, setDetailsMap] = useState<Record<string, ContentDetails>>({});
+  const [monthProgress, setMonthProgress] = useState<MonthProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -34,7 +36,9 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
         ]);
 
         const sortedContent = [...contentResp.items].sort((a, b) => a.order - b.order);
+        const isPrivileged = profile?.role === "TEACHER" || profile?.role === "ADMIN";
         const userSubscribed =
+          isPrivileged ||
           profile?.subscribedMonths?.some((id) => String(id) === String(monthId)) === true;
         const locked =
           contentResp.locked === true ||
@@ -44,6 +48,11 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
         setMonthDetails({ ...monthData, locked });
         setContentList(sortedContent);
         setLoadError(null);
+
+        if (profile?.role === "STUDENT") {
+          const openProgress = await getMonthProgress(monthId).catch(() => null);
+          if (active) setMonthProgress(openProgress);
+        }
 
         if (monthData && monthData.stage) {
           try {
@@ -86,13 +95,32 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
   const monthIsLocked =
     monthDetails?.locked === true || contentList.some((item) => item.locked === true);
 
-  const progress = getMonthSummary(contentList);
-  const progressPercentage = progress.percentage;
-  const remainingText = `متبقي ${progress.remainingLessons} ${progress.remainingLessons === 1 ? "درس" : progress.remainingLessons === 2 ? "درسين" : "دروس"}${progress.remainingExams > 0 ? ` و${progress.remainingExams === 1 ? "اختبار واحد" : `${progress.remainingExams} اختبارات`}` : ""} لإتمام المنهج`;
+  const completedIds = new Set<string>();
+  monthProgress?.lessons.forEach((entry) => {
+    if (entry.completed) completedIds.add(String(entry.lesson));
+  });
+  monthProgress?.exams.forEach((entry) => {
+    if (entry.passed) completedIds.add(String(entry.exam));
+  });
+
+  const totalCount = monthProgress
+    ? monthProgress.summary.totalLessons + monthProgress.summary.totalExams
+    : contentList.length;
+  const completedCount = monthProgress
+    ? monthProgress.summary.completedLessons + monthProgress.summary.completedExams
+    : 0;
+  const progressPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  const remainingLessons = monthProgress
+    ? Math.max(0, monthProgress.summary.totalLessons - monthProgress.summary.completedLessons)
+    : contentList.filter((item) => item.type === "LESSON").length;
+  const remainingExams = monthProgress
+    ? Math.max(0, monthProgress.summary.totalExams - monthProgress.summary.completedExams)
+    : contentList.filter((item) => item.type === "EXAM").length;
+  const remainingText = `متبقي ${remainingLessons} ${remainingLessons === 1 ? "درس" : remainingLessons === 2 ? "درسين" : "دروس"}${remainingExams > 0 ? ` و${remainingExams === 1 ? "اختبار واحد" : `${remainingExams} اختبارات`}` : ""} لإتمام المنهج`;
 
   return (
     <div
-      className="w-full min-h-screen bg-background flex flex-col items-center overflow-x-hidden py-8 md:py-16 px-4 md:px-8"
+      className="w-full min-h-screen bg-background flex flex-col items-center overflow-x-hidden pt-20 pb-20 lg:pt-24 lg:pb-14 px-4 md:px-8"
       dir="rtl"
     >
       <main className="flex flex-col items-start gap-6 md:gap-10 w-full max-w-[1200px]">
@@ -163,16 +191,22 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
           ) : hasContent ? (
             <div className="flex flex-col gap-4 w-full">
               {monthIsLocked && (
-                <div className="flex items-center gap-3 p-4 bg-surface-secondary border border-primary-border rounded-card text-text-muted text-sm font-bold">
-                  <Lock size={18} className="text-primary shrink-0" />
-                  <span>
-                    أنت غير مشترك في هذا الشهر — المحتوى متاح بعد الاشتراك
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-surface-secondary border border-primary-border rounded-card text-text-muted text-sm font-bold">
+                  <div className="flex items-center gap-3">
+                    <Lock size={18} className="text-primary shrink-0" />
+                    <span>أنت غير مشترك في هذا الشهر — المحتوى متاح بعد الاشتراك</span>
+                  </div>
+                  <Link
+                    href="/subscription"
+                    className="h-[42px] px-5 bg-primary text-footer font-bold text-[13px] rounded-control hover:bg-primary-hover transition-colors flex items-center justify-center shrink-0"
+                  >
+                    اشترك الآن
+                  </Link>
                 </div>
               )}
               {contentList.map((item, index) => {
                 const isLesson = item.type === "LESSON";
-                const itemCompleted = Boolean(getProgress()[item._id]);
+                const itemCompleted = completedIds.has(String(item._id));
                 const itemLocked = monthIsLocked || item.locked === true;
                 const href = isLesson
                   ? `/educational-content/content/${item._id}`

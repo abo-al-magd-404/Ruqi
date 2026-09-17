@@ -11,7 +11,7 @@ export default function StageMonthsPage({ params }: { params: Promise<{ stageId:
   const resolvedParams = use(params);
   const stageId = resolvedParams.stageId;
 
-  const [stageDetails, setStageDetails] = useState<EducationalStage | null>(null);
+  const [, setStageDetails] = useState<EducationalStage | null>(null);
   const [months, setMonths] = useState<EducationalMonth[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,7 +51,7 @@ export default function StageMonthsPage({ params }: { params: Promise<{ stageId:
 
   return (
     <div
-      className="w-full min-h-screen bg-background flex flex-col items-center overflow-hidden py-20 px-4 md:px-8"
+      className="w-full min-h-screen bg-background flex flex-col items-center overflow-hidden pt-20 pb-20 lg:pt-24 lg:pb-14 px-4 md:px-8"
       dir="rtl"
     >
       <main className="flex flex-col items-start px-4 sm:px-2 lg:px-0 gap-8 md:gap-12 w-full max-w-[1200px]">

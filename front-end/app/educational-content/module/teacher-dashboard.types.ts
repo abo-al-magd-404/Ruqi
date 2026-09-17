@@ -27,6 +27,8 @@ export interface MonthFormValues {
 export interface ContentFormValues {
   title: string;
   description: string;
+  image: string;
+  note: string;
   videoUrl: string;
   writtenExplanation: string;
   passPercentage: number;
