@@ -8,7 +8,9 @@ import { Question, QuestionSchema } from "./question.schema";
 export type ExamDocument = HydratedDocument<Exam>;
 
 @Schema({ timestamps: true, collection: "Exams" })
-export class Exam implements IExam {
+export class Exam implements IExam {
+  _id: Types.ObjectId;
+
   @Prop({ required: true, enum: ContentType })
   type: ContentType.EXAM;
 
