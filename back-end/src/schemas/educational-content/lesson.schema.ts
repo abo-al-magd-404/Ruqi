@@ -9,8 +9,8 @@ export type LessonDocument = HydratedDocument<Lesson>;
 
 @Schema({ timestamps: true, collection: "Lessons" })
 export class Lesson implements ILesson {
-//  @Prop()
-//  _id: Types.ObjectId;
+  @Prop()
+  _id: Types.ObjectId;
 
   @Prop({ required: true, enum: ContentType, default: ContentType.LESSON })
   type: ContentType.LESSON;
