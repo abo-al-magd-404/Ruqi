@@ -8,10 +8,7 @@ import { Question, QuestionSchema } from "./question.schema";
 export type LessonDocument = HydratedDocument<Lesson>;
 
 @Schema({ timestamps: true, collection: "Lessons" })
-export class Lesson implements ILesson {
-  @Prop()
-  _id: Types.ObjectId;
-
+export class Lesson implements ILesson {
   @Prop({ required: true, enum: ContentType, default: ContentType.LESSON })
   type: ContentType.LESSON;
 
