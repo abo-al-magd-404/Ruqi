@@ -1,6 +1,6 @@
 # 📖 رُقِيّ (RUQI) — Project Documentation & UI/UX Specification
 
-> **"نَرْتَقِي بِاللُّغَةِ، لِتَرْتَقِي بِالْعِلْمِ"**  
+> **"نَرْتَقِي بِاللُّغَةِ، لِتَرْتَقِي بِالْعِلْمِ"**  
 > *A premium, Arabic-first educational platform for structured language learning, progress tracking, and competitive gamification.*
 
 ---
@@ -12,7 +12,6 @@
 4. [Business Rules Summary](#-business-rules-summary)
 5. [System Scope, Assumptions & Dependencies](#-system-scope-assumptions--dependencies)
 6. [Design System & UI/UX Guidelines](#-design-system--uiux-guidelines)
-7. [Screen & Route Inventory](#-screen--route-inventory)
 
 ---
 
@@ -35,7 +34,7 @@ RUQI enforces **Role-Based Authorization (RBAC)** where every account has exactl
 | Role | Arabic Title | Description & Responsibilities |
 | :--- | :--- | :--- |
 | **Student** | طَالِب | Primary platform user. Enrolls in stages, accesses activated months, completes sequential lessons/exams, views scores, tracks progress, and competes on the leaderboard. |
-| **Teacher** | مُعَلِّم | Single platform-level instructor responsible for creating and managing all Educational Stages, Months, Lessons, Homework, and Exams. Does not manage user profiles or subscriptions. |
+| **Teacher** | مُعَلِّم | Single platform-level instructor responsible for creating and managing all Educational Stages, Months, Lessons, Homework, and Exams. Does not manage user profiles or subscriptions. |
 | **Administrator** | أَدْمِن / إِدَارَة | Manages student profiles, user status (activation/deactivation), subscription requests, payment confirmations, month activation, and support requests. Does not edit educational content. |
 
 ---
@@ -125,7 +124,7 @@ RUQI enforces **Role-Based Authorization (RBAC)** where every account has exactl
 ## 🎨 Design System & UI/UX Guidelines
 
 ### Brand Identity & Palette
-* **Brand Name:** رُقِيّ | **Slogan:** "نَرْتَقِي بِاللُّغَةِ، لِتَرْتَقِي بِالْعِلْمِ"
+* **Brand Name:** رُقِيّ | **Slogan:** "نَرْتَقِي بِاللُّغَةِ، لِتَرْتَقِي بِالْعِلْمِ"
 * **Primary Color:** Gold (`Primary Gold`, `Light Gold`, `Dark Gold`, `Muted Gold`).
 * **Background:** Warm Off-white (`#FAF8F5` / `#FDFBF7` equivalent) across all pages.
 * **Dark Surface:** Warm Dark Charcoal / Dark Brown (used for Footer and high-contrast components). Never pure black.
