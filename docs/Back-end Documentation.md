@@ -160,7 +160,7 @@ http://localhost:8000
 ### Production
 
 ```text
-https://app-6a995274.deploy.meerasolution.com
+https://app-6aabf27b.deploy.meerasolution.com
 ```
 
 > Use the configured deployment URL for frontend API requests in production.
