@@ -1,19 +1,77 @@
 import type { ContentItem } from "../types/educational-content";
-import type { MonthProgress } from "../types/progress";
+import type { MonthProgress, MonthProgressLesson } from "../types/progress";
+import {
+  isExamLocallyPassed,
+  isLessonLocallyCompleted,
+} from "./localProgress";
+
+export type SequenceItem = ContentItem & {
+  videoUrl?: string | null;
+  writtenExplanation?: string | null;
+  homework?: unknown[];
+  note?: string | null;
+};
+
+export function isLessonPracticallyCompleted(
+  item: SequenceItem | null | undefined,
+  entry: MonthProgressLesson | undefined,
+): boolean {
+  if (!item) return false;
+  const videoOk = !item.videoUrl || (entry?.videoCompleted ?? false);
+  const explanationOk =
+    !item.writtenExplanation || (entry?.explanationCompleted ?? false);
+  const homeworkOk = true;
+  const bookOk = !item.note || (entry?.bookCompleted ?? false);
+
+  return videoOk && explanationOk && homeworkOk && bookOk;
+}
+
+export function getPracticalCompletedIds(
+  contentList: SequenceItem[],
+  progress: MonthProgress | null,
+): Set<string> {
+  const completedIds = new Set<string>();
+  if (!progress) return completedIds;
+
+  const examMap = new Map<string, boolean>();
+  for (const exam of progress.exams) {
+    examMap.set(String(exam.exam), exam.passed);
+  }
+
+  const lessonMap = new Map<string, MonthProgressLesson>();
+  for (const lesson of progress.lessons) {
+    lessonMap.set(String(lesson.lesson), lesson);
+  }
+
+  for (const item of contentList) {
+    const itemId = String(item._id);
+    if (item.type === "LESSON") {
+      if (
+        isLessonPracticallyCompleted(item, lessonMap.get(itemId)) ||
+        isLessonLocallyCompleted(item)
+      ) {
+        completedIds.add(itemId);
+      }
+    } else if (examMap.get(itemId) || isExamLocallyPassed(itemId)) {
+      completedIds.add(itemId);
+    }
+  }
+
+  return completedIds;
+}
 
 export function getSequenceLockedIds(
-  contentList: ContentItem[],
+  contentList: SequenceItem[],
   progress: MonthProgress | null,
 ): Set<string> {
   const lockedIds = new Set<string>();
   if (!progress) return lockedIds;
-  const completedLessons = new Set(
-    progress.lessons.filter((entry) => entry.completed).map((entry) => String(entry.lesson)),
-  );
+
+  const completedIds = getPracticalCompletedIds(contentList, progress);
   let blocked = false;
   for (const item of contentList) {
     const isUnfinishedLesson =
-      item.type === "LESSON" && !completedLessons.has(String(item._id));
+      item.type === "LESSON" && !completedIds.has(String(item._id));
     if (isUnfinishedLesson && !blocked) {
       blocked = true;
       continue;

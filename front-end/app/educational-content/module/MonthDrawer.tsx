@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { X, ChevronUp, Play, Check, Circle, Lock } from "lucide-react";
+import { X, ChevronUp, Play, Check, Circle } from "lucide-react";
 import type { ContentItem } from "@/lib/types/educational-content";
 
 interface MonthDrawerProps {
@@ -14,7 +14,6 @@ interface MonthDrawerProps {
   currentIndex: number;
   contentPosition: number;
   totalItems: number;
-  lockedIds?: string[];
 }
 
 export default function MonthDrawer({
@@ -26,9 +25,7 @@ export default function MonthDrawer({
   currentIndex,
   contentPosition,
   totalItems,
-  lockedIds = [],
 }: MonthDrawerProps) {
-  const lockedSet = new Set(lockedIds);
   const [stage, setStage] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
@@ -100,58 +97,8 @@ export default function MonthDrawer({
                 const href = isLessonItem
                   ? `/educational-content/content/${item._id}`
                   : `/educational-content/exam/${item._id}`;
-                const isSeqLockedItem = lockedSet.has(String(item._id));
 
-                const row = (
-                  <>
-                    <div
-                      className={`w-6 h-6 rounded-[10px] flex items-center justify-center shrink-0 ml-3 ${
-                        isCurrent
-                          ? "bg-primary text-surface"
-                          : isSeqLockedItem
-                            ? "bg-surface-secondary text-text-muted"
-                            : isCompleted
-                              ? "bg-success-bg text-success"
-                              : "bg-surface-secondary text-text-main"
-                      }`}
-                    >
-                      {isCurrent ? (
-                        <Play size={10} fill="currentColor" className="ml-0.5" />
-                      ) : isSeqLockedItem ? (
-                        <Lock size={12} />
-                      ) : isCompleted ? (
-                        <Check size={12} strokeWidth={3} />
-                      ) : (
-                        <Circle size={6} fill="currentColor" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-[14px] truncate flex-1 text-right ${
-                        isCurrent
-                          ? "font-bold text-primary-hover"
-                          : isSeqLockedItem || isCompleted
-                            ? "font-medium text-text-main"
-                            : "font-medium text-text-muted"
-                      }`}
-                    >
-                      {item.title}
-                    </span>
-                  </>
-                );
-
-                return isSeqLockedItem ? (
-                  <div
-                    key={item._id}
-                    className={`flex flex-row items-center justify-between p-3.5 rounded-[12px] w-full min-h-[52px] cursor-not-allowed ${
-                      isCurrent
-                        ? "bg-primary-light border border-primary"
-                        : "bg-transparent border border-border"
-                    }`}
-                    aria-disabled="true"
-                  >
-                    {row}
-                  </div>
-                ) : (
+                return (
                   <Link
                     href={href}
                     key={item._id}
@@ -164,7 +111,34 @@ export default function MonthDrawer({
                           : "bg-transparent border border-border"
                     }`}
                   >
-                    {row}
+                    <div
+                      className={`w-6 h-6 rounded-[10px] flex items-center justify-center shrink-0 ml-3 ${
+                        isCurrent
+                          ? "bg-primary text-surface"
+                          : isCompleted
+                            ? "bg-success-bg text-success"
+                            : "bg-surface-secondary text-text-main"
+                      }`}
+                    >
+                      {isCurrent ? (
+                        <Play size={10} fill="currentColor" className="ml-0.5" />
+                      ) : isCompleted ? (
+                        <Check size={12} strokeWidth={3} />
+                      ) : (
+                        <Circle size={6} fill="currentColor" />
+                      )}
+                    </div>
+                    <span
+                      className={`text-[14px] truncate flex-1 text-right ${
+                        isCurrent
+                          ? "font-bold text-primary-hover"
+                          : isCompleted
+                            ? "font-medium text-text-main"
+                            : "font-medium text-text-muted"
+                      }`}
+                    >
+                      {item.title}
+                    </span>
                   </Link>
                 );
               })
