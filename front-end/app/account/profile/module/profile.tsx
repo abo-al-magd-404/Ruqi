@@ -15,6 +15,7 @@ import ChangePasswordModal from "./change-password-modal";
 import LogoutConfirmModal from "./logout-confirm-modal";
 import AdminDashboard from "@/app/educational-content/module/teacher-dashboard";
 import AdminStudentsDashboard from "./admin-dashboard";
+import StudentExtraSections from "./student-extra-sections";
 
 export default function StudentProfile() {
   const router = useRouter();
@@ -114,8 +115,8 @@ export default function StudentProfile() {
       setPasswordError("كلمتا المرور غير متطابقتين");
       return;
     }
-    if (passwordForm.password.length < 6) {
-      setPasswordError("كلمة المرور يجب ألا تقل عن 6 أحرف");
+    if (passwordForm.password.length < 8) {
+      setPasswordError("كلمة المرور يجب ألا تقل عن 8 أحرف");
       return;
     }
 
@@ -184,11 +185,11 @@ export default function StudentProfile() {
   const stageTitle = stages.find((s) => s._id === stage)?.title ?? "";
 
   return (
-    <div
-      className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 md:px-8 lg:px-[120px] font-cairo flex flex-col gap-8 lg:gap-12 items-center overflow-x-hidden"
-      dir="rtl"
-    >
-      <div className="w-full max-w-[1200px] bg-white rounded-[20px] md:rounded-[24px] border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.05)] p-5 sm:p-6 md:p-10 flex flex-col gap-6 md:gap-8">
+<div
+        className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-[120px] font-cairo flex flex-col gap-8 lg:gap-12 items-center overflow-x-hidden"
+        dir="rtl"
+      >
+        <div className="w-full max-w-[1200px] bg-white rounded-[20px] md:rounded-[24px] border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.05)] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col gap-6 md:gap-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 w-full lg:w-auto text-center sm:text-right">
             <button
@@ -228,7 +229,7 @@ export default function StudentProfile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-row items-stretch gap-3 w-full lg:w-auto shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row items-stretch gap-3 w-full lg:w-auto shrink-0">
             {role === "STUDENT" && (
               <>
                 <button
@@ -269,8 +270,8 @@ export default function StudentProfile() {
         <div
           className={
             role === "STUDENT"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
-              : "grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5"
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
+              : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5"
           }
         >
           <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
@@ -301,6 +302,8 @@ export default function StudentProfile() {
           </div>
         </div>
       </div>
+
+      {role === "STUDENT" && <StudentExtraSections profile={profile} />}
 
       {role === "TEACHER" && <AdminDashboard />}
 

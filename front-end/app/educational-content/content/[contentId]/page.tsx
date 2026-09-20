@@ -8,7 +8,8 @@ import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
-import { updateLessonProgress } from "@/lib/progress";
+import { getLessonProgress, updateLessonProgress } from "@/lib/progress";
+import type { LessonProgress } from "@/lib/progress";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
@@ -25,6 +26,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [step, setStep] = useState<"video" | "explanation">("video");
+  const [lessonProgress, setLessonProgress] = useState<LessonProgress | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -45,6 +47,10 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
         }
 
         setContent(contentData);
+
+        const progress = await getLessonProgress(contentId).catch(() => null);
+        if (!active) return;
+        setLessonProgress(progress);
 
         if (contentData && contentData.month) {
           const [monthContent, monthData] = await Promise.all([
@@ -124,7 +130,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
 
   const markStep = async (type: "video" | "explanation" | "book") => {
     try {
-      await updateLessonProgress(contentId, type);
+      const updated = await updateLessonProgress(contentId, type);
+      setLessonProgress(updated);
     } catch {
       // غير مصرح للمعلم/الزائر أو تعذر الاتصال
     }
@@ -157,6 +164,37 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
             <h1 className="font-extrabold text-[24px] md:text-[28px] lg:text-[32px] text-text-main leading-tight w-full">
               {content.title}
             </h1>
+
+            {lessonProgress && (
+              <div className="w-full bg-surface border border-border rounded-card p-4 flex flex-wrap items-center gap-3">
+                <span className="font-bold text-[13px] text-text-main">حالة الدرس:</span>
+                {[
+                  { label: "الفيديو", done: lessonProgress.videoCompleted },
+                  ...(articleText
+                    ? [{ label: "الشرح التفصيلي", done: lessonProgress.explanationCompleted }]
+                    : []),
+                  ...(content.homework && content.homework.length > 0
+                    ? [{ label: "الواجب", done: lessonProgress.homeworkCompleted }]
+                    : []),
+                  ...(content.note ? [{ label: "الكتاب", done: lessonProgress.bookCompleted }] : []),
+                ].map((s) => (
+                  <span
+                    key={s.label}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-control text-[12px] font-bold border ${
+                      s.done
+                        ? "bg-success-bg text-success border-success/30"
+                        : "bg-background text-text-muted border-border"
+                    }`}
+                  >
+                    {s.done ? <Check size={13} strokeWidth={3} /> : <Circle size={8} fill="currentColor" />}
+                    {s.label}
+                  </span>
+                ))}
+                <span className="ms-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-control text-[12px] font-bold bg-primary-light text-primary border border-primary-border">
+                  نقاط الدرس: {lessonProgress.totalPoints}
+                </span>
+              </div>
+            )}
 
             {step === "video" &&
               (content.videoUrl ? (
@@ -216,6 +254,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 <h3 className="font-bold text-[18px] text-primary flex items-center gap-2">
                   <span className="w-1.5 h-6 bg-primary rounded-full"></span>
                   الشرح التفصيلي
+                  {lessonProgress?.explanationCompleted && (
+                    <Check size={16} strokeWidth={3} className="text-success" />
+                  )}
                 </h3>
                 <p className="font-medium text-[15px] text-text-muted leading-[32px] w-full whitespace-pre-wrap break-words">
                   {articleText}
@@ -235,9 +276,14 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 <button
                   type="button"
                   onClick={() => markStep("book")}
-                  className="self-start h-[46px] px-6 bg-warning text-white font-bold text-[14px] rounded-control transition-opacity hover:opacity-90"
+                  disabled={lessonProgress?.bookCompleted === true}
+                  className={`self-start h-[46px] px-6 font-bold text-[14px] rounded-control transition-opacity ${
+                    lessonProgress?.bookCompleted
+                      ? "bg-success text-white cursor-default"
+                      : "bg-warning text-white hover:opacity-90"
+                  }`}
                 >
-                  أنهيت الكتاب
+                  {lessonProgress?.bookCompleted ? "تم إنهاء الكتاب ✓" : "أنهيت الكتاب"}
                 </button>
               </div>
             )}

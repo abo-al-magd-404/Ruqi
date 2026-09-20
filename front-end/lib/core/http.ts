@@ -120,3 +120,21 @@ export async function authedJson<T = unknown>(url: string, method: string, body?
   }
   return data as T;
 }
+
+// For mutations whose response has no JSON body (e.g. backend DELETE/reorder
+// returning void => 200/204 with empty body). Treats any 2xx as success.
+export async function authedWrite(url: string, method: string, body?: unknown): Promise<void> {
+  const payload = body !== undefined ? { body: JSON.stringify(body) } : {};
+  const res = await authedFetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    ...payload,
+  });
+  if (!res.ok) {
+    if (res.status === 401) clearTokens();
+    const data = await safeJson(res).catch(() => ({}));
+    const error = new Error(formatApiError(data)) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
+}

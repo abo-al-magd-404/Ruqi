@@ -1,10 +1,10 @@
-import { API_BASE_URL, formatApiError, safeJson } from "../core/http";
+import { API_BASE_URL, authedFetch, formatApiError, safeJson } from "../core/http";
 import type { PlatformStats } from "../types/educational-content";
 
 export async function getPlatformStats(): Promise<PlatformStats> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE_URL}/educational-content/stats`, {
+    res = await authedFetch(`${API_BASE_URL}/educational-content/stats`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

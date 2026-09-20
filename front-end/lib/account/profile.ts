@@ -65,15 +65,6 @@ export async function getProfile(): Promise<UserProfile> {
 export async function updateStudentProfile(payload: UpdateStudentProfilePayload): Promise<UserProfile> {
   const body: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(payload)) {
-    if (key === "stage") {
-      const isValid = typeof value === "string" && /^[a-fA-F0-9]{24}$/.test(value.trim());
-      if (isValid) body[key] = value.trim();
-      continue;
-    }
-    if (Array.isArray(value)) {
-      body[key] = value;
-      continue;
-    }
     if (value !== undefined && value !== null && String(value).trim() !== "") {
       body[key] = value;
     }

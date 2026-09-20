@@ -164,8 +164,15 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
     try {
       const result = await submitHomework(contentId, answers);
       correct = result.correctAnswers;
-    } catch {
-      // غير مصرح للمعلم/الزائر أو تعذر الاتصال — نحسب محليًا للعرض فقط
+    } catch (error) {
+      const apiError = error as { status?: number };
+      if (apiError.status === 401 || apiError.status === 403) {
+        // غير مصرح للمعلم/الزائر — نحسب محليًا للعرض فقط (معاينة)
+      } else {
+        setSubmitError(error instanceof Error ? error.message : "تعذر تسليم الواجب، حاول مجدداً");
+        setSubmitting(false);
+        return;
+      }
     } finally {
       setSubmitting(false);
     }

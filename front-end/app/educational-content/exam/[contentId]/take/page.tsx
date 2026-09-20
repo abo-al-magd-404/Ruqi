@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Check } from "lucide-react";
@@ -89,8 +89,11 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
   const [violations, setViolations] = useState(0);
   const [showViolationWarning, setShowViolationWarning] = useState(false);
   const [violationMessage, setViolationMessage] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const submitInFlight = useRef(false);
 
   const submitExam = useCallback(async () => {
+    if (submitInFlight.current) return;
     const qs = content?.examQuestions || content?.homework || [];
     const total = qs.length;
     const answers = qs.map((_, idx) => [...(selectedAnswers[idx] ?? [])].sort((a, b) => a - b));
@@ -102,12 +105,21 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
         }
       });
     }
+    submitInFlight.current = true;
     try {
       const result = await submitExamProgress(contentId, answers);
       correct = result.correctAnswers;
-    } catch {
-      // غير مصرح للمعلم/الزائر أو تعذر الاتصال — نحسب محليًا للعرض فقط
+    } catch (error) {
+      submitInFlight.current = false;
+      const apiError = error as { status?: number };
+      if (apiError.status === 401 || apiError.status === 403) {
+        // غير مصرح للمعلم/الزائر — نحسب محليًا للعرض فقط (معاينة)
+      } else {
+        setSubmitError(error instanceof Error ? error.message : "تعذر تسليم الاختبار، حاول مجدداً");
+        return;
+      }
     }
+    submitInFlight.current = false;
     const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
     try {
       localStorage.setItem(`exam_${contentId}_answers`, JSON.stringify(selectedAnswers));
@@ -140,6 +152,9 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
     if (typeof window === "undefined") return;
     const startKey = getStorageKey(contentId, "start");
     if (!localStorage.getItem(startKey)) {
+      // محاولة جديدة: امسح إجابات ونتيجة المحاولة السابقة قبل بدء العدّ
+      localStorage.removeItem(getStorageKey(contentId, "answers"));
+      localStorage.removeItem(getStorageKey(contentId, "result"));
       localStorage.setItem(startKey, String(Date.now()));
     }
     const remaining = getRemainingTime(contentId);
@@ -328,6 +343,11 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
 
       <main className="w-full flex-1 flex flex-col items-center py-6 sm:py-10 md:py-16 px-4 sm:px-8 md:px-20">
         <div className="w-full max-w-[1080px] flex flex-col items-start gap-4 sm:gap-6 md:gap-8">
+          {submitError && (
+            <p className="w-full text-[13px] text-danger bg-danger-bg border border-danger rounded-lg p-3 text-center font-medium">
+              {submitError}
+            </p>
+          )}
           <div className="w-full flex flex-col gap-6 sm:gap-8 p-5 sm:p-8 md:p-12 bg-surface border border-border shadow-sm rounded-[20px] md:rounded-card">
             <div className="flex flex-col gap-3 sm:gap-4 w-full">
               <div className="flex justify-between items-center w-full flex-wrap gap-2">

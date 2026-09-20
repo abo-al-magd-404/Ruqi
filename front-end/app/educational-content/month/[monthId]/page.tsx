@@ -281,7 +281,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-background border border-border text-text-muted rounded-full text-xs font-bold">
-                          <span>غير مشترك</span>
+                          <span>قيد التقدم</span>
                         </div>
                       )}
                     </div>

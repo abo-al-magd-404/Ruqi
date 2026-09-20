@@ -84,7 +84,7 @@ export default function StageMonthsPage({ params }: { params: Promise<{ stageId:
                 <div className="flex flex-col w-full h-full bg-surface rounded-card shadow-lg border border-border overflow-hidden cursor-pointer group-hover:scale-[1.02] transition-transform duration-300">
                   <div
                     className="w-full h-[180px] bg-surface-secondary bg-cover bg-center border-b border-border"
-                    style={{ backgroundImage: `url('${month.image || "/placeholder-month.jpg"}')` }}
+                    style={{ backgroundImage: `url('${month.image || "/placeholder.svg"}')` }}
                   ></div>
 
                   <div className="flex flex-col flex-grow p-5 md:p-6 gap-3">

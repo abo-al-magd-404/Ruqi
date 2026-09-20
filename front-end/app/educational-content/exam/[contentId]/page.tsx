@@ -10,6 +10,8 @@ import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
+import { getExamProgress } from "@/lib/progress";
+import type { ExamProgress } from "@/lib/progress";
 
 const EXAM_DURATION_MINUTES = 30;
 
@@ -23,6 +25,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [examProgress, setExamProgress] = useState<ExamProgress | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -37,6 +40,10 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
           if (active) setIsLocked(true);
           return;
         }
+
+        const progress = await getExamProgress(contentId).catch(() => null);
+        if (!active) return;
+        setExamProgress(progress);
 
         if (contentData && contentData.month) {
           const [monthContent, monthData] = await Promise.all([
@@ -114,6 +121,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   const totalItems = monthContentList.length || 1;
 
   const questionsCount = content.examQuestions?.length || 20;
+  const attempted = !!examProgress && (examProgress.passed || examProgress.totalPoints > 0);
 
   const instructions = [
     "يرجى التأكد من استقرار اتصال الإنترنت قبل بدء الاختبار.",
@@ -145,6 +153,32 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
                   "اختبر مدى استيعابك لمقرر هذا الشهر من خلال هذا الاختبار التقويمي المعتمد والمصمم لقياس مستواك الدقيق."}
               </p>
             </div>
+
+            {attempted && examProgress && (
+              <div
+                className={`w-full rounded-card border p-5 flex flex-wrap items-center gap-x-6 gap-y-3 ${
+                  examProgress.passed
+                    ? "bg-success-bg border-success/30"
+                    : "bg-warning-bg border-warning/30"
+                }`}
+              >
+                <span
+                  className={`inline-flex items-center gap-2 font-extrabold text-[15px] ${
+                    examProgress.passed ? "text-success" : "text-warning"
+                  }`}
+                >
+                  <Trophy size={18} strokeWidth={2.5} />
+                  {examProgress.passed ? "لقد نجحت في هذا الاختبار" : "لم تنجح بعد — يمكنك إعادة المحاولة"}
+                </span>
+                <span className="font-bold text-[13px] text-text-main">
+                  أفضل نتيجة: {examProgress.correctAnswers} من {examProgress.totalQuestions}
+                </span>
+                <span className="inline-flex items-center gap-1.5 font-bold text-[13px] text-primary ms-auto">
+                  النقاط: {examProgress.totalPoints}
+                  {examProgress.bonusPoints > 0 ? ` (+${examProgress.bonusPoints} مكافأة)` : ""}
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2  sm:grid-cols-3 gap-4 md:gap-6 w-full justify-between">
               <div className="bg-surface border border-border shadow-sm rounded-card p-6 flex flex-col items-center text-center gap-2.5 transition-transform hover:-translate-y-1">
@@ -202,7 +236,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
                   className="w-full sm:w-auto h-[52px] sm:h-[58px] px-8 sm:px-12 bg-primary hover:bg-primary-hover text-footer font-bold text-[15px] sm:text-[16px] rounded-xl shadow-[0_8px_16px_rgba(196,154,69,0.14)] transition-all flex items-center justify-center gap-2.5 active:scale-95"
                 >
                   <PlayCircle size={20} strokeWidth={2.5} />
-                  <span>ابدأ الاختبار الآن</span>
+                  <span>{attempted ? "أعد المحاولة" : "ابدأ الاختبار الآن"}</span>
                 </Link>
               </div>
             </div>

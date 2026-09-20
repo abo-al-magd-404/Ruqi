@@ -58,7 +58,5 @@ export interface UpdateStudentProfilePayload {
   password?: string;
   phoneNumber?: string;
   address?: string;
-  stage?: string;
   avatar?: string;
-  subscribedMonths?: string[];
 }

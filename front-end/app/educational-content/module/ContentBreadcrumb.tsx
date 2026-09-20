@@ -31,13 +31,21 @@ export default function ContentBreadcrumb() {
       const [, route, id] = segments;
       const trail: BreadcrumbItem[] = [ROOT];
 
-      if (route === "month" && id) {
+      if (route === "stage" && id) {
+        const stage = await getEducationalStageById(id).catch(() => null);
+        if (stage) {
+          trail.push({ label: stage.title });
+        }
+      } else if (route === "month" && id) {
         const month = await getEducationalMonthById(id).catch(() => null);
         if (month?.stage) {
           const stage = await getEducationalStageById(String(month.stage)).catch(() => null);
           if (stage) {
             trail.push({ label: stage.title, href: `/educational-content/stage/${stage._id}` });
           }
+        }
+        if (month) {
+          trail.push({ label: month.title });
         }
       } else if ((route === "content" || route === "exam") && id) {
         const content = await getContentById(id).catch(() => null);
@@ -52,6 +60,9 @@ export default function ContentBreadcrumb() {
             }
             trail.push({ label: month.title, href: `/educational-content/month/${month._id}` });
           }
+        }
+        if (content) {
+          trail.push({ label: content.title });
         }
       }
 
@@ -79,14 +90,19 @@ export default function ContentBreadcrumb() {
           <span key={item.label + index} className="flex items-center gap-2">
             {index > 0 && <span>&gt;</span>}
             {isLast ? (
+              <span
+                className="font-bold text-primary text-xs md:text-sm max-w-[220px] md:max-w-[300px] truncate"
+                aria-current="page"
+              >
+                {item.label}
+              </span>
+            ) : (
               <Link
                 href={item.href ?? ROOT.href!}
-                className="font-bold text-primary hover:underline transition-colors text-xs md:text-sm"
+                className="font-medium text-text-muted hover:text-primary transition-colors text-xs md:text-sm"
               >
                 {item.label}
               </Link>
-            ) : (
-              <span className="font-medium text-text-muted text-xs md:text-sm">{item.label}</span>
             )}
           </span>
         );

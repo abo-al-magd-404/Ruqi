@@ -1,4 +1,4 @@
-import { API_BASE_URL, authedFetch, authedJson, formatApiError, safeJson } from "../core/http";
+import { API_BASE_URL, authedFetch, authedJson, authedWrite, formatApiError, safeJson } from "../core/http";
 import type {
   ContentDetails,
   ContentPayload,
@@ -10,59 +10,102 @@ import type {
   ReorderItem,
 } from "../types/educational-content";
 
+// ============= In-memory cache (dedupe + short TTL) =============
+
+const CACHE_TTL_MS = 15_000;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const cache = new Map<string, { promise: Promise<any>; timestamp: number }>();
+
+export function cachedGet<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const record = cache.get(key);
+  if (record && Date.now() - record.timestamp < CACHE_TTL_MS) {
+    return record.promise;
+  }
+  const promise = Promise.resolve().then(fetcher);
+  cache.set(key, { promise, timestamp: Date.now() });
+  promise.catch(() => {
+    if (cache.get(key)?.promise === promise) cache.delete(key);
+  });
+  return promise;
+}
+
+// Must be called after any mutation so the next read reflects fresh data.
+export function clearContentCache() {
+  cache.clear();
+}
+
 // ============= Student (Public) =============
 
 export async function getContentByMonth(monthId: string): Promise<MonthContent> {
-  const res = await authedFetch(`${API_BASE_URL}/educational-content/content/month/${monthId}`, {
-    method: "GET",
-  });
-
-  const data = await safeJson(res);
-  if (!res.ok) {
-    throw new Error(formatApiError(data));
-  }
-  const src = Array.isArray(data)
-    ? { locked: false, items: data as LessonExam[] }
-    : (data as MonthContent);
-  return { locked: src.locked === true, items: src.items ?? [] };
+  return cachedGet(`content-month:${monthId}`, () =>
+    authedFetch(`${API_BASE_URL}/educational-content/content/month/${monthId}`, {
+      method: "GET",
+    }).then(async (res) => {
+      const data = await safeJson(res);
+      if (!res.ok) {
+        throw new Error(formatApiError(data));
+      }
+      const src = Array.isArray(data)
+        ? { locked: false, items: data as LessonExam[] }
+        : (data as MonthContent);
+      return { locked: src.locked === true, items: src.items ?? [] };
+    }),
+  );
 }
 
 export const getMonthContent = getContentByMonth;
 
 export async function getContentById(id: string): Promise<ContentDetails> {
-  const candidates = [
-    `${API_BASE_URL}/educational-content/lessons/${id}`,
-    `${API_BASE_URL}/educational-content/exams/${id}`,
-    `${API_BASE_URL}/educational-content/content/${id}`,
-  ];
-  let lastError = "تعذر الاتصال بالخادم";
-  for (const url of candidates) {
-    let res: Response;
-    try {
-      res = await authedFetch(url, { method: "GET" });
-    } catch {
-      continue;
-    }
-    const data = await safeJson(res).catch(() => ({}));
-    if (res.ok) {
-      return data as ContentDetails;
-    }
-    lastError = res.status === 404 ? formatApiError(data) : formatApiError(data);
-    if (res.status !== 404) {
-      break;
-    }
-  }
-  throw new Error(lastError);
+  return cachedGet(`content:${id}`, () =>
+    (async () => {
+      const candidates = [
+        `${API_BASE_URL}/educational-content/content/${id}`,
+        `${API_BASE_URL}/educational-content/lessons/${id}`,
+        `${API_BASE_URL}/educational-content/exams/${id}`,
+      ];
+      let lastError: Error | null = null;
+      for (const url of candidates) {
+        let res: Response;
+        try {
+          res = await authedFetch(url, { method: "GET" });
+        } catch (e) {
+          lastError = e instanceof Error ? e : new Error("تعذر الاتصال بالخادم");
+          continue;
+        }
+        const data = await safeJson(res).catch(() => ({}));
+        if (res.ok) {
+          return data as ContentDetails;
+        }
+        lastError = new Error(formatApiError(data));
+        if (res.status !== 404) {
+          break;
+        }
+      }
+      throw lastError ?? new Error("تعذر الاتصال بالخادم");
+    })(),
+  );
 }
 
 // ============= Teacher CRUD =============
 
 export async function createLesson(payload: LessonPayload): Promise<LessonExam> {
-  return authedJson(`${API_BASE_URL}/educational-content/lessons`, "POST", payload);
+  const created = await authedJson<LessonExam>(
+    `${API_BASE_URL}/educational-content/lessons`,
+    "POST",
+    payload,
+  );
+  clearContentCache();
+  return created;
 }
 
 export async function createExam(payload: ExamPayload): Promise<LessonExam> {
-  return authedJson(`${API_BASE_URL}/educational-content/exams`, "POST", payload);
+  const created = await authedJson<LessonExam>(
+    `${API_BASE_URL}/educational-content/exams`,
+    "POST",
+    payload,
+  );
+  clearContentCache();
+  return created;
 }
 
 export async function updateContent(
@@ -71,30 +114,41 @@ export async function updateContent(
   payload: ContentPayload,
 ): Promise<LessonExam> {
   const specific = `${API_BASE_URL}/educational-content/${type === "LESSON" ? "lessons" : "exams"}/${id}`;
+  let updated: LessonExam;
   try {
-    return await authedJson(specific, "PATCH", payload);
+    updated = await authedJson<LessonExam>(specific, "PATCH", payload);
   } catch (err) {
     const status = (err as { status?: number }).status;
     if (status === 404) {
-      return authedJson(`${API_BASE_URL}/educational-content/content/${id}`, "PATCH", payload);
+      updated = await authedJson<LessonExam>(
+        `${API_BASE_URL}/educational-content/content/${id}`,
+        "PATCH",
+        payload,
+      );
+    } else {
+      throw err;
     }
-    throw err;
   }
+  clearContentCache();
+  return updated;
 }
 
-export async function deleteContent(id: string, type: ContentType): Promise<{ message: string }> {
+export async function deleteContent(id: string, type: ContentType): Promise<void> {
   const specific = `${API_BASE_URL}/educational-content/${type === "LESSON" ? "lessons" : "exams"}/${id}`;
   try {
-    return await authedJson(specific, "DELETE");
+    await authedWrite(specific, "DELETE");
   } catch (err) {
     const status = (err as { status?: number }).status;
     if (status === 404) {
-      return authedJson(`${API_BASE_URL}/educational-content/content/${id}`, "DELETE");
+      await authedWrite(`${API_BASE_URL}/educational-content/content/${id}`, "DELETE");
+    } else {
+      throw err;
     }
-    throw err;
   }
+  clearContentCache();
 }
 
-export async function reorderContent(items: ReorderItem[]): Promise<{ message: string }> {
-  return authedJson(`${API_BASE_URL}/educational-content/content/reorder`, "PATCH", { items });
+export async function reorderContent(items: ReorderItem[]): Promise<void> {
+  await authedWrite(`${API_BASE_URL}/educational-content/content/reorder`, "PATCH", { items });
+  clearContentCache();
 }

@@ -72,7 +72,7 @@ export default function ContentPage() {
                 <div className="flex flex-col w-full h-85 md:h-95 bg-text-main rounded-card shadow-lg overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300">
                   <div
                     className="w-full grow bg-surface-secondary bg-cover bg-center"
-                    style={{ backgroundImage: `url('${stage.image || "/placeholder-stage.jpg"}')` }}
+                    style={{ backgroundImage: `url('${stage.image || "/placeholder.svg"}')` }}
                   ></div>
                   <div className="h-11.25 md:h-12.5 w-full flex justify-center items-center shrink-0">
                     <span className="font-extrabold text-[18px] md:text-[20px] text-primary truncate px-4">

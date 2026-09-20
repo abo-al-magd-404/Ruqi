@@ -1,21 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getLeaderboard } from "@/lib/leaderboard";
+import { getLeaderboard, getLeaderboardStages } from "@/lib/leaderboard";
+import type { LeaderboardStage } from "@/lib/leaderboard";
 import type { StudentRank } from "@/lib/types/leaderboard";
 
+const ALL_STAGES_TAB = "على مستوى المنصة";
+
 export default function LeaderboardPage() {
-  const [activeTab, setActiveTab] = useState<string>("على مستوى المنصة");
+  const [activeTab, setActiveTab] = useState<string>(ALL_STAGES_TAB);
+  const [stages, setStages] = useState<LeaderboardStage[]>([]);
   const [students, setStudents] = useState<StudentRank[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const tabs = ["على مستوى المنصة"];
+  const tabs = [ALL_STAGES_TAB, ...stages.map((s) => s.title)];
+
+  useEffect(() => {
+    getLeaderboardStages()
+      .then(setStages)
+      .catch(() => setStages([]));
+  }, []);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setIsLoading(true);
       try {
-        const list = await getLeaderboard(activeTab);
+        const stage = stages.find((s) => s.title === activeTab);
+        const list = await getLeaderboard(stage?._id);
         setStudents(list);
       } catch {
         setStudents([]);
@@ -25,7 +36,7 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-  }, [activeTab]);
+  }, [activeTab, stages]);
 
   const topThree = students.filter((s) => s.rank <= 3).sort((a, b) => a.rank - b.rank);
   const otherRanks = students.filter((s) => s.rank > 3).sort((a, b) => a.rank - b.rank);

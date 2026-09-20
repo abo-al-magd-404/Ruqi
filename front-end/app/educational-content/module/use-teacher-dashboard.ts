@@ -341,7 +341,7 @@ export function useTeacherDashboard() {
       const month = selectedMonthId;
       if (contentModalMode === "create") {
         if (contentType === "LESSON") {
-          await createLesson({
+          const created = await createLesson({
             type: "LESSON",
             title: data.title,
             description: data.description,
@@ -351,6 +351,10 @@ export function useTeacherDashboard() {
             writtenExplanation: data.writtenExplanation,
             homework: validQuestions,
           });
+          // CreateLessonDto لا يقبل note، فنحفظه بتحديث لاحق بعد الإنشاء
+          if (data.note.trim() && created?._id) {
+            await updateContent(created._id, "LESSON", { note: data.note.trim() });
+          }
         } else {
           await createExam({
             type: "EXAM",
