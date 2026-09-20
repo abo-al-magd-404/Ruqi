@@ -62,6 +62,15 @@ export async function deleteStage(id: string): Promise<void> {
 }
 
 export async function reorderStages(items: ReorderItem[]): Promise<void> {
-  await authedWrite(`${API_BASE_URL}/educational-content/stages/reorder`, "PATCH", { items });
+  try {
+    await authedWrite(`${API_BASE_URL}/educational-content/stages/reorder`, "PATCH", { items });
+  } catch (err) {
+    if (!(err instanceof Error && /should not exist/i.test(err.message))) throw err;
+    for (const item of items) {
+      await authedJson(`${API_BASE_URL}/educational-content/stages/${item.id}`, "PATCH", {
+        order: item.order,
+      });
+    }
+  }
   clearContentCache();
 }

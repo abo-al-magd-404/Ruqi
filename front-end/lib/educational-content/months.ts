@@ -62,6 +62,15 @@ export async function deleteMonth(id: string): Promise<void> {
 }
 
 export async function reorderMonths(items: ReorderItem[]): Promise<void> {
-  await authedWrite(`${API_BASE_URL}/educational-content/months/reorder`, "PATCH", { items });
+  try {
+    await authedWrite(`${API_BASE_URL}/educational-content/months/reorder`, "PATCH", { items });
+  } catch (err) {
+    if (!(err instanceof Error && /should not exist/i.test(err.message))) throw err;
+    for (const item of items) {
+      await authedJson(`${API_BASE_URL}/educational-content/months/${item.id}`, "PATCH", {
+        order: item.order,
+      });
+    }
+  }
   clearContentCache();
 }

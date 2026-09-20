@@ -149,6 +149,14 @@ export async function deleteContent(id: string, type: ContentType): Promise<void
 }
 
 export async function reorderContent(items: ReorderItem[]): Promise<void> {
-  await authedWrite(`${API_BASE_URL}/educational-content/content/reorder`, "PATCH", { items });
+  try {
+    await authedWrite(`${API_BASE_URL}/educational-content/content/reorder`, "PATCH", { items });
+  } catch (err) {
+    if (!(err instanceof Error && /should not exist/i.test(err.message))) throw err;
+    for (const item of items) {
+      const details = await getContentById(item.id);
+      await updateContent(item.id, details.type, { order: item.order });
+    }
+  }
   clearContentCache();
 }
