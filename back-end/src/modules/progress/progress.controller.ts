@@ -3,19 +3,19 @@ import {
   Controller,
   Get,
   Param,
-  Patch,
   Post,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
-import type { Request } from "express";
 import { Types } from "mongoose";
+import type { Request } from "express";
+
 import { ProgressService } from "./progress.service";
 import { SubmitAnswersDto, UpdateLessonProgressDto } from "./dto";
+
+import { JwtAuthGuard } from "../../common/guards";
 import { UserRole } from "../../common/enums";
-import { JwtAuthGuard, RolesGuard } from "../../common/guards";
-import { Roles } from "../../common/decorators";
-import { ParseMongoIdPipe } from "../../common/pipes";
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -26,53 +26,93 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller("progress")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.STUDENT)
+@UseGuards(JwtAuthGuard)
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
+
+  // ============================================================
+  // Helpers
+  // ============================================================
+
+  private getAuthenticatedStudentId(
+    req: AuthenticatedRequest,
+  ): Types.ObjectId {
+    const userId = req.user?.id;
+
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      throw new UnauthorizedException("جلسة غير صالحة");
+    }
+
+    return new Types.ObjectId(userId);
+  }
+
+  private getValidObjectId(id: string, message: string): Types.ObjectId {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new UnauthorizedException(message);
+    }
+
+    return new Types.ObjectId(id);
+  }
 
   // ============================================================
   // Lesson Progress
   // ============================================================
 
-  @Patch("lessons/:lessonId")
+  @Post("lessons/:lessonId")
   async updateLessonProgress(
-    @Req() req: AuthenticatedRequest,
-    @Param("lessonId", ParseMongoIdPipe) lessonId: string,
+    @Param("lessonId") lessonId: string,
     @Body() dto: UpdateLessonProgressDto,
+    @Req() req: AuthenticatedRequest,
   ) {
+    const studentId = this.getAuthenticatedStudentId(req);
+
+    const validLessonId = this.getValidObjectId(
+      lessonId,
+      "معرّف الدرس غير صالح",
+    );
+
     return this.progressService.updateLessonProgress(
-      new Types.ObjectId(req.user.id),
-      new Types.ObjectId(lessonId),
+      studentId,
+      validLessonId,
+      dto,
+    );
+  }
+
+  @Post("lessons/:lessonId/homework")
+  async submitHomework(
+    @Param("lessonId") lessonId: string,
+    @Body() dto: SubmitAnswersDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const studentId = this.getAuthenticatedStudentId(req);
+
+    const validLessonId = this.getValidObjectId(
+      lessonId,
+      "معرّف الدرس غير صالح",
+    );
+
+    return this.progressService.submitHomework(
+      studentId,
+      validLessonId,
       dto,
     );
   }
 
   @Get("lessons/:lessonId")
   async getLessonProgress(
+    @Param("lessonId") lessonId: string,
     @Req() req: AuthenticatedRequest,
-    @Param("lessonId", ParseMongoIdPipe) lessonId: string,
   ) {
-    return this.progressService.getLessonProgress(
-      new Types.ObjectId(req.user.id),
-      new Types.ObjectId(lessonId),
+    const studentId = this.getAuthenticatedStudentId(req);
+
+    const validLessonId = this.getValidObjectId(
+      lessonId,
+      "معرّف الدرس غير صالح",
     );
-  }
 
-  // ============================================================
-  // Homework
-  // ============================================================
-
-  @Post("lessons/:lessonId/homework")
-  async submitHomework(
-    @Req() req: AuthenticatedRequest,
-    @Param("lessonId", ParseMongoIdPipe) lessonId: string,
-    @Body() dto: SubmitAnswersDto,
-  ) {
-    return this.progressService.submitHomework(
-      new Types.ObjectId(req.user.id),
-      new Types.ObjectId(lessonId),
-      dto,
+    return this.progressService.getLessonProgress(
+      studentId,
+      validLessonId,
     );
   }
 
@@ -80,27 +120,41 @@ export class ProgressController {
   // Exam Progress
   // ============================================================
 
-  @Get("exams/:examId")
-  async getExamProgress(
+  @Post("exams/:examId")
+  async submitExam(
+    @Param("examId") examId: string,
+    @Body() dto: SubmitAnswersDto,
     @Req() req: AuthenticatedRequest,
-    @Param("examId", ParseMongoIdPipe) examId: string,
   ) {
-    return this.progressService.getExamProgress(
-      new Types.ObjectId(req.user.id),
-      new Types.ObjectId(examId),
+    const studentId = this.getAuthenticatedStudentId(req);
+
+    const validExamId = this.getValidObjectId(
+      examId,
+      "معرّف الاختبار غير صالح",
+    );
+
+    return this.progressService.submitExam(
+      studentId,
+      validExamId,
+      dto,
     );
   }
 
-  @Post("exams/:examId/submit")
-  async submitExam(
+  @Get("exams/:examId")
+  async getExamProgress(
+    @Param("examId") examId: string,
     @Req() req: AuthenticatedRequest,
-    @Param("examId", ParseMongoIdPipe) examId: string,
-    @Body() dto: SubmitAnswersDto,
   ) {
-    return this.progressService.submitExam(
-      new Types.ObjectId(req.user.id),
-      new Types.ObjectId(examId),
-      dto,
+    const studentId = this.getAuthenticatedStudentId(req);
+
+    const validExamId = this.getValidObjectId(
+      examId,
+      "معرّف الاختبار غير صالح",
+    );
+
+    return this.progressService.getExamProgress(
+      studentId,
+      validExamId,
     );
   }
 
@@ -110,12 +164,19 @@ export class ProgressController {
 
   @Get("months/:monthId")
   async getMonthProgress(
+    @Param("monthId") monthId: string,
     @Req() req: AuthenticatedRequest,
-    @Param("monthId", ParseMongoIdPipe) monthId: string,
   ) {
+    const studentId = this.getAuthenticatedStudentId(req);
+
+    const validMonthId = this.getValidObjectId(
+      monthId,
+      "معرّف الشهر غير صالح",
+    );
+
     return this.progressService.getMonthProgress(
-      new Types.ObjectId(req.user.id),
-      new Types.ObjectId(monthId),
+      studentId,
+      validMonthId,
     );
   }
 }
