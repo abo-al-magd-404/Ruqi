@@ -19,7 +19,8 @@ import { ParseMongoIdPipe } from "../../common/pipes";
 
 interface AuthenticatedRequest extends Request {
   user: {
-    studentId: string;
+    id: string;
+    email: string;
     role: UserRole;
   };
 }
@@ -41,7 +42,7 @@ export class ProgressController {
     @Body() dto: UpdateLessonProgressDto,
   ) {
     return this.progressService.updateLessonProgress(
-      new Types.ObjectId(req.user.studentId),
+      new Types.ObjectId(req.user.id),
       new Types.ObjectId(lessonId),
       dto,
     );
@@ -53,7 +54,7 @@ export class ProgressController {
     @Param("lessonId", ParseMongoIdPipe) lessonId: string,
   ) {
     return this.progressService.getLessonProgress(
-      new Types.ObjectId(req.user.studentId),
+      new Types.ObjectId(req.user.id),
       new Types.ObjectId(lessonId),
     );
   }
@@ -69,7 +70,7 @@ export class ProgressController {
     @Body() dto: SubmitAnswersDto,
   ) {
     return this.progressService.submitHomework(
-      new Types.ObjectId(req.user.studentId),
+      new Types.ObjectId(req.user.id),
       new Types.ObjectId(lessonId),
       dto,
     );
@@ -85,7 +86,7 @@ export class ProgressController {
     @Param("examId", ParseMongoIdPipe) examId: string,
   ) {
     return this.progressService.getExamProgress(
-      new Types.ObjectId(req.user.studentId),
+      new Types.ObjectId(req.user.id),
       new Types.ObjectId(examId),
     );
   }
@@ -97,7 +98,7 @@ export class ProgressController {
     @Body() dto: SubmitAnswersDto,
   ) {
     return this.progressService.submitExam(
-      new Types.ObjectId(req.user.studentId),
+      new Types.ObjectId(req.user.id),
       new Types.ObjectId(examId),
       dto,
     );
@@ -113,7 +114,7 @@ export class ProgressController {
     @Param("monthId", ParseMongoIdPipe) monthId: string,
   ) {
     return this.progressService.getMonthProgress(
-      new Types.ObjectId(req.user.studentId),
+      new Types.ObjectId(req.user.id),
       new Types.ObjectId(monthId),
     );
   }
