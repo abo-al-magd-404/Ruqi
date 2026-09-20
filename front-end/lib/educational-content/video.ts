@@ -1,4 +1,7 @@
-export function toEmbedVideoUrl(url: string): string | null {
+export function toEmbedVideoUrl(
+  url: string,
+  domain: "nocookie" | "youtube" = "nocookie",
+): string | null {
   try {
     const u = new URL(url);
     const host = u.hostname.replace(/^(www\.|m\.|music\.)/, "");
@@ -18,7 +21,11 @@ export function toEmbedVideoUrl(url: string): string | null {
 
     if (!videoId) return null;
 
-    const embed = new URL(`https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`);
+    const base =
+      domain === "youtube"
+        ? "https://www.youtube.com/embed/"
+        : "https://www.youtube-nocookie.com/embed/";
+    const embed = new URL(`${base}${encodeURIComponent(videoId)}`);
     if (u.searchParams.has("si")) embed.searchParams.set("si", u.searchParams.get("si") ?? "");
     embed.searchParams.set("rel", "0");
     embed.searchParams.set("modestbranding", "1");
