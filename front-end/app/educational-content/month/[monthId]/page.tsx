@@ -9,6 +9,7 @@ import { getEducationalStageById } from "@/lib/educational-content/stages";
 import type { EducationalMonth, ContentItem, EducationalStage, ContentDetails } from "@/lib/types/educational-content";
 import { getMonthProgress } from "@/lib/progress";
 import type { MonthProgress } from "@/lib/types/progress";
+import { getSequenceLockedIds } from "@/lib/progress/sequence";
 import { getProfile } from "@/lib/account/profile";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
@@ -103,6 +104,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
     if (entry.passed) completedIds.add(String(entry.exam));
   });
 
+  const seqLockedIds = getSequenceLockedIds(contentList, monthProgress);
+
   const totalCount = monthProgress
     ? monthProgress.summary.totalLessons + monthProgress.summary.totalExams
     : contentList.length;
@@ -139,12 +142,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                     {monthDetails.price} ج.م
                   </span>
                 )}
-                {monthIsLocked ? (
-                  <span className="inline-flex items-center gap-1.5 bg-danger-bg text-danger font-bold text-xs px-3 py-1.5 rounded-control">
-                    <Lock size={13} />
-                    غير مشترك
-                  </span>
-                ) : (
+                {!monthIsLocked && (
                   <span className="inline-flex items-center gap-1.5 bg-success-bg text-success font-bold text-xs px-3 py-1.5 rounded-control">
                     <Check size={13} />
                     مشترك
@@ -190,24 +188,12 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
             </div>
           ) : hasContent ? (
             <div className="flex flex-col gap-4 w-full">
-              {monthIsLocked && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-surface-secondary border border-primary-border rounded-card text-text-muted text-sm font-bold">
-                  <div className="flex items-center gap-3">
-                    <Lock size={18} className="text-primary shrink-0" />
-                    <span>أنت غير مشترك في هذا الشهر — المحتوى متاح بعد الاشتراك</span>
-                  </div>
-                  <Link
-                    href="/subscription"
-                    className="h-[42px] px-5 bg-primary text-footer font-bold text-[13px] rounded-control hover:bg-primary-hover transition-colors flex items-center justify-center shrink-0"
-                  >
-                    اشترك الآن
-                  </Link>
-                </div>
-              )}
               {contentList.map((item, index) => {
                 const isLesson = item.type === "LESSON";
                 const itemCompleted = completedIds.has(String(item._id));
-                const itemLocked = monthIsLocked || item.locked === true;
+                const isSubLocked = monthIsLocked || item.locked === true;
+                const isSeqLocked = !monthIsLocked && seqLockedIds.has(String(item._id));
+                const itemLocked = isSubLocked || isSeqLocked;
                 const href = isLesson
                   ? `/educational-content/content/${item._id}`
                   : `/educational-content/exam/${item._id}`;
@@ -215,7 +201,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                 const row = (
                   <div
                     className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 md:p-6 bg-surface rounded-card shadow-sm border border-border gap-4 ${
-                      monthIsLocked
+                      itemLocked
                         ? "opacity-75"
                         : "group-hover:border-primary group-hover:shadow-md transition-all duration-300"
                     }`}
@@ -223,7 +209,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                     <div className="flex items-center gap-4 flex-grow w-full sm:w-auto">
                       <span
                         className={`font-black text-2xl ${
-                          monthIsLocked ? "text-text-muted" : "text-primary opacity-60"
+                          itemLocked ? "text-text-muted" : "text-primary opacity-60"
                         }`}
                       >
                         {String(index + 1).padStart(2, "0")}
@@ -231,7 +217,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                       <div className="flex flex-col gap-2 flex-grow min-w-0 text-right">
                         <h3
                           className={`font-extrabold text-base md:text-lg ${
-                            monthIsLocked
+                            itemLocked
                               ? "text-text-muted"
                               : "text-text-main group-hover:text-primary transition-colors"
                           }`}
@@ -270,7 +256,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                       {itemLocked ? (
                         <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-danger-bg text-danger rounded-full text-xs font-bold">
                           <Lock size={14} />
-                          <span>غير مشترك</span>
+                          <span>{isSubLocked ? "غير مشترك" : "أكمل ما قبلها أولاً"}</span>
                         </div>
                       ) : itemCompleted ? (
                         <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-success-bg text-success rounded-full text-xs font-bold">

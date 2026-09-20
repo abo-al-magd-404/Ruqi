@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ClipboardList, Timer, Trophy, PlayCircle, Play, Check, Circle } from "lucide-react";
+import { ClipboardList, Timer, Trophy, PlayCircle, Play, Check, Circle, Lock } from "lucide-react";
 import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
@@ -10,8 +10,10 @@ import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
-import { getExamProgress } from "@/lib/progress";
-import type { ExamProgress } from "@/lib/progress";
+import { getExamProgress, getMonthProgress } from "@/lib/progress";
+import type { ExamProgress, MonthProgress } from "@/lib/progress";
+import { getSequenceLockedIds } from "@/lib/progress/sequence";
+import { getProfile } from "@/lib/account/profile";
 
 const EXAM_DURATION_MINUTES = 30;
 
@@ -26,6 +28,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [examProgress, setExamProgress] = useState<ExamProgress | null>(null);
+  const [monthProgress, setMonthProgress] = useState<MonthProgress | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -54,6 +57,14 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
 
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
+
+          const profile = await getProfile().catch(() => null);
+          const isPrivileged = profile?.role === "TEACHER" || profile?.role === "ADMIN";
+          const monthProg = isPrivileged
+            ? null
+            : await getMonthProgress(contentData.month).catch(() => null);
+          if (!active) return;
+          setMonthProgress(monthProg);
         }
       } catch {
         if (active) setContent(null);
@@ -111,6 +122,29 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
           className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-[15px] hover:bg-primary-hover transition-colors flex items-center justify-center"
         >
           العودة للمراحل التعليمية
+        </Link>
+      </div>
+    );
+  }
+
+  const seqLockedIds = getSequenceLockedIds(monthContentList, monthProgress);
+  const seqLocked = seqLockedIds.has(String(content._id));
+
+  if (seqLocked) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo"
+        dir="rtl"
+      >
+        <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الاختبار مؤجل</h3>
+        <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
+          أكمل الدروس والواجبات السابقة في هذا الشهر أولاً حتى تتمكن من فتح هذا الاختبار.
+        </p>
+        <Link
+          href={month ? `/educational-content/month/${month._id}` : "/educational-content"}
+          className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-[15px] hover:bg-primary-hover transition-colors flex items-center justify-center"
+        >
+          العودة إلى محتويات الشهر
         </Link>
       </div>
     );
@@ -265,8 +299,58 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
                   const href = isLessonItem
                     ? `/educational-content/content/${item._id}`
                     : `/educational-content/exam/${item._id}`;
+                  const isSeqLockedItem = seqLockedIds.has(String(item._id));
 
-                  return (
+                  const row = (
+                    <>
+                      <div
+                        className={`w-6 h-6 rounded-xl flex items-center justify-center shrink-0 ml-3 ${
+                          isCurrent
+                            ? "bg-primary text-surface"
+                            : isSeqLockedItem
+                              ? "bg-surface-secondary text-text-muted"
+                              : isCompleted
+                                ? "bg-success-bg text-success"
+                                : "bg-surface-secondary text-text-main"
+                        }`}
+                      >
+                        {isCurrent ? (
+                          <Play size={12} fill="currentColor" className="ml-0.5" />
+                        ) : isSeqLockedItem ? (
+                          <Lock size={12} />
+                        ) : isCompleted ? (
+                          <Check size={14} strokeWidth={3} />
+                        ) : (
+                          <Circle size={8} fill="currentColor" />
+                        )}
+                      </div>
+                      <span
+                        className={`text-[14px] truncate flex-1 text-right ${
+                          isCurrent
+                            ? "font-bold text-primary-hover"
+                            : isSeqLockedItem || isCompleted
+                              ? "font-medium text-text-main"
+                              : "font-medium text-text-muted"
+                        }`}
+                      >
+                        {item.title}
+                      </span>
+                    </>
+                  );
+
+                  return isSeqLockedItem ? (
+                    <div
+                      key={item._id}
+                      className={`flex flex-row items-center justify-between p-4 rounded-xl w-full min-h-[58px] cursor-not-allowed ${
+                        isCurrent
+                          ? "bg-primary-light border border-primary"
+                          : "bg-transparent border border-border"
+                      }`}
+                      aria-disabled="true"
+                    >
+                      {row}
+                    </div>
+                  ) : (
                     <Link
                       href={href}
                       key={item._id}
@@ -278,34 +362,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
                             : "bg-transparent border border-border"
                       }`}
                     >
-                      <div
-                        className={`w-6 h-6 rounded-xl flex items-center justify-center shrink-0 ml-3 ${
-                          isCurrent
-                            ? "bg-primary text-surface"
-                            : isCompleted
-                              ? "bg-success-bg text-success"
-                              : "bg-surface-secondary text-text-main"
-                        }`}
-                      >
-                        {isCurrent ? (
-                          <Play size={12} fill="currentColor" className="ml-0.5" />
-                        ) : isCompleted ? (
-                          <Check size={14} strokeWidth={3} />
-                        ) : (
-                          <Circle size={8} fill="currentColor" />
-                        )}
-                      </div>
-                      <span
-                        className={`text-[14px] truncate flex-1 text-right ${
-                          isCurrent
-                            ? "font-bold text-primary-hover"
-                            : isCompleted
-                              ? "font-medium text-text-main"
-                              : "font-medium text-text-muted"
-                        }`}
-                      >
-                        {item.title}
-                      </span>
+                      {row}
                     </Link>
                   );
                 })
@@ -324,6 +381,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
         currentIndex={currentIndex}
         contentPosition={contentPosition}
         totalItems={totalItems}
+        lockedIds={[...seqLockedIds]}
       />
       <MonthDrawerButton onClick={() => setDrawerOpen(true)} />
     </div>

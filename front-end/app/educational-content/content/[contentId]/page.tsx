@@ -3,13 +3,16 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Play, Check, Circle, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, Check, Circle, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
-import { getLessonProgress, updateLessonProgress } from "@/lib/progress";
-import type { LessonProgress } from "@/lib/progress";
+import { getLessonProgress, getMonthProgress, updateLessonProgress } from "@/lib/progress";
+import type { LessonProgress, MonthProgress } from "@/lib/progress";
+import { getSequenceLockedIds } from "@/lib/progress/sequence";
+import { getProfile } from "@/lib/account/profile";
+import { toEmbedVideoUrl } from "@/lib/educational-content/video";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
@@ -25,8 +28,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [step, setStep] = useState<"video" | "explanation">("video");
+  const [step, setStep] = useState<"video" | "explanation" | "book">("video");
   const [lessonProgress, setLessonProgress] = useState<LessonProgress | null>(null);
+  const [monthProgress, setMonthProgress] = useState<MonthProgress | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -60,6 +64,14 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
           if (!active) return;
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
+
+          const profile = await getProfile().catch(() => null);
+          const isPrivileged = profile?.role === "TEACHER" || profile?.role === "ADMIN";
+          const monthProg = isPrivileged
+            ? null
+            : await getMonthProgress(contentData.month).catch(() => null);
+          if (!active) return;
+          setMonthProgress(monthProg);
         }
       } catch {
         if (active) {
@@ -120,6 +132,26 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     );
   }
 
+  const seqLockedIds = getSequenceLockedIds(monthContentList, monthProgress);
+  const seqLocked = seqLockedIds.has(String(content._id));
+
+  if (seqLocked) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo" dir="rtl">
+        <h3 className="font-extrabold text-2xl text-text-main mb-3">هذا الدرس مؤجل</h3>
+        <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
+          أكمل الدروس والواجبات السابقة في هذا الشهر أولاً حتى تتمكن من فتح هذا الدرس.
+        </p>
+        <Link
+          href={month ? `/educational-content/month/${month._id}` : "/educational-content"}
+          className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-base hover:bg-primary-hover transition-colors flex items-center justify-center"
+        >
+          العودة إلى محتويات الشهر
+        </Link>
+      </div>
+    );
+  }
+
   const currentIndex = monthContentList.findIndex((item) => item._id === content._id);
   const contentPosition = currentIndex === -1 ? content.order : currentIndex + 1;
   const totalItems = monthContentList.length || 1;
@@ -127,6 +159,11 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     currentIndex < monthContentList.length - 1 && currentIndex !== -1 ? monthContentList[currentIndex + 1] : null;
 
   const articleText = content.writtenExplanation || content.description || "";
+  const lastStep: "video" | "explanation" | "book" = content.note
+    ? "book"
+    : articleText
+      ? "explanation"
+      : "video";
 
   const markStep = async (type: "video" | "explanation" | "book") => {
     try {
@@ -198,15 +235,30 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
 
             {step === "video" &&
               (content.videoUrl ? (
-                <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
-                  <video
-                    key={content.videoUrl}
-                    src={content.videoUrl}
-                    controls
-                    onEnded={() => markStep("video")}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                toEmbedVideoUrl(content.videoUrl) ? (
+                  <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
+                    <iframe
+                      key={content.videoUrl}
+                      src={toEmbedVideoUrl(content.videoUrl) ?? undefined}
+                      title={content.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                      onLoad={() => markStep("video")}
+                      className="w-full h-full border-0"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
+                    <video
+                      key={content.videoUrl}
+                      src={content.videoUrl}
+                      controls
+                      onEnded={() => markStep("video")}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )
               ) : (
                 <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex flex-col items-center justify-center relative border border-border">
                   <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-[0_8px_24px_rgba(196,154,69,0.25)] mb-4">
@@ -216,7 +268,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 </div>
               ))}
 
-            {step === "explanation" && articleText && (
+            {(step === "explanation" || step === "book") && articleText && (
               <button
                 type="button"
                 onClick={() => setStep("video")}
@@ -264,8 +316,43 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </div>
             )}
 
-            {content.note && (
-              <div className="w-full bg-warning-bg border border-warning/30 rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2">
+            {step === "explanation" && content.note && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("book");
+                  requestAnimationFrame(() => {
+                    document.getElementById("book-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }}
+                className="w-full h-[58px] bg-surface border border-warning text-warning font-bold text-[16px] rounded-control transition-colors flex items-center justify-center gap-2 hover:bg-warning-bg mt-2"
+              >
+                <span>الانتقال إلى الكتاب المطلوب</span>
+                <ChevronDown size={20} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {step === "video" && !articleText && content.note && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("book");
+                  requestAnimationFrame(() => {
+                    document.getElementById("book-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }}
+                className="w-full h-[58px] bg-surface border border-warning text-warning font-bold text-[16px] rounded-control transition-colors flex items-center justify-center gap-2 hover:bg-warning-bg mt-2"
+              >
+                <span>الانتقال إلى الكتاب المطلوب</span>
+                <ChevronDown size={20} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {step === "book" && content.note && (
+              <div
+                id="book-section"
+                className="w-full bg-warning-bg border border-warning/30 rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2 scroll-mt-32"
+              >
                 <h3 className="font-bold text-[18px] text-warning flex items-center gap-2">
                   <span className="w-1.5 h-6 bg-warning rounded-full"></span>
                   الكتاب المطلوب
@@ -288,7 +375,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </div>
             )}
 
-            {(step === "explanation" || !articleText) && (
+            {step === lastStep && (
               <button
                 type="button"
                 onClick={handleNextAction}
@@ -328,8 +415,51 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                   const href = isLessonItem
                     ? `/educational-content/content/${item._id}`
                     : `/educational-content/exam/${item._id}`;
+                  const isSeqLockedItem = seqLockedIds.has(String(item._id));
 
-                  return (
+                  const row = (
+                    <>
+                      <div
+                        className={`w-6 h-6 rounded-[12px] flex items-center justify-center shrink-0 ml-3 ${
+                          isCurrent
+                            ? "bg-primary text-surface"
+                            : isSeqLockedItem
+                              ? "bg-surface-secondary text-text-muted"
+                              : isCompleted
+                                ? "bg-success-bg text-success"
+                                : "bg-surface-secondary text-text-main"
+                        }`}
+                      >
+                        {isCurrent ? <Play size={12} fill="currentColor" className="ml-0.5" /> : isSeqLockedItem ? <Lock size={12} /> : isCompleted ? <Check size={14} strokeWidth={3} /> : <Circle size={8} fill="currentColor" />}
+                      </div>
+
+                      <span
+                        className={`text-[14px] truncate flex-1 text-right ${
+                          isCurrent
+                            ? "font-bold text-primary-hover"
+                            : isSeqLockedItem || isCompleted
+                              ? "font-medium text-text-main"
+                              : "font-medium text-text-muted"
+                        }`}
+                      >
+                        {item.title}
+                      </span>
+                    </>
+                  );
+
+                  return isSeqLockedItem ? (
+                    <div
+                      key={item._id}
+                      className={`flex flex-row items-center justify-between p-4 rounded-[12px] w-full min-h-[58px] cursor-not-allowed ${
+                        isCurrent
+                          ? "bg-primary-light border border-primary"
+                          : "bg-transparent border border-border"
+                      }`}
+                      aria-disabled="true"
+                    >
+                      {row}
+                    </div>
+                  ) : (
                     <Link
                       href={href}
                       key={item._id}
@@ -341,29 +471,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                             : "bg-transparent border border-border"
                       }`}
                     >
-                      <div
-                        className={`w-6 h-6 rounded-[12px] flex items-center justify-center shrink-0 ml-3 ${
-                          isCurrent
-                            ? "bg-primary text-surface"
-                            : isCompleted
-                              ? "bg-success-bg text-success"
-                              : "bg-surface-secondary text-text-main"
-                        }`}
-                      >
-                        {isCurrent ? <Play size={12} fill="currentColor" className="ml-0.5" /> : isCompleted ? <Check size={14} strokeWidth={3} /> : <Circle size={8} fill="currentColor" />}
-                      </div>
-
-                      <span
-                        className={`text-[14px] truncate flex-1 text-right ${
-                          isCurrent
-                            ? "font-bold text-primary-hover"
-                            : isCompleted
-                              ? "font-medium text-text-main"
-                              : "font-medium text-text-muted"
-                        }`}
-                      >
-                        {item.title}
-                      </span>
+                      {row}
                     </Link>
                   );
                 })
@@ -382,6 +490,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
         currentIndex={currentIndex}
         contentPosition={contentPosition}
         totalItems={totalItems}
+        lockedIds={[...seqLockedIds]}
       />
       <MonthDrawerButton onClick={() => setDrawerOpen(true)} />
     </div>
