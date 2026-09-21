@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, Trophy, Sparkles } from "lucide-react";
+import { Star, Trophy, Sparkles, ChevronDown, MessageCircle } from "lucide-react";
 import { getMonthProgress } from "@/lib/student/dashboard";
 import { getEducationalStages } from "@/lib/educational-content/stages";
 import { getMonthsByStage } from "@/lib/educational-content/months";
@@ -359,6 +359,69 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
         </div>
       </section>
       )}
+
+      {/* ============ HOW TO SUBSCRIBE + SUPPORT ============ */}
+      <section className="bg-white border border-[#E9E3D8] rounded-[24px] p-6 md:p-10 shadow-[0px_8px_24px_-2px_rgba(84,70,58,0.06)] flex flex-col gap-4 mb-8">
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="flex flex-row items-center gap-3">
+            <div className="w-[40px] h-[1.5px] bg-[#D4AF37]" />
+            <MessageCircle size={18} className="text-[#D4AF37]" />
+            <div className="w-[40px] h-[1.5px] bg-[#D4AF37]" />
+          </div>
+          <h2 className="font-extrabold text-[24px] md:text-[28px] text-[#2C2621]">
+            الاشتراك والدعم الفني
+          </h2>
+          <p className="text-[14px] text-[#6E655F]">كل ما يخص تفعيل اشتراكك والتواصل معنا لحل أي مشكلة</p>
+        </div>
+
+        <details className="group bg-[#FAF8F5] border border-[#E9E3D8] rounded-[16px] px-5 py-4">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-3 font-bold text-[15px] text-[#2C2621] select-none">
+            ازاي تشترك معانا في شهر معين ؟
+            <ChevronDown size={18} className="text-[#997D21] shrink-0 transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+          <ol className="mt-4 flex flex-col gap-2 text-[14px] leading-relaxed text-[#6E655F] list-decimal list-inside pr-2">
+            <li>
+              ادخل على رقم الأدمن على واتساب{" "}
+              <a
+                href="https://wa.me/201012345678"
+                target="_blank"
+                rel="noopener noreferrer"
+                dir="ltr"
+                className="font-bold text-[#997D21]"
+              >
+                01012345678
+              </a>
+            </li>
+            <li>ابعت بياناتك (اسمك، الـ ID بتاعك، الشهر اللي عايز تفعله)</li>
+            <li>ابعت سكرين (صورة) لرسيد الدفع</li>
+            <li>الأدمن هيتواصل معاك وهيتأكد من سلامة البيانات ويفتح لك المحتوى التعليمي الخاص بالشهر المطلوب ويبلغك</li>
+            <li>بعد كدا ذاكر واجتهد يا بطل وتبقى من أبطالنا وطلابنا المميزين</li>
+          </ol>
+        </details>
+
+        <details className="group bg-[#FAF8F5] border border-[#E9E3D8] rounded-[16px] px-5 py-4">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-3 font-bold text-[15px] text-[#2C2621] select-none">
+            ازاي تتواصل مع الدعم الفني لو واجهك أي مشاكل في المنصة ؟
+            <ChevronDown size={18} className="text-[#997D21] shrink-0 transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+          <ol className="mt-4 flex flex-col gap-2 text-[14px] leading-relaxed text-[#6E655F] list-decimal list-inside pr-2">
+            <li>
+              ادخل على رقم الأدمن على واتساب{" "}
+              <a
+                href="https://wa.me/201012345678"
+                target="_blank"
+                rel="noopener noreferrer"
+                dir="ltr"
+                className="font-bold text-[#997D21]"
+              >
+                01012345678
+              </a>
+            </li>
+            <li>ابعت بياناتك (اسمك، الـ ID بتاعك، المشكلة اللي بتواجهك)</li>
+            <li>الأدمن هيتواصل معك مباشرة وهنحاول نحل مشكلتك في أسرع وقت</li>
+          </ol>
+        </details>
+      </section>
     </div>
   );
 }

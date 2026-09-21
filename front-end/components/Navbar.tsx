@@ -9,7 +9,6 @@ const NAV_LINKS = [
   { label: "المحتوى التعليمي", href: "/educational-content" },
   { label: "المتفوقين", href: "/leaderboard" },
   { label: "الحساب", href: "/account" },
-  { label: "الدعم", href: "/support" },
 ];
 
 export default function Navbar() {
