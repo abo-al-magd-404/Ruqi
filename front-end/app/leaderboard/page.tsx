@@ -153,9 +153,9 @@ export default function LeaderboardPage() {
         ) : rows.length > 0 ? (
           <div className="flex flex-col w-full gap-14 items-center">
             {topThree.length > 0 && (
-              <div className="flex flex-col md:flex-row justify-center items-center md:items-end gap-6 w-full">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 w-full justify-items-center items-stretch md:items-end">
                 {topThree.find((s) => s.rank === 2) && (
-                  <div className="flex flex-col items-center p-6 gap-4 w-full md:w-75.5 max-w-[300px] bg-surface border border-border shadow-lg rounded-[20px] order-2 md:order-1 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="flex flex-col items-center justify-center p-6 gap-4 rounded-[20px] col-span-1 order-2 md:order-1 w-full max-w-[300px] bg-surface border border-border shadow-lg hover:-translate-y-1 transition-transform duration-300">
                     <div className="relative w-18 h-18 rounded-full bg-background">
                       <img
                         src={resolveAvatarSrc(topThree.find((s) => s.rank === 2)?.imageUrl, topThree.find((s) => s.rank === 2)?.name ?? AVATAR_FALLBACK_NAME).src}
@@ -169,7 +169,7 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <span className="font-bold text-[16px] text-text-main truncate max-w-50">
+                      <span className="text-[13px] md:text-[16px] font-bold text-text-main text-center leading-snug break-words line-clamp-2 w-full">
                         {topThree.find((s) => s.rank === 2)?.name}
                       </span>
                       <span className="font-normal text-[12px] text-text-muted">
@@ -186,7 +186,7 @@ export default function LeaderboardPage() {
                 )}
 
                 {topThree.find((s) => s.rank === 1) && (
-                  <div className="flex flex-col items-center p-8 gap-5 w-full md:w-77 max-w-[320px] bg-[#1E1A17] shadow-[0_12px_32px_-4px_rgba(212,175,55,0.1)] rounded-3xl order-1 md:order-2 z-10 hover:-translate-y-2 transition-transform duration-300">
+                  <div className="flex flex-col items-center p-8 gap-5 col-span-2 order-1 md:col-span-1 md:order-2 w-full max-w-[320px] bg-[#1E1A17] shadow-[0_12px_32px_-4px_rgba(212,175,55,0.1)] rounded-3xl z-10 hover:-translate-y-2 transition-transform duration-300">
                     <div className="relative w-24 h-24 rounded-full bg-background border-2 border-primary">
                       <img
                         src={resolveAvatarSrc(topThree.find((s) => s.rank === 1)?.imageUrl, topThree.find((s) => s.rank === 1)?.name ?? AVATAR_FALLBACK_NAME).src}
@@ -202,7 +202,7 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className="font-extrabold text-[20px] text-white truncate max-w-55">
+                      <span className="text-[16px] md:text-[20px] font-extrabold text-white text-center leading-snug break-words line-clamp-2 w-full">
                         {topThree.find((s) => s.rank === 1)?.name}
                       </span>
                       <span className="font-normal text-[13px] text-[#FAF3E6] opacity-80">
@@ -219,7 +219,7 @@ export default function LeaderboardPage() {
                 )}
 
                 {topThree.find((s) => s.rank === 3) && (
-                  <div className="flex flex-col items-center p-6 gap-4 w-full md:w-75.5 max-w-[300px] bg-surface border border-border shadow-lg rounded-[20px] order-3 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="flex flex-col items-center justify-center p-6 gap-4 rounded-[20px] col-span-1 order-3 w-full max-w-[300px] bg-surface border border-border shadow-lg hover:-translate-y-1 transition-transform duration-300">
                     <div className="relative w-18 h-18 rounded-full bg-background">
                       <img
                         src={resolveAvatarSrc(topThree.find((s) => s.rank === 3)?.imageUrl, topThree.find((s) => s.rank === 3)?.name ?? AVATAR_FALLBACK_NAME).src}
@@ -233,7 +233,7 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <span className="font-bold text-[16px] text-text-main truncate max-w-50">
+                      <span className="text-[13px] md:text-[16px] font-bold text-text-main text-center leading-snug break-words line-clamp-2 w-full">
                         {topThree.find((s) => s.rank === 3)?.name}
                       </span>
                       <span className="font-normal text-[12px] text-text-muted">
