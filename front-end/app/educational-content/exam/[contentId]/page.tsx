@@ -105,7 +105,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
       >
         <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الاختبار غير متاح حالياً</h3>
         <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
-          أكمل الدروس السابقة أولاً، ثم سيفتح لك هذا الاختبار لإتمام خطتك الدراسية.
+          أكمل المحتوى السابق أولاً، ثم سيفتح لك هذا الاختبار لإتمام خطتك الدراسية.
         </p>
         <Link
           href={content?.month ? `/educational-content/month/${content.month}` : "/educational-content"}

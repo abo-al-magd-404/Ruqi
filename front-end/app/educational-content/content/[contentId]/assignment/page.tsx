@@ -113,7 +113,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
       >
         <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الواجب غير متاح حالياً</h3>
         <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
-          أكمل الدروس السابقة أولاً، ثم سيفتح لك هذا الواجب التطبيقي إتماماً لخطتك الدراسية.
+          أكمل المحتوى السابق أولاً، ثم سيفتح لك هذا الواجب التطبيقي إتماماً لخطتك الدراسية.
         </p>
         <Link
           href={content?.month ? `/educational-content/month/${content.month}` : "/educational-content"}

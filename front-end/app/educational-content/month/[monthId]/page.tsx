@@ -264,7 +264,7 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                       {itemLocked ? (
                         <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-danger-bg text-danger rounded-full text-xs font-bold">
                           <Lock size={14} />
-                          <span>{sequenceLocked && !monthIsLocked && item.locked !== true ? "أكمل الدرس السابق" : "غير متاح"}</span>
+                          <span>{sequenceLocked && !monthIsLocked && item.locked !== true ? "أكمل العنصر السابق" : "غير متاح"}</span>
                         </div>
                       ) : itemCompleted ? (
                         <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-success-bg text-success rounded-full text-xs font-bold">

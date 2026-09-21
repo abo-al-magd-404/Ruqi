@@ -105,7 +105,7 @@ export default function MonthSidebar({
 
                 {isLocked && (
                   <span className="shrink-0 text-[11px] font-bold text-danger ml-2">
-                    أكمل الدرس السابق
+                    أكمل العنصر السابق
                   </span>
                 )}
               </div>

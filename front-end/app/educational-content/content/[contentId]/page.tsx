@@ -145,7 +145,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
       <div className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo" dir="rtl">
         <h3 className="font-extrabold text-2xl text-text-main mb-3">هذا الدرس غير متاح حالياً</h3>
         <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
-          أكمل الدروس السابقة أولاً، ثم سيفتح لك هذا الدرس لإتمام خطتك الدراسية.
+          أكمل المحتوى السابق أولاً، ثم سيفتح لك هذا الدرس لإتمام خطتك الدراسية.
         </p>
         <Link
           href={content?.month ? `/educational-content/month/${content.month}` : "/educational-content"}

@@ -68,9 +68,7 @@ export function getSequenceLockedIds(
   const completedIds = getPracticalCompletedIds(contentList, progress);
   let blocked = false;
   for (const item of contentList) {
-    const isUnfinishedLesson =
-      item.type === "LESSON" && !completedIds.has(String(item._id));
-    if (isUnfinishedLesson && !blocked) {
+    if (!completedIds.has(String(item._id)) && !blocked) {
       blocked = true;
       continue;
     }
