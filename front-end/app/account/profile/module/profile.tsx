@@ -1,0 +1,371 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Settings, KeyRound, LogOut, Camera } from "lucide-react";
+import { logoutUser } from "@/lib/account/auth";
+import { getProfile, updateStudentProfile } from "@/lib/account/profile";
+import { getEducationalStages } from "@/lib/educational-content/stages";
+import type { UserProfile } from "@/lib/types/account";
+import type { EducationalStage } from "@/lib/types/educational-content";
+import Loading from "@/app/loading";
+import EditProfileModal from "./edit-profile-modal";
+import StudentAvatar from "./student-avatar";
+import ChangePasswordModal from "./change-password-modal";
+import LogoutConfirmModal from "./logout-confirm-modal";
+import AdminDashboard from "@/app/educational-content/module/teacher-dashboard";
+import AdminStudentsDashboard from "./admin-dashboard";
+import StudentExtraSections from "./student-extra-sections";
+
+export default function StudentProfile() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stages, setStages] = useState<EducationalStage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editSection, setEditSection] = useState<"data" | "avatar">("data");
+  const [editForm, setEditForm] = useState({
+    name: "",
+    phoneNumber: "",
+    address: "",
+    stage: "",
+    avatar: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logoutUser();
+    router.replace("/account");
+    router.refresh();
+  };
+
+  const openEditModal = (section: "data" | "avatar" = "data") => {
+    const currentStage = profile?.stage ?? "";
+    const matched = stages.some((s) => s._id === currentStage);
+    setEditForm({
+      name: profile?.name ?? "",
+      phoneNumber: profile?.phoneNumber ?? "",
+      address: profile?.address ?? "",
+      stage: matched ? currentStage : "",
+      avatar: profile?.avatar ?? "",
+    });
+    setEditSection(section);
+    setEditError(null);
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name: field, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+    if (editError) setEditError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError(null);
+
+    const phone = editForm.phoneNumber.trim();
+    if (phone && !/^01[0125][0-9]{8}$/.test(phone)) {
+      setEditError("يرجى إدخال رقم هاتف مصري صحيح (مثال: 01012345678)");
+      return;
+    }
+
+    setSavingEdit(true);
+
+    try {
+      await updateStudentProfile({
+        name: editForm.name,
+        phoneNumber: editForm.phoneNumber,
+        address: editForm.address,
+        avatar: editForm.avatar,
+      });
+      const fresh = await getProfile();
+      setProfile(fresh);
+      setShowEditModal(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "تعذر حفظ البيانات");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name: field, value } = e.target;
+    setPasswordForm((prev) => ({ ...prev, [field]: value }));
+    if (passwordError) setPasswordError(null);
+  };
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.password !== passwordForm.confirmPassword) {
+      setPasswordError("كلمتا المرور غير متطابقتين");
+      return;
+    }
+    if (passwordForm.password.length < 8) {
+      setPasswordError("كلمة المرور يجب ألا تقل عن 8 أحرف");
+      return;
+    }
+
+    setSavingPassword(true);
+    setPasswordError(null);
+
+    try {
+      const updated = await updateStudentProfile({
+        password: passwordForm.password,
+      });
+      setProfile(updated);
+      setPasswordForm({ password: "", confirmPassword: "" });
+      setShowPasswordModal(false);
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error ? err.message : "تعذر تغيير كلمة المرور",
+      );
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([getProfile(), getEducationalStages().catch(() => [])])
+      .then(async ([profileData, stagesData]) => {
+        if (!active) return;
+        setProfile(profileData);
+        setStages(stagesData);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(
+          err instanceof Error ? err.message : "تعذر تحميل بيانات الحساب",
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (error || !profile) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-5 px-4 font-cairo text-center"
+        dir="rtl"
+      >
+        <span className="text-danger font-bold text-[16px] max-w-75 leading-relaxed">
+          {error ?? "تعذر تحميل بيانات الحساب"}
+        </span>
+        <button
+          type="button"
+          onClick={() => router.push("/account/login")}
+          className="h-12 px-8 bg-primary rounded-xl text-text-main font-bold text-[15px] hover:bg-primary-hover transition-colors shadow-sm"
+        >
+          تسجيل الدخول
+        </button>
+      </div>
+    );
+  }
+
+  const { name, studentId, email, phoneNumber, address, stage, role, avatar } =
+    profile;
+  const stageTitle = stages.find((s) => s._id === stage)?.title ?? "";
+
+  return (
+    <div
+      className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-30 font-cairo flex flex-col gap-8 lg:gap-12 items-center overflow-x-hidden"
+      dir="rtl"
+    >
+      <div className="w-full max-w-300 bg-white rounded-[20px] md:rounded-3xl border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.05)] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col gap-6 md:gap-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 w-full lg:w-auto text-center sm:text-right">
+            <button
+              type="button"
+              onClick={() =>
+                role === "TEACHER" ? undefined : openEditModal("avatar")
+              }
+              className="relative w-20 h-20 md:w-28 md:h-28 rounded-full border-2 border-primary bg-primary-light flex items-center justify-center shrink-0 overflow-hidden group"
+              aria-label={
+                role === "TEACHER" ? "صورة المدرس" : "تغيير الصورة الرمزية"
+              }
+            >
+              <StudentAvatar avatar={avatar ?? ""} seed={name} role={role} />
+              {role !== "TEACHER" && (
+                <span className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+                  <Camera size={22} className="md:w-7 md:h-7 text-white" />
+                </span>
+              )}
+            </button>
+            <div className="flex flex-col gap-2 sm:gap-3 mt-1 sm:mt-2">
+              <h1 className="text-[20px] sm:text-[22px] md:text-[26px] font-extrabold text-text-main leading-tight">
+                {name}
+              </h1>
+              <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 sm:gap-3">
+                {studentId && (
+                  <span className="bg-primary-light text-primary text-[11px] sm:text-[12px] font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                    {studentId}
+                  </span>
+                )}
+                <span className="text-[13px] sm:text-[14px] md:text-[15px] text-text-muted leading-relaxed max-w-70 sm:max-w-none">
+                  {role === "STUDENT"
+                    ? "طالب أكاديمي في رُقِيّ"
+                    : role === "TEACHER"
+                      ? "الهيئة الأكاديمية لرُقِيّ"
+                      : role === "ADMIN"
+                        ? "مسؤول النظام (Admin)"
+                        : "عضو في رُقِيّ"}
+                  {role === "STUDENT" && stageTitle ? ` • ${stageTitle}` : ""}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row items-stretch gap-3 w-full lg:w-auto shrink-0">
+            {role === "STUDENT" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => openEditModal()}
+                  className="h-12 md:h-12.5 px-4 md:px-6 bg-primary text-text-main font-bold text-[13px] md:text-[14px] rounded-xl shadow-[0_12px_32px_-4px_rgba(196,154,69,0.1)] hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <Settings size={18} />
+                  تعديل المعلومات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasswordForm({ password: "", confirmPassword: "" });
+                    setPasswordError(null);
+                    setShowPasswordModal(true);
+                  }}
+                  className="h-12 md:h-12.5 px-4 md:px-6 bg-transparent border border-border text-text-muted font-bold text-[13px] md:text-[14px] rounded-xl hover:bg-surface-secondary transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <KeyRound size={18} />
+                  كلمة المرور
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="h-12 md:h-12.5 px-4 md:px-6 bg-transparent border border-border text-danger font-bold text-[13px] md:text-[14px] rounded-xl hover:bg-danger-bg transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <LogOut size={18} />
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+
+        <div className="w-full h-px bg-border"></div>
+
+        <div
+          className={
+            role === "STUDENT"
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
+              : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5"
+          }
+        >
+          <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
+            <span className="text-[12px] md:text-[13px] text-text-muted">
+              البريد الإلكتروني
+            </span>
+            <span
+              className="text-[14px] md:text-[16px] font-bold text-text-main break-all"
+              dir="ltr"
+            >
+              {email}
+            </span>
+          </div>
+          <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
+            <span className="text-[12px] md:text-[13px] text-text-muted">
+              رقم الهاتف
+            </span>
+            <span
+              className="text-[14px] md:text-[16px] font-bold text-text-main"
+              dir="ltr"
+            >
+              {phoneNumber || "—"}
+            </span>
+          </div>
+          {role === "STUDENT" && (
+            <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
+              <span className="text-[12px] md:text-[13px] text-text-muted">
+                المرحلة الدراسية
+              </span>
+              <span className="text-[14px] md:text-[16px] font-bold text-text-main wrap-break-word">
+                {stageTitle || "غير محددة"}
+              </span>
+            </div>
+          )}
+          <div className="flex flex-col items-center justify-center gap-2 text-center bg-surface-secondary rounded-2xl p-4 md:p-5">
+            <span className="text-[12px] md:text-[13px] text-text-muted">
+              العنوان
+            </span>
+            <span className="text-[14px] md:text-[16px] font-bold text-text-main wrap-break-word">
+              {address || "—"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {role === "STUDENT" && <StudentExtraSections profile={profile} />}
+
+      {role === "TEACHER" && <AdminDashboard />}
+
+      {role === "ADMIN" && (
+        <AdminStudentsDashboard adminName={name} adminEmail={email} />
+      )}
+
+      <LogoutConfirmModal
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        loggingOut={loggingOut}
+      />
+
+      <EditProfileModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        form={editForm}
+        onChange={handleEditChange}
+        onSubmit={handleSaveEdit}
+        saving={savingEdit}
+        error={editError}
+        stages={stages}
+        initialSection={editSection}
+      />
+
+      <ChangePasswordModal
+        open={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        form={passwordForm}
+        onChange={handlePasswordChange}
+        onSubmit={handleSavePassword}
+        saving={savingPassword}
+        error={passwordError}
+      />
+    </div>
+  );
+}

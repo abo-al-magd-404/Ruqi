@@ -1,0 +1,325 @@
+import { Style, Avatar } from "@dicebear/core";
+import glyphs from "@dicebear/styles/glyphs.json" with { type: "json" };
+
+export const AVATAR_FALLBACK_NAME = "رقي";
+
+const AVATAR_STYLE = new Style(glyphs);
+const DATA_URI_CACHE = new Map<string, string>();
+
+export const GLYPHS_PALETTE = [
+  // 🔵 Blues & Cyans
+  "#3B82F6", // Royal Blue
+  "#06B6D4", // Cyan
+  "#0E7490", // Deep Cyan
+  "#2563EB", // Strong Blue
+  "#38BDF8", // Sky Blue
+
+  // 🟣 Purples & Violets
+  "#7C3AED", // Vivid Violet
+  "#A855F7", // Electric Purple
+  "#C026D3", // Magenta Purple
+  "#6366F1", // Indigo
+  "#8B5CF6", // Soft Violet
+
+  // 🟢 Greens & Teals
+  "#059669", // Emerald
+  "#10B981", // Green
+  "#14B8A6", // Teal
+  "#84CC16", // Lime
+  "#65A30D", // Olive Green
+
+  // 🔴 Reds & Pinks
+  "#E11D48", // Crimson
+  "#F43F5E", // Rose
+  "#EC4899", // Hot Pink
+  "#DB2777", // Deep Pink
+  "#BE123C", // Ruby
+
+  // 🟠 Oranges & Yellows
+  "#F97316", // Orange
+  "#EA580C", // Deep Orange
+  "#F59E0B", // Amber
+  "#EAB308", // Golden Yellow
+  "#D97706", // Dark Amber
+
+  // 🟤 Earthy & Neutral Tones
+  "#A16207", // Earth Gold
+  "#B45309", // Warm Brown
+  "#78716C", // Stone
+  "#64748B", // Slate
+  "#475569", // Dark Slate
+
+  // ✨ Distinctive Colors
+  "#0F766E", // Deep Teal
+  "#9333EA", // Royal Purple
+  "#0891B2", // Ocean Blue
+  "#CA8A04", // Mustard
+] as const;
+
+export const GLYPHS_SHAPE_VARIANTS = [
+  "variant01",
+  "variant02",
+  "variant03",
+  "variant04",
+  "variant05",
+  "variant06",
+  "variant07",
+  "variant08",
+  "variant09",
+  "variant10",
+  "variant11",
+  "variant12",
+  "variant13",
+  "variant14",
+  "variant15",
+  "variant16",
+  "variant17",
+  "variant18",
+  "variant19",
+  "variant20",
+  "variant21",
+  "variant22",
+  "variant23",
+  "variant24",
+  "variant25",
+  "variant26",
+  "variant27",
+  "variant28",
+  "variant29",
+  "variant30",
+  "variant31",
+  "variant32",
+  "variant33",
+  "variant34",
+  "variant35",
+] as const;
+
+export type GlyphsShapeVariant = (typeof GLYPHS_SHAPE_VARIANTS)[number];
+
+export interface AvatarOptions {
+  seed: string;
+  glyphColor?: string;
+  shapeVariant?: GlyphsShapeVariant;
+}
+
+function cacheKey(opts: AvatarOptions, size: number): string {
+  return `${size}|${opts.seed}|${opts.glyphColor ?? ""}|${opts.shapeVariant ?? ""}`;
+}
+
+function avatarStyleOptions(opts: AvatarOptions) {
+  return {
+    seed: opts.seed.trim() || AVATAR_FALLBACK_NAME,
+    ...(opts.glyphColor ? { glyphColor: [opts.glyphColor] } : {}),
+    ...(opts.shapeVariant ? { shapeVariant: opts.shapeVariant } : {}),
+  };
+}
+
+export function avatarDataUri(
+  seedOrOptions: string | AvatarOptions | null | undefined,
+  size = 128,
+): string {
+  const opts: AvatarOptions =
+    typeof seedOrOptions === "string" || seedOrOptions == null
+      ? { seed: seedOrOptions?.trim() || AVATAR_FALLBACK_NAME }
+      : seedOrOptions;
+  const key = cacheKey(opts, size);
+  if (DATA_URI_CACHE.has(key)) return DATA_URI_CACHE.get(key)!;
+  const uri = new Avatar(AVATAR_STYLE, {
+    ...avatarStyleOptions(opts),
+    size,
+  }).toDataUri();
+  DATA_URI_CACHE.set(key, uri);
+  return uri;
+}
+
+export function avatarUrl(options: AvatarOptions | string): string {
+  const opts: AvatarOptions =
+    typeof options === "string" ? { seed: options } : options;
+  const params = new URLSearchParams({
+    seed: opts.seed.trim() || AVATAR_FALLBACK_NAME,
+  });
+  if (opts.glyphColor)
+    params.set("glyphColor", opts.glyphColor.replace("#", ""));
+  if (opts.shapeVariant) params.set("shapeVariant", opts.shapeVariant);
+  return `https://api.dicebear.com/10.x/glyphs/svg?${params.toString()}`;
+}
+
+export function avatarStringFromOptions(opts: AvatarOptions): string {
+  const hasCustom = Boolean(opts.glyphColor) || Boolean(opts.shapeVariant);
+  const seed = opts.seed.trim() || AVATAR_FALLBACK_NAME;
+  return hasCustom ? avatarUrl({ ...opts, seed }) : seed;
+}
+
+export function randomAvatarOptions(): AvatarOptions {
+  const pick = <T>(arr: readonly T[]): T =>
+    arr[Math.floor(Math.random() * arr.length)];
+  return {
+    seed: Math.random().toString(36).slice(2, 10),
+    glyphColor: pick(GLYPHS_PALETTE),
+    shapeVariant: pick(GLYPHS_SHAPE_VARIANTS),
+  };
+}
+
+const DICEBEAR_URL_RE =
+  /^https?:\/\/api\.dicebear\.com\/\d+\.x\/glyphs\/svg\?/i;
+
+export function parseAvatarValue(
+  value: string | null | undefined,
+): AvatarOptions | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (DICEBEAR_URL_RE.test(trimmed)) {
+    let searchParams: URLSearchParams;
+    try {
+      searchParams = new URL(trimmed).searchParams;
+    } catch {
+      return null;
+    }
+    const seed = searchParams.get("seed")?.trim() || AVATAR_FALLBACK_NAME;
+    const glyphColor = searchParams.get("glyphColor");
+    const shapeVariant = searchParams.get("shapeVariant");
+    return {
+      seed,
+      ...(glyphColor ? { glyphColor: `#${glyphColor}` } : {}),
+      ...(shapeVariant
+        ? { shapeVariant: shapeVariant as GlyphsShapeVariant }
+        : {}),
+    };
+  }
+
+  if (isAvatarImage(trimmed) || !isAvatarSeed(trimmed)) return null;
+  return { seed: trimmed };
+}
+
+export function avatarDataUriFromValue(
+  value: string | null | undefined,
+  fallbackSeed = AVATAR_FALLBACK_NAME,
+  size = 128,
+): string {
+  const parsed = parseAvatarValue(value);
+  return avatarDataUri(parsed ?? { seed: fallbackSeed }, size);
+}
+
+export function isAvatarImage(avatar: string | null | undefined): boolean {
+  if (!avatar) return false;
+  return (
+    avatar.startsWith("/") ||
+    avatar.startsWith("data:") ||
+    /^https?:\/\//i.test(avatar)
+  );
+}
+
+export function isAvatarSeed(avatar: string | null | undefined): boolean {
+  if (!avatar || isAvatarImage(avatar)) return false;
+  const trimmed = avatar.trim();
+  if (trimmed.startsWith("{")) return false;
+  if (EMOJI_RE.test(trimmed)) return false;
+  return trimmed.length > 0;
+}
+
+const EMOJI_RE =
+  /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2B50}\u{2764}]/u;
+
+export function resolveAvatarSrc(
+  avatar: string | null | undefined,
+  fallbackSeed = AVATAR_FALLBACK_NAME,
+): { isImage: boolean; src: string; seed: string } {
+  const parsed = parseAvatarValue(avatar);
+  if (parsed) {
+    return { isImage: false, src: avatarDataUri(parsed), seed: parsed.seed };
+  }
+  const legacy = legacyAvatarOptions(avatar);
+  if (legacy) {
+    return { isImage: false, src: avatarDataUri(legacy), seed: legacy.seed };
+  }
+  if (isAvatarImage(avatar)) {
+    return { isImage: true, src: avatar as string, seed: fallbackSeed };
+  }
+  const seed = isAvatarSeed(avatar) ? (avatar as string) : fallbackSeed;
+  return { isImage: false, src: avatarDataUri(seed), seed };
+}
+
+function hashSeed(input: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const match = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!match) return null;
+  const value = parseInt(match[1], 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+function nearestPaletteColor(hex: string): string | undefined {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return undefined;
+  let best: string | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const candidate of GLYPHS_PALETTE) {
+    const candidateRgb = hexToRgb(candidate);
+    if (!candidateRgb) continue;
+    const distance =
+      (rgb[0] - candidateRgb[0]) ** 2 +
+      (rgb[1] - candidateRgb[1]) ** 2 +
+      (rgb[2] - candidateRgb[2]) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+function legacyAvatarOptions(
+  avatar: string | null | undefined,
+): AvatarOptions | null {
+  if (!avatar) return null;
+  const trimmed = avatar.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  let cfg: Record<string, unknown>;
+  try {
+    cfg = JSON.parse(trimmed) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  if (!cfg || typeof cfg !== "object") return null;
+
+  const opts: AvatarOptions = { seed: hashSeed(trimmed) };
+
+  const faceColor =
+    typeof cfg.faceColor === "string" ? cfg.faceColor : undefined;
+  if (faceColor) opts.glyphColor = nearestPaletteColor(faceColor);
+
+  return opts;
+}
+
+export function pendingAvatarStorage() {
+  const KEY = "ruqi_pending_avatar";
+  return {
+    get: (): string | null => {
+      try {
+        return localStorage.getItem(KEY);
+      } catch {
+        return null;
+      }
+    },
+    set: (seed: string) => {
+      try {
+        localStorage.setItem(KEY, seed);
+      } catch {}
+    },
+    clear: () => {
+      try {
+        localStorage.removeItem(KEY);
+      } catch {}
+    },
+  };
+}
