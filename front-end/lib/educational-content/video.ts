@@ -31,6 +31,7 @@ export function toEmbedVideoUrl(
     embed.searchParams.set("modestbranding", "1");
     embed.searchParams.set("playsinline", "1");
     embed.searchParams.set("iv_load_policy", "3");
+    embed.searchParams.set("enablejsapi", "1");
     return embed.toString();
   } catch {
     return null;

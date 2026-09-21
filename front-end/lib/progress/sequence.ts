@@ -31,15 +31,14 @@ export function getPracticalCompletedIds(
   progress: MonthProgress | null,
 ): Set<string> {
   const completedIds = new Set<string>();
-  if (!progress) return completedIds;
 
   const examMap = new Map<string, boolean>();
-  for (const exam of progress.exams) {
+  for (const exam of progress?.exams ?? []) {
     examMap.set(String(exam.exam), exam.passed);
   }
 
   const lessonMap = new Map<string, MonthProgressLesson>();
-  for (const lesson of progress.lessons) {
+  for (const lesson of progress?.lessons ?? []) {
     lessonMap.set(String(lesson.lesson), lesson);
   }
 
@@ -65,7 +64,6 @@ export function getSequenceLockedIds(
   progress: MonthProgress | null,
 ): Set<string> {
   const lockedIds = new Set<string>();
-  if (!progress) return lockedIds;
 
   const completedIds = getPracticalCompletedIds(contentList, progress);
   let blocked = false;
