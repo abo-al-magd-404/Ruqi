@@ -28,6 +28,10 @@ export const metadata: Metadata = {
   description:
     "رُقِيّ منصة تعليمية متخصصة في تعليم اللغة العربية للطلاب، مع دروس واختبارات تفاعلية ومحتوى تعليمي منظم بإشراف الأستاذ سمير أبو المجد.",
 
+  verification: {
+    google: "r93MBpZ4IhPtlaF9XgNAODkpsF0tjllF3Y0ADBbmeo0",
+  },
+
   keywords: [
     "رُقِيّ",
     "منصة رقي",
