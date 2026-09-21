@@ -73,11 +73,11 @@ export default function Footer() {
           <p>® {currentYear} حقوق النشر محفوظة رُقِيّ. صنع بشغف لخدمة الضاد.</p>
           <div className="flex gap-4">
             <div className="hover:text-primary transition-colors" role="text">
-              Ahmed Mokhtar Ahmed
+              Ahmed Mokhtar
             </div>
             <span aria-hidden="true">•</span>
             <div className="hover:text-primary transition-colors" role="text">
-              Mohamed Mahmoud Abo Al Magd
+              Mohamed Mahmoud
             </div>
           </div>
         </div>
