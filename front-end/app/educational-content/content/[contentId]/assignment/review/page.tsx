@@ -1,11 +1,17 @@
 "use client";
 
+// Homework review page.
+// Shows each homework question with the student's saved answers (read from
+// localStorage) and marks every option as correct/incorrect.
+
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { CheckCircle2, XCircle, ArrowRight, Check, X } from "lucide-react";
 import { getContentById } from "@/lib/educational-content/content";
 import type { ContentDetails, ContentQuestion } from "@/lib/types/educational-content";
 
+// A question is answered correctly only when the chosen indices match the
+// correct set exactly (order is irrelevant).
 function isExactSet(chosen: number[], correct: number[]): boolean {
   if (chosen.length !== correct.length) return false;
   const set = new Set(correct);
@@ -23,6 +29,7 @@ export default function AssignmentReviewPage({ params }: { params: Promise<{ con
   useEffect(() => {
     let active = true;
 
+    // Read the answers the assignment page saved before navigating here.
     const rawAnswers = contentId
       ? (() => {
           try {
@@ -33,6 +40,7 @@ export default function AssignmentReviewPage({ params }: { params: Promise<{ con
         })()
       : null;
 
+    // Normalize the stored answer map: single numeric answers become arrays.
     const fetchContent = async () => {
       try {
         const data = await getContentById(contentId);

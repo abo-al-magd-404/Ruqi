@@ -1,3 +1,5 @@
+// Account types: signup/verify/login payloads and the signed-in user profile shape.
+
 export interface SignupPayload {
   name: string;
   email: string;

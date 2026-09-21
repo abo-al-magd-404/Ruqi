@@ -1,5 +1,9 @@
 "use client";
 
+// Teacher dashboard page.
+// Composes the three CRUD sections (stages, months, content), the create/edit
+// modals, and the delete confirmation, all driven by useTeacherDashboard.
+
 import { useTeacherDashboard } from "./use-teacher-dashboard";
 import StageSection from "./stage-section";
 import MonthSection from "./month-section";

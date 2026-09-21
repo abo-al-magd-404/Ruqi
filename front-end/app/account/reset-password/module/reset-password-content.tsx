@@ -1,4 +1,9 @@
 "use client";
+
+// Reset-password page content: collects the email, the 6-digit OTP and a new
+// password, validates registration (match + min length), calls the reset API and
+// routes to the login page shortly after success. The email arrives via query
+// params from the forgot-password step.
 import Link from "next/link";
 
 import { useState } from "react";
@@ -34,6 +39,7 @@ export default function ResetPasswordContent() {
   const [email, setEmail] = useState(emailParam);
   const [prevEmailParam, setPrevEmailParam] = useState(emailParam);
 
+  // Keep the email field in sync when the URL's email query param changes.
   if (emailParam !== prevEmailParam) {
     setPrevEmailParam(emailParam);
     if (emailParam) setEmail(emailParam);

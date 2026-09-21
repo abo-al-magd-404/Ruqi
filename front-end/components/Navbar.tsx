@@ -1,10 +1,16 @@
 "use client";
 
+// ============= Navbar =============
+// Fixed top navigation bar with desktop links and a full-screen mobile menu.
+// Highlights the active route and locks body scroll while the mobile menu is
+// open.
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
+// Main navigation destinations rendered on both desktop and mobile.
 const NAV_LINKS = [
   { label: "المحتوى التعليمي", href: "/educational-content" },
   { label: "المتفوقين", href: "/leaderboard" },
@@ -15,6 +21,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Prevent background scrolling while the mobile menu overlay is open.
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : "";
     return () => {
@@ -22,6 +29,7 @@ export default function Navbar() {
     };
   }, [isMenuOpen]);
 
+  // "/" matches only the exact root; other links also match any child route.
   const isActive = (href: string) => {
     if (href === "/") {
       return pathname === "/";

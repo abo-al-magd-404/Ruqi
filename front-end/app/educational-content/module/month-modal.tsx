@@ -1,5 +1,8 @@
 "use client";
 
+// Modal form for creating/editing a study month (title, description, price,
+// optional image). Uncontrolled inputs are re-seeded from props on open.
+
 import { useState } from "react";
 
 interface MonthModalProps {

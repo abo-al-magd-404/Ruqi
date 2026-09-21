@@ -1,3 +1,7 @@
+// ============= Progress: Lessons =============
+// Reads a student's lesson progress, marks a lesson step complete
+// (video / explanation / book), and submits homework answers.
+
 import { API_BASE_URL, authedJson } from "../core/http";
 import type {
   HomeworkResult,

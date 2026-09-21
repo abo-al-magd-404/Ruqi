@@ -1,5 +1,10 @@
 "use client";
 
+// Exam taking page — a full-screen timed exam.
+// Runs a countdown timer (persisted across reloads via localStorage),
+// auto-submits when time runs out, counts tab-switch violations, and stores
+// answers so the review/result pages can replay them.
+
 import { useState, useEffect, use, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,12 +13,15 @@ import { getContentById } from "@/lib/educational-content/content";
 import type { ContentDetails, ContentQuestion } from "@/lib/types/educational-content";
 import { submitExam as submitExamProgress } from "@/lib/progress";
 
+// Storage namespace helper — keys are namespaced per content id.
 const EXAM_DURATION_SECONDS = 30 * 60;
 
 function getStorageKey(contentId: string, suffix: string) {
   return `exam_${contentId}_${suffix}`;
 }
 
+// Remaining time is computed from a start timestamp rather than a local
+// counter, so reloads keep the exam's original deadline.
 function getRemainingTime(contentId: string): number {
   if (typeof window === "undefined") return EXAM_DURATION_SECONDS;
   const startStr = localStorage.getItem(getStorageKey(contentId, "start"));
@@ -24,6 +32,7 @@ function getRemainingTime(contentId: string): number {
   return Math.max(0, EXAM_DURATION_SECONDS - elapsed);
 }
 
+// Persist / restore the answers so an accidental reload does not lose work.
 function saveAnswers(contentId: string, answers: Record<number, number[]>) {
   try {
     localStorage.setItem(getStorageKey(contentId, "answers"), JSON.stringify(answers));
@@ -45,6 +54,8 @@ function loadAnswers(contentId: string): Record<number, number[]> {
   return {};
 }
 
+// A question is counted as answered correctly only when the chosen option
+// indices match the correct set exactly (order is irrelevant).
 function isExactSet(chosen: number[], correct: number[]): boolean {
   if (chosen.length !== correct.length) return false;
   const set = new Set(correct);
@@ -92,6 +103,9 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitInFlight = useRef(false);
 
+  // Submit the exam and navigate to the result page. The server result overrides
+  // the locally-computed grade; on 401/403 (teacher/visitor preview) only the
+  // local grade is used for display.
   const submitExam = useCallback(async () => {
     if (submitInFlight.current) return;
     const qs = content?.examQuestions || content?.homework || [];
@@ -113,7 +127,7 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
       submitInFlight.current = false;
       const apiError = error as { status?: number };
       if (apiError.status === 401 || apiError.status === 403) {
-        // غير مصرح للمعلم/الزائر — نحسب محليًا للعرض فقط (معاينة)
+        // Not authorized (teacher/visitor preview) — grade locally for display only.
       } else {
         setSubmitError(error instanceof Error ? error.message : "تعذر تسليم الاختبار، حاول مجدداً");
         return;
@@ -148,11 +162,14 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
     };
   }, [contentId]);
 
+  // Resume (or start) the timer from the stored start timestamp, restoring any
+  // saved answers and violation count before the first render.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const startKey = getStorageKey(contentId, "start");
     if (!localStorage.getItem(startKey)) {
-      // محاولة جديدة: امسح إجابات ونتيجة المحاولة السابقة قبل بدء العدّ
+      // Fresh attempt: clear answers/result of a previous attempt before the
+      // countdown starts.
       localStorage.removeItem(getStorageKey(contentId, "answers"));
       localStorage.removeItem(getStorageKey(contentId, "result"));
       localStorage.setItem(startKey, String(Date.now()));
@@ -169,6 +186,7 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
     return () => cancelAnimationFrame(frame);
   }, [contentId]);
 
+  // Tick every second and auto-submit when the remaining time reaches zero.
   useEffect(() => {
     if (!timerInitialized) return;
     const timer = setInterval(() => {
@@ -188,6 +206,7 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
     }
   }, [selectedAnswers, contentId, timerInitialized]);
 
+  // Warn before leaving the page while the exam is running.
   useEffect(() => {
     if (!timerInitialized) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -198,6 +217,8 @@ export default function ExamTakingPage({ params }: { params: Promise<{ contentId
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [timerInitialized]);
 
+  // Count every tab switch as a violation; the exam auto-submits once the
+  // allowed number (MAX_VIOLATIONS) is exceeded.
   useEffect(() => {
     if (!timerInitialized) return;
     const handleVisibilityChange = () => {

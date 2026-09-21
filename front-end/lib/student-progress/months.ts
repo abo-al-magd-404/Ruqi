@@ -1,3 +1,6 @@
+// ============= Student Progress: Months =============
+// Reads the aggregated progress of a whole month (all lessons + exams).
+
 import { API_BASE_URL, authedJson } from "../core/http";
 import type { MonthProgress } from "../types/progress";
 

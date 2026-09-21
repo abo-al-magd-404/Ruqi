@@ -1,3 +1,5 @@
+// Next.js loading fallback - shown while a route is streaming. A centered
+// "رُقِيّ" card with a spinning indicator over a subtle decorative pattern.
 export default function Loading() {
   return (
     <section

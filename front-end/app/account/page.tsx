@@ -1,3 +1,5 @@
+// Account landing page (guests only) - the entry point of the auth area. Offers
+// two choices: create a new student account or log in to an existing one.
 import Link from "next/link";
 import GuestGuard from "./module/GuestGuard";
 

@@ -1,3 +1,8 @@
+// ============= Tokens =============
+// Access/refresh token persistence in localStorage (SSR-safe) plus the
+// refresh flow used to recover an expired access token. Also exports the
+// API base URL consumed by the rest of the lib layer.
+
 export const API_BASE_URL = "/api/backend";
 
 // ============= Token Management =============
@@ -39,6 +44,9 @@ export async function refreshAccessToken(): Promise<boolean> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
 
+  // Post the refresh token to the auth endpoint. On success the new pair is
+  // saved over the old tokens so the caller can retry its failed request;
+  // on any failure we return false so the caller clears the session.
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}/auth/get-new-access-token`, {
@@ -60,6 +68,8 @@ export async function refreshAccessToken(): Promise<boolean> {
   }
   if (!data || typeof data !== "object") return false;
 
+  // Backend may return the pair at the top level OR nested under "tokens";
+  // read whichever shape is present.
   const record = data as {
     accessToken?: unknown;
     refreshToken?: unknown;

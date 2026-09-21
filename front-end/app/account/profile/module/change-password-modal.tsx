@@ -1,3 +1,5 @@
+// Change password modal - collects the new password + confirmation and hands
+// them to the parent's saved handler. Clicking the backdrop cancels the dialog.
 interface ChangePasswordModalProps {
   open: boolean;
   onClose: () => void;

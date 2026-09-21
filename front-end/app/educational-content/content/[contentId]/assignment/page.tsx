@@ -1,5 +1,10 @@
 "use client";
 
+// Homework (training) page for a lesson.
+// Presents the lesson's homework questions one at a time, collects the chosen
+// options, and submits them as answers. Uses the same sequence gating as other
+// content routes.
+
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +21,8 @@ import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module
 import MonthSidebar from "@/app/educational-content/module/MonthSidebar";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
+// A question is counted as answered correctly only when the chosen option
+// indices match the correct set exactly (order is irrelevant).
 function isExactSet(chosen: number[], correct: number[]): boolean {
   if (chosen.length !== correct.length) return false;
   const set = new Set(correct);
@@ -67,6 +74,8 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
 
+          // Sequence gating: students must finish the previous item before attempting
+          // the homework.
           if (profile?.role === "STUDENT") {
             const monthProgress = await getMonthProgress(contentData.month).catch(() => null);
             if (!active) return;
@@ -193,7 +202,7 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
     } catch (error) {
       const apiError = error as { status?: number };
       if (apiError.status === 401 || apiError.status === 403) {
-        // غير مصرح للمعلم/الزائر — نحسب محليًا للعرض فقط (معاينة)
+        // Not authorized (teacher/visitor preview) — grade locally for display only.
       } else {
         setSubmitError(error instanceof Error ? error.message : "تعذر تسليم الواجب، حاول مجدداً");
         setSubmitting(false);
@@ -203,7 +212,10 @@ export default function AssignmentPage({ params }: { params: Promise<{ contentId
       setSubmitting(false);
     }
 
+    // Compute the score percentage out of the total number of questions.
     const scorePct = total === 0 ? 0 : Math.round((correct / total) * 100);
+
+    // Persist the selected answers so the review page can replay them.
     try {
       localStorage.setItem(`ruqi_answers_${contentId}`, JSON.stringify(selectedOptions));
     } catch {}

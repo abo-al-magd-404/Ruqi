@@ -1,3 +1,5 @@
+// Educational-content types: stages, months, lessons/exams, questions, reorder items, and platform stats.
+
 export type ContentType = "LESSON" | "EXAM";
 
 export interface ContentQuestion {

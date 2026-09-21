@@ -1,8 +1,12 @@
+// Root layout: global metadata (title/description/keywords), Arabic Google fonts
+// (Cairo + Aref Ruqaa) exported as CSS variables, lang="ar" + dir="rtl", and the
+// shared SiteChrome wrapper that renders the navbar and footer around every page.
 import type { Metadata } from "next";
 import { Cairo, Aref_Ruqaa } from "next/font/google";
 import SiteChrome from "./educational-content/module/site-chrome";
 import "./globals.css";
 
+// Primary UI font; exposed as the --font-cairo CSS variable used by font-cairo.
 const cairo = Cairo({
   subsets: ["arabic"],
   weight: ["400", "600", "700"],
@@ -10,6 +14,7 @@ const cairo = Cairo({
   display: "swap",
 });
 
+// Decorative display font for the "رُقِيّ" wordmark; variable --font-aref.
 const arefRuqaa = Aref_Ruqaa({
   subsets: ["arabic"],
   weight: ["700"],

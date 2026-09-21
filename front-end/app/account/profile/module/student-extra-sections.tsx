@@ -1,5 +1,13 @@
 "use client";
 
+// Student-only sections rendered on the profile below the identity card.
+// 1) Academic progress: dashboard totals aggregated from the per-month progress
+//    API (lessons/exams/homework, points, completed months).
+// 2) Leaderboard: the student's overall rank plus total points, fetched from the
+//    top-students list.
+// 3) "Subscription & technical support": collapsible <details> blocks with
+//    WhatsApp instructions - the number shown, 01012345678, deep-links to
+//    wa.me/201012345678 (Egyptian country code 20).
 import { useEffect, useState } from "react";
 import { Star, Trophy, Sparkles, ChevronDown, MessageCircle } from "lucide-react";
 import { getMonthProgress } from "@/lib/student/dashboard";
@@ -60,6 +68,8 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
 
     async function loadProgress() {
       try {
+        // Resolve the month ids: for a known stage use its months, otherwise gather the
+        // months of every educational stage on the platform.
         const monthIds = await (async () => {
           if (profile.stage) {
             const months = await getMonthsByStage(profile.stage).catch(() => [] as Month[]);
@@ -96,6 +106,8 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
           monthsTotal: monthIds.length,
         };
 
+        // Sum the summary counters across every successfully loaded month, then
+        // compute started/done counters from the per-item completion flags.
         for (const m of valid) {
           totals.totalLessons += m.summary.totalLessons;
           totals.completedLessons += m.summary.completedLessons;
@@ -116,6 +128,8 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
             if (!e.passed && e.points > 0) totals.examsStarted++;
           }
 
+          // A month only counts as completed when it has content and all of its
+          // lessons and exams are done.
           const hasItems = m.summary.totalLessons + m.summary.totalExams > 0;
           const allLessonsDone =
             m.summary.totalLessons === 0 || m.summary.completedLessons === m.summary.totalLessons;
@@ -134,6 +148,8 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
 
     loadProgress();
 
+    // Locate the student inside the overall leaderboard; when found, record the
+    // rank and the points still needed to overtake the current leader.
     getOverallTopStudents()
       .then((list) => {
         if (!active) return;
@@ -165,6 +181,7 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
 
   const t = progress ?? EMPTY_TOTALS;
 
+  // Derived metrics for the progress section, computed from the aggregated totals.
   const contentTotal = t.totalLessons + t.totalExams;
   const overallPct = contentTotal > 0 ? Math.round((100 * (t.completedLessons + t.completedExams)) / contentTotal) : 0;
   const lessonsNotStarted = t.totalLessons - t.completedLessons - t.lessonsStarted;
@@ -374,6 +391,8 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
           <p className="text-[14px] text-[#6E655F]">كل ما يخص تفعيل اشتراكك والتواصل معنا لحل أي مشكلة</p>
         </div>
 
+        {/* Collapsible walkthrough: subscription via WhatsApp - the number shown,
+            01012345678, deep-links to wa.me/201012345678 (Egyptian code 20). */}
         <details className="group bg-[#FAF8F5] border border-[#E9E3D8] rounded-[16px] px-5 py-4">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3 font-bold text-[15px] text-[#2C2621] select-none">
             ازاي تشترك معانا في شهر معين ؟
@@ -399,6 +418,7 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
           </ol>
         </details>
 
+        {/* Technical-support flow: contact the same admin number with the problem. */}
         <details className="group bg-[#FAF8F5] border border-[#E9E3D8] rounded-[16px] px-5 py-4">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-3 font-bold text-[15px] text-[#2C2621] select-none">
             ازاي تتواصل مع الدعم الفني لو واجهك أي مشاكل في المنصة ؟

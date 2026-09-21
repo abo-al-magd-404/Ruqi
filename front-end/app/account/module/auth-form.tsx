@@ -1,5 +1,12 @@
 "use client";
 
+// Shared auth form used by the login and register pages.
+// Login: validates the email/password, stores the returned auth tokens, applies
+// any avatar picked at the choose-avatar step, then redirects to
+// /account/profile, where the user's role (student / teacher / admin) decides
+// which dashboard renders. Signup: validates Arabic-only name/address, an
+// Egyptian phone number and a strong password, then redirects to email
+// verification, keeping the email and name for the steps that follow.
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -63,6 +70,7 @@ function FormField({
   );
 }
 
+// Validation helpers used during signup: Arabic-only text and Egyptian phone numbers.
 const EGYPTIAN_PHONE_RE = /^01[0125][0-9]{8}$/;
 const ARABIC_CHAR_RE = /[\u0621-\u064A]/;
 const ARABIC_NAME_RE = /^[\u0621-\u064A\s]+$/;
@@ -126,6 +134,8 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
     if (needsActivation) setNeedsActivation(false);
   };
 
+  // Validate the form, then submit it. Login stores tokens and goes to the
+  // profile; signup routes to email verification.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -171,6 +181,8 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
 
     try {
       if (isLogin) {
+        // Login: persist the tokens, then attach any avatar chosen earlier and
+        // clear the leftover registration data before entering the profile.
         const { tokens } = await loginUser({ email: form.email, password: form.password });
         saveTokens(tokens);
         const pending = pendingAvatarStorage().get();
@@ -184,6 +196,8 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         clearPendingName();
         router.push("/account/profile");
       } else {
+        // Signup: create the account and keep email/name pending for the
+        // verification + avatar steps that follow.
         await signup({
           name: form.name,
           email: form.email,
@@ -207,8 +221,11 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
     }
   };
 
+  // When login fails only because the account is pending activation, keep the
+  // email around so the activation link can pre-fill the verification form.
   const activationPendingEmail = getPendingEmail();
 
+  // Live per-field validation results (signup only) used to tint the inputs.
   const fieldValidity = isLogin
     ? null
     : {

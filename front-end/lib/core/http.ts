@@ -1,3 +1,9 @@
+// ============= HTTP Core =============
+// Shared HTTP primitives: API base URL re-export, pending signup data kept
+// in localStorage, response parsing / error formatting, and authenticated
+// request helpers (authedFetch / authedJson / authedWrite) with a token
+// refresh flow built into the 401 handling.
+
 import {
   API_BASE_URL,
   getAccessToken,
@@ -6,6 +12,8 @@ import {
 } from "../tokens/tokens";
 
 export { API_BASE_URL };
+
+// ============= Pending Signup Data (localStorage) =============
 
 const PENDING_EMAIL_KEY = "ruqi_pending_email";
 const PENDING_NAME_KEY = "ruqi_pending_name";
@@ -88,6 +96,9 @@ export async function authedFetch(url: string, init: RequestInit = {}): Promise<
     throw new Error("تعذر الاتصال بالخادم");
   }
 
+  // Token refresh flow: on a 401 we try to swap the refresh token for a new
+  // access token once, then retry the original request. If the refresh fails
+  // the session is treated as dead and the local tokens are cleared.
   if (res.status === 401) {
     const refreshed = await refreshAccessToken();
     if (refreshed) {

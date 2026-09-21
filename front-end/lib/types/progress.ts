@@ -1,3 +1,5 @@
+// Progress types: lesson/exam progress, homework results, and month summaries.
+
 export type LessonProgressType = "video" | "explanation" | "book";
 
 export interface LessonProgress {

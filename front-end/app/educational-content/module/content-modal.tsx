@@ -1,5 +1,10 @@
 "use client";
 
+// Modal form for creating/editing a lesson (video, explanation, note, homework
+// questions) or an exam (pass percentage + exam questions). In create mode the
+// form can switch between lesson and exam. Uncontrolled inputs are re-seeded
+// from props whenever the modal opens.
+
 import { useState } from "react";
 import { Plus, Trash2, Check } from "lucide-react";
 import type { ContentType, ContentQuestion } from "@/lib/types/educational-content";

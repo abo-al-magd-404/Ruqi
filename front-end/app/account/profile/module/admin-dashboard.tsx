@@ -1,5 +1,9 @@
 "use client";
 
+// Admin dashboard rendered inside the profile page for ADMIN users. Provides the
+// full student management UI: a searchable students table, a selected-student
+// detail panel (stage, subscription ratio, account status), and a subscriptions
+// section that toggles which months of the student's stage are active.
 import { useState } from "react";
 import { Search, Shield, Check, X } from "lucide-react";
 import {
@@ -10,6 +14,7 @@ import {
 import EditStudentModal from "./edit-student-modal";
 import type { AdminStudent, UserStatus } from "@/lib/types/admin";
 
+// Human-readable labels + badge classes for each account status.
 const STATUS_LABEL: Record<UserStatus, string> = {
   ACTIVE: "نشط",
   PENDING: "قيد التفعيل",
@@ -50,6 +55,8 @@ function ActionButton({
   );
 }
 
+// Builds the admin dashboard UI; all state and mutations come from the shared
+// useAdminDashboard hook, and the modal lifecycle lives here.
 export default function AdminDashboard({
   adminName,
   adminEmail,
@@ -63,6 +70,7 @@ export default function AdminDashboard({
 
   const selected = dash.selected;
   const subscribedIds = studentSubscribedIds(selected);
+  // Share (0-100) of the selected stage's months the student is subscribed to.
   const subscriptionRatio =
     dash.stageMonths.length === 0
       ? 0
@@ -81,6 +89,7 @@ export default function AdminDashboard({
 
   return (
     <main className="w-full bg-background flex flex-col items-center px-4 py-8 md:px-[80px] md:py-[48px] font-cairo gap-10">
+      {/* Header card identifying the logged-in admin. */}
       <section className="w-full max-w-[1280px] bg-surface border border-border rounded-[16px] p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-primary-light rounded-full flex justify-center items-center shrink-0">
@@ -98,6 +107,7 @@ export default function AdminDashboard({
         <div className="text-[14px] text-text-muted">لوحة إدارة الطلاب والاشتراكات</div>
       </section>
 
+      {/* Stats cards: total students, active accounts, active subscriptions. */}
       <section className="w-full max-w-[1280px] grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-surface border border-border rounded-[16px] p-6 flex flex-col items-end text-right gap-2 shadow-sm transition-transform hover:-translate-y-1">
           <h3 className="text-[14px] font-bold text-primary">إجمالي الطلاب</h3>
@@ -128,6 +138,8 @@ export default function AdminDashboard({
         </div>
       )}
 
+      {/* Split layout: students table (with search) on the right, the selected
+          student's detail panel as the left sidebar. */}
       <section className="w-full max-w-[1280px] flex flex-col lg:flex-row items-start gap-6">
         <aside className="w-full lg:w-[360px] bg-surface border-[1.5px] border-primary shadow-[0px_8px_24px_-2px_rgba(84,70,58,0.05)] rounded-[20px] p-6 flex flex-col gap-6 shrink-0">
           <div className="flex justify-between items-center border-b border-border pb-4">
@@ -298,6 +310,8 @@ export default function AdminDashboard({
             </div>
           </div>
 
+          {/* Subscription access control: toggle subscribed months for the selected
+              student's stage. */}
           <div className="flex flex-col gap-4">
             <h2 className="text-[20px] font-extrabold text-text-main">التحكم في وصول الاشتراكات</h2>
 
@@ -374,6 +388,7 @@ export default function AdminDashboard({
         onSave={handleEditSave}
       />
 
+      {/* Delete confirmation dialog for the pending student. */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/40 p-4" dir="rtl">
           <div className="w-full max-w-[420px] bg-surface rounded-[20px] border border-border p-6 shadow-2xl flex flex-col gap-5">

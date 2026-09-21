@@ -1,5 +1,9 @@
 "use client";
 
+// AvatarPicker - interactive avatar builder used wherever a student picks a
+// glyph-style avatar (choose-avatar step + edit profile modal). Offers a color
+// palette, a horizontal glyph-shape strip and a randomize button; every tweak is
+// serialized back into the avatar's string value through avatarStringFromOptions.
 import { Shuffle } from "lucide-react";
 import {
   avatarDataUri,
@@ -33,6 +37,7 @@ export default function AvatarPicker({
 
   const update = (next: AvatarOptions) => onChange(avatarStringFromOptions(next));
 
+  // Toggle the glyph's color; toggling the same color again resets to default.
   const toggleColor = (color: string) => {
     update({ ...opts, seed, glyphColor: opts.glyphColor === color ? undefined : color });
   };
@@ -41,6 +46,7 @@ export default function AvatarPicker({
     update({ ...opts, seed, shapeVariant: opts.shapeVariant === variant ? undefined : variant });
   };
 
+  // Randomly roll a complete set of avatar options at once.
   const randomize = () => {
     onChange(avatarStringFromOptions(randomAvatarOptions()));
   };

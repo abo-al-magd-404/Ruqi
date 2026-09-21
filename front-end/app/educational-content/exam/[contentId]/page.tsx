@@ -1,5 +1,10 @@
 "use client";
 
+// Exam overview page for a monthly content item.
+// Shows exam stats (questions count, duration, pass percentage), the exam
+// rules, and a start button. Uses the same sequence gating as lessons:
+// TEACHER/ADMIN preview freely, STUDENT access requires the previous item done.
+
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { ClipboardList, Timer, Trophy, PlayCircle } from "lucide-react";
@@ -39,11 +44,13 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
     const fetchExamDetails = async () => {
       try {
         const contentData = await getContentById(contentId);
+        // Only STUDENT role is gated by the month progress sequence.
         const profile = await getProfile().catch(() => null);
         if (!active) return;
         setIsStudent(profile?.role === "STUDENT");
         setContent(contentData);
 
+        // Content-level lock (subscription) → show the locked screen.
         if (contentData?.locked) {
           if (active) setIsLocked(true);
           return;
@@ -63,6 +70,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
 
+          // Sequence gating: students must finish the item before this exam.
           if (profile?.role === "STUDENT") {
             const monthProgress = await getMonthProgress(contentData.month).catch(() => null);
             if (!active) return;
@@ -140,6 +148,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
     );
   }
 
+  // Passed to the drawer/sidebar so locked items cannot be navigated to.
   const currentIndex = monthContentList.findIndex((item) => item._id === content._id);
   const drawerLockedIds = isStudent ? getSequenceLockedIds(monthContentList, monthProgress) : new Set<string>();
   const contentPosition = currentIndex === -1 ? content.order : currentIndex + 1;
@@ -148,6 +157,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   const questionsCount = content.examQuestions?.length || 20;
   const attempted = !!examProgress && (examProgress.passed || examProgress.totalPoints > 0);
 
+  // Static exam rules shown in the instructions card.
   const instructions = [
     "يرجى التأكد من استقرار اتصال الإنترنت قبل بدء الاختبار.",
     "بمجرد الضغط على زر (ابدأ الاختبار) سيبدأ المؤقت التنازلي مباشرة ولا يمكن إيقافه مؤقتاً.",

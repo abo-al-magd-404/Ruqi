@@ -1,3 +1,6 @@
+// ============= Progress: Exams =============
+// Reads a student's exam progress and submits exam answers for grading.
+
 import { API_BASE_URL, authedJson } from "../core/http";
 import type { ExamProgress, ExamResult } from "../types/progress";
 

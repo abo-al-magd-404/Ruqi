@@ -1,3 +1,5 @@
+// Admin types: student records, status updates, and subscribed-months data.
+
 export type UserStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
 
 export interface AdminStageRef {

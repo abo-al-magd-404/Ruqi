@@ -1,3 +1,8 @@
+// ============= Password Validation =============
+// Password strength checks shared by signup and reset-password forms.
+// Exports MIN_PASSWORD_LENGTH, evaluatePassword, getPasswordStrength, and
+// the Arabic strength label map used by the UI.
+
 export const MIN_PASSWORD_LENGTH = 8;
 
 export interface PasswordRequirements {
@@ -26,6 +31,8 @@ export const PASSWORD_STRENGTH_LABELS: Record<PasswordStrengthLevel, string> = {
 };
 
 export function getPasswordStrength(password: string): PasswordStrengthLevel {
+  // Strength equals the number of met criteria, clamped to a minimum of 1
+  // so even an empty password is "weak", never out of range.
   const checks = evaluatePassword(password);
   const metCount = Object.values(checks).filter(Boolean).length;
   return Math.max(1, metCount) as PasswordStrengthLevel;

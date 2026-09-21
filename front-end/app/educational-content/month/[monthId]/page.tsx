@@ -1,5 +1,11 @@
 "use client";
 
+// Month content page.
+// Fetches the month, its ordered content list, and the user profile, then
+// renders the sequential lesson/exam list with progress and lock badges.
+// Gating: TEACHER/ADMIN are always unlocked; STUDENT access depends on
+// subscription and on completing the previous item in the sequence.
+
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { Lock, Sparkles, Check } from "lucide-react";
@@ -31,6 +37,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
 
     const fetchData = async () => {
       try {
+        // Fetch month metadata, ordered content, and profile in parallel so the
+        // lock state can be computed before the first render completes.
         const [monthData, contentResp, profile] = await Promise.all([
           getEducationalMonthById(monthId),
           getMonthContent(monthId),
@@ -38,6 +46,9 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
         ]);
 
         const sortedContent = [...contentResp.items].sort((a, b) => a.order - b.order);
+        // TEACHER/ADMIN are treated as subscribed to every month, so the lock
+        // state only depends on backend flags for them; everyone else needs an
+        // active subscription to the month.
         const isPrivileged = profile?.role === "TEACHER" || profile?.role === "ADMIN";
         const userSubscribed =
           isPrivileged ||
@@ -51,12 +62,15 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
         setContentList(sortedContent);
         setLoadError(null);
 
+        // Progress tracking only applies to the STUDENT role; other roles see
+        // the raw course list without progress or sequence state.
         if (profile?.role === "STUDENT") {
           const openProgress = await getMonthProgress(monthId).catch(() => null);
           if (active) setMonthProgress(openProgress);
         }
         if (active) setIsStudent(profile?.role === "STUDENT");
 
+        // Resolve the parent stage so navigation can stay in context.
         if (monthData && monthData.stage) {
           try {
             const stageData = await getEducationalStageById(monthData.stage);
@@ -64,6 +78,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
           } catch {}
         }
 
+        // Load full details (video, explanation, homework...) for every item so
+        // the badge chips in each list row can be rendered.
         const detailResults = await Promise.all(
           sortedContent.map((item) => getContentById(item._id).catch(() => null)),
         );
@@ -98,9 +114,12 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
   const monthIsLocked =
     monthDetails?.locked === true || contentList.some((item) => item.locked === true);
 
+  // For students, compute the set of items locked behind an unfinished
+  // previous item. Only students are gated in this way.
   const sequenceLockedIds =
     isStudent ? getSequenceLockedIds(contentList, monthProgress) : new Set<string>();
 
+  // Collect ids of completed lessons and passed exams from the month progress.
   const completedIds = new Set<string>();
   monthProgress?.lessons.forEach((entry) => {
     if (entry.completed) completedIds.add(String(entry.lesson));
@@ -116,6 +135,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
     ? monthProgress.summary.completedLessons + monthProgress.summary.completedExams
     : 0;
   const progressPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  // Count remaining lessons/exams, then build an Arabic summary string:
+  // "متبقي" = "remaining", "درس/درسين/دروس" = singular/dual/plural "lesson".
   const remainingLessons = monthProgress
     ? Math.max(0, monthProgress.summary.totalLessons - monthProgress.summary.completedLessons)
     : contentList.filter((item) => item.type === "LESSON").length;
@@ -264,6 +285,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                       {itemLocked ? (
                         <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-danger-bg text-danger rounded-full text-xs font-bold">
                           <Lock size={14} />
+                          {/* "أكمل العنصر السابق" = complete the previous item first;
+                              "غير متاح" = unavailable (subscription/backend lock). */}
                           <span>{sequenceLocked && !monthIsLocked && item.locked !== true ? "أكمل العنصر السابق" : "غير متاح"}</span>
                         </div>
                       ) : itemCompleted ? (
@@ -282,6 +305,8 @@ export default function MonthContentPage({ params }: { params: Promise<{ monthId
                   </div>
                 );
 
+                // Locked items are rendered as non-clickable rows; unlocked items
+                // navigate to the lesson or exam page.
                 if (itemLocked) {
                   return (
                     <div key={item._id} className="block w-full cursor-not-allowed" aria-disabled="true">

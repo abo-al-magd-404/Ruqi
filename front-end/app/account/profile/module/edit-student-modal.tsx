@@ -1,5 +1,8 @@
 "use client";
 
+// Edit student modal (admin) - edits name / phone / address / stage / avatar of
+// a student and optionally assigns a new password. The local form state is
+// re-seeded every time the modal is opened for a student.
 import { useState } from "react";
 import type { AdminStudent, UpdateStudentPayload } from "@/lib/types/admin";
 import type { EducationalStage } from "@/lib/types/educational-content";
@@ -14,6 +17,7 @@ interface EditStudentModalProps {
   onSave: (studentId: string, payload: UpdateStudentPayload) => void;
 }
 
+// Extract the stage as a plain id; a student's stage may be an object or a string.
 function stageIdOf(student: AdminStudent | null): string {
   if (!student?.stage) return "";
   if (typeof student.stage === "object") return String(student.stage._id);
@@ -40,6 +44,7 @@ export default function EditStudentModal({
   const [password, setPassword] = useState("");
   const [prevOpen, setPrevOpen] = useState(open);
 
+  // Re-seed the form fields each time the modal opens for a (possibly different) student.
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
@@ -54,6 +59,7 @@ export default function EditStudentModal({
 
   if (!open || !student) return null;
 
+  // Build the update payload, only sending a stage / password when actually set.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!student.studentId) return;

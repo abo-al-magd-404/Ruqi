@@ -1,3 +1,8 @@
+// ============= Account: Profile =============
+// Fetches and updates the signed-in user's profile. normalizeProfile
+// flattens the various shapes the backend may return (wrapped in { user },
+// an array, or a plain object) into a single UserProfile.
+
 import {
   API_BASE_URL,
   authedFetch,
@@ -14,6 +19,8 @@ import type {
 // ============= Profile =============
 
 function normalizeProfile(data: unknown): UserProfile {
+  // The backend may return the profile directly, wrapped under "user", or
+  // as a single-element array — unwrap any of those shapes.
   const src =
     data && typeof data === "object" && "user" in (data as Record<string, unknown>)
       ? ((data as Record<string, unknown>).user as Record<string, unknown>)
@@ -64,6 +71,7 @@ export async function getProfile(): Promise<UserProfile> {
 
 export async function updateStudentProfile(payload: UpdateStudentProfilePayload): Promise<UserProfile> {
   const body: Record<string, unknown> = {};
+  // Drop empty values so a partial update never clobbers existing fields.
   for (const [key, value] of Object.entries(payload)) {
     if (value !== undefined && value !== null && String(value).trim() !== "") {
       body[key] = value;

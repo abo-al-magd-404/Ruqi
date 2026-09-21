@@ -1,3 +1,8 @@
+// ============= Progress: Sequence Locking =============
+// Decides which items of a month (lessons AND exams) stay locked until the
+// preceding items are completed. Completeness merges server progress with
+// the optimistic localStorage mirror (see ./localProgress).
+
 import type { ContentItem } from "../types/educational-content";
 import type { MonthProgress, MonthProgressLesson } from "../types/progress";
 import {
@@ -30,6 +35,8 @@ export function getPracticalCompletedIds(
   contentList: SequenceItem[],
   progress: MonthProgress | null,
 ): Set<string> {
+  // An item counts as completed if the server says so OR if local progress
+  // (localStorage) also says so — belt and braces for the optimistic UI.
   const completedIds = new Set<string>();
 
   const examMap = new Map<string, boolean>();
@@ -65,6 +72,9 @@ export function getSequenceLockedIds(
 ): Set<string> {
   const lockedIds = new Set<string>();
 
+  // Sequence lock: walk the items in order. The first unfinished item flips
+  // the "blocked" flag, and from that point on every remaining item —
+  // whether a lesson or an exam — stays locked until the blocker is done.
   const completedIds = getPracticalCompletedIds(contentList, progress);
   let blocked = false;
   for (const item of contentList) {

@@ -1,5 +1,8 @@
 "use client";
 
+// Profile route guard. Uses a synchronous auth snapshot to redirect guests to
+// /account (with a brief "checking" state), then renders the actual profile
+// (StudentProfile) for authenticated users.
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSyncExternalStore } from "react";

@@ -1,5 +1,11 @@
 "use client";
 
+// Leaderboard page: stage tabs (all platform / per stage), a top-3 podium plus
+// the remaining ranks table. On mobile the podium ranks 2 & 3 sit side by side
+// under the full-width rank-1 card; on md+ it becomes the classic 3-column
+// podium with the leader centered. Avatars are resolved with a fallback, and the
+// current student's own row is highlighted (a synthetic row is appended when the
+// leaderboard API does not include them).
 import { useState, useEffect, useRef } from "react";
 import { getLeaderboard, getLeaderboardStages, getMyLeaderboardSummary } from "@/lib/leaderboard";
 import { resolveAvatarSrc, AVATAR_FALLBACK_NAME } from "@/lib/avatar";
@@ -14,6 +20,7 @@ export default function LeaderboardPage() {
   const [students, setStudents] = useState<StudentRank[]>([]);
   const [mySummary, setMySummary] = useState<MyLeaderboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Memoize the current-user summary per tab so switching tabs doesn't refetch.
   const summaryCache = useRef<Record<string, MyLeaderboardSummary | null>>({});
 
   const tabs = [ALL_STAGES_TAB, ...stages.map((s) => s.title)];
@@ -24,6 +31,7 @@ export default function LeaderboardPage() {
       .catch(() => setStages([]));
   }, []);
 
+  // Fetch the current user's own summary for the active tab (cached per tab).
   useEffect(() => {
     let active = true;
 
@@ -49,6 +57,7 @@ export default function LeaderboardPage() {
     };
   }, [activeTab, stages]);
 
+  // Fetch the ranked students list for the active tab whenever it changes.
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setIsLoading(true);
@@ -66,6 +75,8 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, [activeTab, stages]);
 
+  // Tag the rows owned by the current user, then make sure the user always
+  // appears - appending a synthetic row (points + computed rank) when missing.
   const baseRows = students.map((s) => ({
     ...s,
     isCurrentUser: Boolean(mySummary && String(s.id) === mySummary.studentId),
@@ -87,9 +98,11 @@ export default function LeaderboardPage() {
         ]
       : baseRows;
 
+  // Split into the podium (ranks 1-3) and the regular rank table (everything else).
   const topThree = rows.filter((s) => s.rank <= 3).sort((a, b) => a.rank - b.rank);
   const otherRanks = rows.filter((s) => s.rank > 3).sort((a, b) => a.rank - b.rank);
 
+  // Medal-style badge colors for the top-3 positions (gold / silver / bronze).
   const getRankBadgeColor = (rank: number) => {
     if (rank === 1) return "bg-[#E6C15C]";
     if (rank === 2) return "bg-[#B8C2C7]";
@@ -97,6 +110,7 @@ export default function LeaderboardPage() {
     return "bg-primary-light";
   };
 
+  // Arabic ordinal labels up to "العاشر", falling back to the raw number.
   const rankName = (rank: number): string | number => {
     const names: Record<number, string> = {
       4: "الرابع",
@@ -153,6 +167,9 @@ export default function LeaderboardPage() {
         ) : rows.length > 0 ? (
           <div className="flex flex-col w-full gap-14 items-center">
             {topThree.length > 0 && (
+              // Podium grid: on mobile the rank-1 card spans the full first row (col-span-2)
+              // while ranks 2 & 3 share the row below; on md+ it becomes the classic 3-column
+              // podium with the leader centered (order-2), flanked by ranks 2 (order-1) and 3 (order-3).
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 w-full justify-items-center items-stretch md:items-end">
                 {topThree.find((s) => s.rank === 2) && (
                   <div className="flex flex-col items-center justify-center p-6 gap-4 rounded-[20px] col-span-1 order-2 md:order-1 w-full max-w-[300px] bg-surface border border-border shadow-lg hover:-translate-y-1 transition-transform duration-300">
@@ -253,6 +270,7 @@ export default function LeaderboardPage() {
 
             {otherRanks.length > 0 && (
               <>
+                {/* Desktop table + mobile cards for everyone below the podium. */}
                 <div className="hidden md:block w-full rounded-[20px] border border-border shadow-sm bg-surface overflow-hidden">
                   <table className="w-full table-fixed text-center border-collapse">
                     <thead className="bg-primary-light">
@@ -282,6 +300,7 @@ export default function LeaderboardPage() {
                           </td>
                           <td className="py-5 px-4">
                             <div className="flex items-center justify-center gap-3">
+                              {/* resolveAvatarSrc falls back to a generated avatar when a student has none. */}
                               <img
                                 src={resolveAvatarSrc(student.imageUrl, student.name).src}
                                 alt={student.name}

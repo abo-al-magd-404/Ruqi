@@ -1,5 +1,10 @@
 "use client";
 
+// Profile page for authenticated users. Fetches the user profile plus the list
+// of educational stages, then renders the section that matches the user's role:
+// students see academic-progress extras (StudentExtraSections), teachers get the
+// teacher dashboard, and admins get the student/subscription management dashboard.
+// Also owns the edit-profile, change-password and logout modals.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings, KeyRound, LogOut, Camera } from "lucide-react";
@@ -46,6 +51,7 @@ export default function StudentProfile() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  // Sign out, then bounce back to the guest account entry page.
   const handleLogout = async () => {
     setLoggingOut(true);
     await logoutUser();
@@ -55,6 +61,8 @@ export default function StudentProfile() {
 
   const openEditModal = (section: "data" | "avatar" = "data") => {
     const currentStage = profile?.stage ?? "";
+    // Only keep the saved stage when it still exists in the fetched list, so the
+    // edit form never carries a stale/unknown stage id.
     const matched = stages.some((s) => s._id === currentStage);
     setEditForm({
       name: profile?.name ?? "",
@@ -135,6 +143,8 @@ export default function StudentProfile() {
     }
   };
 
+  // Load the profile and the educational stages once on mount; the loading
+  // flag/screen is released when both settle (even on error).
   useEffect(() => {
     let active = true;
 
@@ -182,6 +192,7 @@ export default function StudentProfile() {
   }
 
   const { name, studentId, email, phoneNumber, address, stage, role, avatar } = profile;
+  // Resolve the stage id into a displayable title for the profile card.
   const stageTitle = stages.find((s) => s._id === stage)?.title ?? "";
 
   return (
@@ -192,6 +203,7 @@ export default function StudentProfile() {
         <div className="w-full max-w-[1200px] bg-white rounded-[20px] md:rounded-[24px] border border-border shadow-[0_8px_24px_-2px_rgba(84,70,58,0.05)] p-5 sm:p-6 md:p-8 lg:p-10 flex flex-col gap-6 md:gap-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 w-full lg:w-auto text-center sm:text-right">
+            {/* Avatar button: non-teachers can click it to change their avatar. */}
             <button
               type="button"
               onClick={() => (role === "TEACHER" ? undefined : openEditModal("avatar"))}
@@ -303,6 +315,8 @@ export default function StudentProfile() {
         </div>
       </div>
 
+      {/* Role-based content: students get their progress/leaderboard extras,
+          teachers the teacher dashboard, admins the student management panel. */}
       {role === "STUDENT" && <StudentExtraSections profile={profile} />}
 
       {role === "TEACHER" && <AdminDashboard />}

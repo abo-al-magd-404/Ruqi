@@ -1,5 +1,9 @@
 "use client";
 
+// "Stage (المرحلة)" management section of the teacher dashboard.
+// Renders stages as selectable cards with reorder up/down, delete and edit
+// actions; selecting a stage drives the months section below.
+
 import { ArrowDown, ArrowUp, Loader2, Plus } from "lucide-react";
 import type { EducationalStage } from "@/lib/types/educational-content";
 

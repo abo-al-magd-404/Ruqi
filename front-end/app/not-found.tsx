@@ -1,3 +1,5 @@
+// 404 not-found page - branded error card (logo, title, description) with a
+// single "back to home" button, rendered by Next.js for unknown routes.
 import Link from "next/link";
 
 export default function NotFound() {

@@ -1,8 +1,15 @@
+// ============= Educational Content: Video =============
+// Converts shared YouTube links (youtu.be, /watch, /embed, /shorts) into a
+// privacy-friendly embed URL that can also be driven by the JS player API.
+
 export function toEmbedVideoUrl(
   url: string,
   domain: "nocookie" | "youtube" = "nocookie",
 ): string | null {
   try {
+    // Strip tracking subdomains (www./m./music.) then extract the video id
+    // from whichever URL shape was shared: youtu.be short links, /watch?v=,
+    // /embed/, or /shorts/.
     const u = new URL(url);
     const host = u.hostname.replace(/^(www\.|m\.|music\.)/, "");
     let videoId: string | null = null;
@@ -31,6 +38,8 @@ export function toEmbedVideoUrl(
     embed.searchParams.set("modestbranding", "1");
     embed.searchParams.set("playsinline", "1");
     embed.searchParams.set("iv_load_policy", "3");
+    // enablejsapi lets the YouTube IFrame API drive the player
+    // (play/pause/seek); the params above hide branding and related videos.
     embed.searchParams.set("enablejsapi", "1");
     return embed.toString();
   } catch {

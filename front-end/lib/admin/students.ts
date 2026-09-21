@@ -1,3 +1,7 @@
+// ============= Admin: Students =============
+// Admin-only REST helpers for listing, viewing, updating, and deleting
+// students, plus toggling their account status.
+
 import { API_BASE_URL, authedJson } from "../core/http";
 import type {
   AdminStudent,
@@ -6,6 +10,8 @@ import type {
   UserStatus,
 } from "../types/admin";
 
+// Normalize raw backend shapes (nested stage object, missing studentId,
+// non-array subscribedMonths) into the AdminStudent contract.
 function normalizeStudent(raw: AdminStudent): AdminStudent {
   return {
     ...raw,
@@ -45,6 +51,7 @@ export async function updateStudent(
   payload: UpdateStudentPayload,
 ): Promise<AdminStudent> {
   const body: Record<string, unknown> = {};
+  // Drop empty values so a partial update never clobbers existing fields.
   for (const [key, value] of Object.entries(payload)) {
     if (value !== undefined && value !== null && String(value).trim() !== "") {
       body[key] = value;

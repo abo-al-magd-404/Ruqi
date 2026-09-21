@@ -1,5 +1,9 @@
 "use client";
 
+// Stage page.
+// Shows the study months belonging to one stage as clickable cards, with
+// price tags (free or in EGP).
+
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { getEducationalMonths } from "@/lib/educational-content/months";

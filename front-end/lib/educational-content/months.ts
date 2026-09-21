@@ -1,3 +1,8 @@
+// ============= Educational Content: Months =============
+// Read + CRUD helpers for the months inside a stage. Public reads go through
+// the shared cache (cachedGet); teacher mutations call clearContentCache
+// afterwards so the next read reflects the change.
+
 import { API_BASE_URL, authedFetch, authedJson, authedWrite, formatApiError, safeJson } from "../core/http";
 import { cachedGet, clearContentCache } from "./content";
 import type { EducationalMonth, Month, MonthPayload, ReorderItem } from "../types/educational-content";
@@ -65,6 +70,8 @@ export async function reorderMonths(items: ReorderItem[]): Promise<void> {
   try {
     await authedWrite(`${API_BASE_URL}/educational-content/months/reorder`, "PATCH", { items });
   } catch (err) {
+    // Bulk reorder rejected ("should not exist") — fall back to applying
+    // each item's order through its individual PATCH endpoint.
     if (!(err instanceof Error && /should not exist/i.test(err.message))) throw err;
     for (const item of items) {
       await authedJson(`${API_BASE_URL}/educational-content/months/${item.id}`, "PATCH", {

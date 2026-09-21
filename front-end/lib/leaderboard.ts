@@ -1,3 +1,8 @@
+// ============= Leaderboard =============
+// Fetches the student leaderboard (overall or per stage), the list of stages
+// used as leaderboard filters, and the signed-in student's own points
+// summary. Top-student lists reuse the shared content cache.
+
 import { API_BASE_URL } from "./core/http";
 import { cachedGet } from "./educational-content/content";
 import type { StudentRank } from "./types/leaderboard";
@@ -37,6 +42,8 @@ function normalizeStudent(raw: LeaderboardStudent, fallbackStage?: string): Stud
   };
 }
 
+// ============= Leaderboard Fetches =============
+
 export async function getLeaderboardStages(): Promise<LeaderboardStage[]> {
   const res = await fetch(`${API_BASE_URL}/leaderboard/stages`);
   if (!res.ok) throw new Error("تعذر تحميل المراحل");
@@ -75,6 +82,8 @@ export async function getLeaderboard(stageId?: string): Promise<StudentRank[]> {
   return stageId ? getStageTopStudents(stageId) : getOverallTopStudents();
 }
 
+// ============= Current Student Summary =============
+
 export async function getMyLeaderboardSummary(
   stageId?: string,
 ): Promise<MyLeaderboardSummary | null> {
@@ -96,6 +105,8 @@ export async function getMyLeaderboardSummary(
     const progresses = await Promise.all(
       months.map((month) => getMonthProgress(month._id).catch(() => null)),
     );
+    // Sum every lesson's (video + explanation + homework) points and every
+    // exam's (points + bonus) across all of the student's months.
     const points = progresses.reduce((sum, progress) => {
       if (!progress) return sum;
       const lessonPoints = progress.lessons.reduce(

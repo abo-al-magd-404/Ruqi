@@ -1,5 +1,9 @@
 "use client";
 
+// Confirmation dialog shown before deleting a stage, month, or content item.
+// Displays the human-readable warning message and blocks closing while the
+// delete request is in flight.
+
 interface DeleteConfirmModalProps {
   open: boolean;
   deleteMessage: string;

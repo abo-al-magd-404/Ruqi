@@ -1,5 +1,10 @@
 "use client";
 
+// Homework result screen.
+// Reads the score and answer counts passed in the URL query string, then
+// renders a success summary card with a circular progress ring and a link to
+// review the answers.
+
 import { Suspense } from "react";
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
@@ -9,6 +14,8 @@ import { getContentById } from "@/lib/educational-content/content";
 import type { ContentDetails } from "@/lib/types/educational-content";
 
 export default function AssignmentResultPage({ params }: { params: Promise<{ contentId: string }> }) {
+  // useSearchParams requires a <Suspense> boundary during prerendering, so the
+  // inner component reads the query string while this wrapper holds the fallback.
   return (
     <Suspense
       fallback={
@@ -76,6 +83,7 @@ function AssignmentResultInner({ params }: { params: Promise<{ contentId: string
     );
   }
 
+  // Score and answer counts were passed to this route via the query string.
   const scorePercentage = Number(searchParams.get("score") ?? 0);
   const correctAnswersCount = Number(searchParams.get("correct") ?? 0);
   const totalCount = Number(searchParams.get("total") ?? 0);

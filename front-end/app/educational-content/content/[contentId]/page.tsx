@@ -1,5 +1,11 @@
 "use client";
 
+// Lesson details page — the tutorial flow for a single content item.
+// Students go through a staged flow (video → explanation → book), can mark a
+// stage as complete, and finish toward homework or the next lesson.
+// Gating: exams redirect to the exam route; TEACHER/ADMIN preview freely while
+// STUDENT access is limited by the month sequence.
+
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,6 +36,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Current stage of the 3-step lesson flow: video → explanation → book.
   const [step, setStep] = useState<"video" | "explanation" | "book">("video");
   const [lessonProgress, setLessonProgress] = useState<LessonProgress | null>(null);
   const [monthProgress, setMonthProgress] = useState<MonthProgress | null>(null);
@@ -41,15 +48,19 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     const fetchDetails = async () => {
       try {
         const contentData = await getContentById(contentId);
+        // Detect the requesting role: only STUDENT is subject to progress and
+        // sequence gating.
         const profile = await getProfile().catch(() => null);
         if (!active) return;
         setIsStudent(profile?.role === "STUDENT");
 
+        // This is the lesson router — exams live on their own page, so redirect.
         if (contentData && contentData.type === "EXAM") {
           router.replace(`/educational-content/exam/${contentId}`);
           return;
         }
 
+        // Backend-level lock (subscription/content) → show the locked screen.
         if (contentData?.locked) {
           if (active) setIsLocked(true);
           return;
@@ -70,6 +81,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
 
+          // Sequence gating: for students the lesson page itself can be locked if the
+          // previous item in the month sequence is not finished yet.
           if (profile?.role === "STUDENT") {
             const monthProgress = await getMonthProgress(contentData.month).catch(() => null);
             if (!active) return;
@@ -109,6 +122,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     const embedUrl = toEmbedVideoUrl(content.videoUrl);
     if (!embedUrl) return;
 
+    // Listen to postMessage events coming from the embedded YouTube player.
+    // The origin is verified so events from unknown windows are ignored.
     const handleMessage = async (event: MessageEvent) => {
       if (
         event.origin !== "https://www.youtube.com" &&
@@ -122,12 +137,13 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
       } catch {
         return;
       }
+      // YouTube's info===0 signals the video finished → mark it complete.
       if (data.event === "onStateChange" && data.info === 0) {
         try {
           const updated = await updateLessonProgress(contentId, "video");
           setLessonProgress(updated);
         } catch {
-          // غير مصرح أو تعذر الاتصال
+          // Not authorized (teacher/visitor) or network failure — ignore.
         }
       }
     };
@@ -185,6 +201,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
 
   const articleText = content.writtenExplanation || content.description || "";
   const embedVideoUrl = content.videoUrl ? toEmbedVideoUrl(content.videoUrl) : null;
+  // Passed to the drawer/sidebar: navigation lock ids for the month + per-stage
+  // completion chips for the current lesson. A stage counts as done when it is
+  // absent from the lesson OR already completed in the saved progress.
   const drawerLockedIds = isStudent ? getSequenceLockedIds(monthContentList, monthProgress) : new Set<string>();
   const currentLessonStages = isStudent
     ? {
@@ -196,15 +215,20 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
       }
     : null;
 
+  // Mark a single lesson stage (video/explanation/book) as complete. The server
+  // persists it and returns the updated progress record.
   const markStep = async (type: "video" | "explanation" | "book") => {
     try {
       const updated = await updateLessonProgress(contentId, type);
       setLessonProgress(updated);
     } catch {
-      // غير مصرح للمعلم/الزائر أو تعذر الاتصال
+      // Not authorized for teacher/visitor roles or network failure — ignore.
     }
   };
 
+  // Final CTA ("الانتقال إلى التدريب والتطبيقات" = go to training and
+  // applications): route to the homework if the lesson has one, otherwise to
+  // the next item in the month (or back to the hub if this was the last one).
   const handleNextAction = () => {
     setDrawerOpen(false);
     if (content.homework && content.homework.length > 0) {
@@ -267,6 +291,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
             {step === "video" &&
               (content.videoUrl ? (
                 <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
+                  {/* Embeddable (YouTube) links render inside an iframe; anything else
+                  falls back to a native <video> element. */}
                   {embedVideoUrl ? (
                     <iframe
                       key={embedVideoUrl}
@@ -277,6 +303,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                       className="w-full h-full border-0"
                     />
                   ) : (
+                    // Native player reports completion via the onEnded event.
                     <video
                       key={content.videoUrl}
                       src={content.videoUrl}
@@ -301,6 +328,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </span>
             )}
 
+            {/* Manual "أتممت مشاهدة الفيديو" ("I finished watching the video") button as
+              a fallback for players that cannot emit completion events. */}
             {step === "video" && content.videoUrl && (
               <button
                 type="button"
@@ -363,6 +392,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </button>
             )}
 
+            // Written explanation section (step 2 of the flow).
             {step === "explanation" && articleText && (
               <div
                 id="explanation-section"
@@ -400,6 +430,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </button>
             )}
 
+            // Required book / note section (step 3 of the flow).
             {step === "book" && content.note && (
               <div
                 id="book-section"

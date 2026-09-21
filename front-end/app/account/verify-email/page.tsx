@@ -1,11 +1,15 @@
 "use client";
 
+// Email verification page: a 6-digit OTP input with auto-advance focus, paste
+// support, an expiry countdown and a resend button with its own cooldown. On a
+// successful verification the student is routed to the choose-avatar step.
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyAccount, resendOtp } from "@/lib/account/auth";
 import { getPendingEmail } from "@/lib/core/http";
 
+// Resend cooldown and the OTP's validity window (in seconds).
 const OTP_COOLDOWN_SECONDS = 60; 
 const OTP_EXPIRY_SECONDS = 600; 
 
@@ -19,10 +23,11 @@ export default function VerifyOTP() {
   const [info, setInfo] = useState<string | null>(null);
   
   const [secondsLeft, setSecondsLeft] = useState(OTP_EXPIRY_SECONDS);
-  const [cooldownLeft, setCooldownLeft] = useState(0); // مؤقت منفصل لإعادة الإرسال
+  const [cooldownLeft, setCooldownLeft] = useState(0); // separate resend cooldown countdown
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Tick every second: drives both the OTP expiry and the resend cooldown.
   useEffect(() => {
     const interval = setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -32,6 +37,7 @@ export default function VerifyOTP() {
     return () => clearInterval(interval);
   }, []);
 
+  // Keep one digit per box and auto-focus the next empty box after typing.
   const handleChange = (index: number, value: string) => {
     if (isNaN(Number(value))) return;
 
@@ -43,6 +49,7 @@ export default function VerifyOTP() {
     }
   };
 
+  // Backspace on an empty box steps the focus back to the previous one.
   const handleKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>
@@ -52,6 +59,7 @@ export default function VerifyOTP() {
     }
   };
 
+  // Paste support: distribute up to 6 digits across the boxes at once.
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData("text/plain").slice(0, 6);
@@ -73,6 +81,7 @@ export default function VerifyOTP() {
     return `${m}:${s}`;
   };
 
+  // Resend the OTP when the cooldown has elapsed, resetting both timers + the boxes.
   const handleResend = async () => {
     if (cooldownLeft > 0 || loading) return;
 

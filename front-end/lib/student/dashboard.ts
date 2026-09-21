@@ -1,3 +1,7 @@
+// ============= Student Dashboard =============
+// Month-level progress consumed by the student dashboard, fetched through
+// the shared cache so the dashboard doesn't refetch on every render.
+
 import { API_BASE_URL, authedJson } from "../core/http";
 import { cachedGet } from "../educational-content/content";
 

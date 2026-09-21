@@ -1,5 +1,8 @@
 "use client";
 
+// Modal form for creating/editing a study stage (title + optional image).
+// Uncontrolled inputs are re-seeded from props whenever the modal opens.
+
 import { useState } from "react";
 
 interface StageModalProps {

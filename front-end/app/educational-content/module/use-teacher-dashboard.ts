@@ -1,3 +1,8 @@
+// State hook backing the teacher dashboard.
+// Loads stages / months / content, exposes create–edit–delete handlers plus
+// optimistic reordering (with reload on failure), and keeps the three modal
+// forms and the delete confirmation in sync.
+
 import { useCallback, useEffect, useState } from "react";
 import {
   getEducationalStages,
@@ -36,7 +41,9 @@ import type {
   StageFormValues,
 } from "./teacher-dashboard.types";
 
-function validateQuestion(q: ContentQuestion): string | null {
+// Validate a single question before saving: it must have a prompt, at least two
+  // options, and at least one correct answer that actually exists as an option.
+  function validateQuestion(q: ContentQuestion): string | null {
   if (!q.questionText.trim()) return "أحد الأسئلة لا يحتوي على نص السؤال";
   if (q.options.length < 2) return "يجب أن يحتوي كل سؤال على خيارين على الأقل";
   if (q.correctAnswers.length < 1) return "يجب تحديد إجابة صحيحة واحدة على الأقل لكل سؤال";
@@ -169,6 +176,8 @@ export function useTeacherDashboard() {
   };
 
   // ============ Helper: reorder array locally + call API ============
+  // Optimistically reorder the local list and persist the new order via the API.
+  // On failure the canonical list is reloaded so the UI matches the server.
   const moveItem = async <T extends { _id: string; order: number }>(
     list: T[],
     index: number,
@@ -351,7 +360,8 @@ export function useTeacherDashboard() {
             writtenExplanation: data.writtenExplanation,
             homework: validQuestions,
           });
-          // CreateLessonDto لا يقبل note، فنحفظه بتحديث لاحق بعد الإنشاء
+          // CreateLessonDto has no note field, so the note is saved with a separate
+          // update (PATCH) right after the lesson is created.
           if (data.note.trim() && created?._id) {
             await updateContent(created._id, "LESSON", { note: data.note.trim() });
           }

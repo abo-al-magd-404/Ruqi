@@ -1,5 +1,9 @@
 "use client";
 
+// "Content (المحتوى)" management section of the teacher dashboard.
+// Lists the lessons/exams of the selected month with reorder, delete and edit
+// actions, plus buttons to create a new lesson or exam.
+
 import { ArrowDown, ArrowUp, Loader2, Plus } from "lucide-react";
 import type { LessonExam, Month } from "@/lib/types/educational-content";
 

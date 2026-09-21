@@ -1,5 +1,8 @@
 "use client";
 
+// StudentAvatar - renders the profile photo. Teachers always show the fixed
+// teacher image; everyone else uses resolveAvatarSrc, which falls back to a
+// generated data-URI avatar when no custom image is set.
 import { AVATAR_FALLBACK_NAME, resolveAvatarSrc } from "@/lib/avatar";
 
 export default function StudentAvatar({
@@ -11,6 +14,7 @@ export default function StudentAvatar({
   seed?: string;
   role?: string;
 }) {
+  // Teachers share a fixed image; students resolve their avatar with a fallback.
   const src =
     role === "TEACHER" ? "/teacher-image.png" : resolveAvatarSrc(avatar, seed).src;
 

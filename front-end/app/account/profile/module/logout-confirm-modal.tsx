@@ -1,3 +1,5 @@
+// Logout confirmation dialog - double-checks the user wants to sign out before
+// invoking onConfirm; the backdrop is ignored while a logout is in progress.
 interface LogoutConfirmModalProps {
   open: boolean;
   onClose: () => void;

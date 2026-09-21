@@ -1,5 +1,9 @@
 "use client";
 
+// Admin dashboard data layer (backing the admin-dashboard UI). Loads the
+// students + educational stages, keeps the search and selected-student state,
+// and exposes the admin mutations: toggling month subscriptions, editing
+// students, changing account status and deleting accounts.
 import { useCallback, useEffect, useState } from "react";
 import {
   deleteStudent,
@@ -18,6 +22,8 @@ import type {
 } from "@/lib/types/admin";
 import type { EducationalStage, Month } from "@/lib/types/educational-content";
 
+// Helpers that normalize a student's polymorphic stage / subscribedMonths fields
+// into plain strings, plus small selectors used by the dashboard UI.
 export function studentStageId(student: AdminStudent | null): string | null {
   if (!student) return null;
   if (student.stage && typeof student.stage === "object") return String(student.stage._id);
@@ -51,6 +57,8 @@ export function useAdminDashboard() {
   const [loadingMonths, setLoadingMonths] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Initial load: fetch students + the sorted stage list, then default the
+  // selection to the first student (kept in sync after every reload).
   const loadStudents = useCallback(async () => {
     try {
       const [data, stages] = await Promise.all([
@@ -79,6 +87,8 @@ export function useAdminDashboard() {
 
   const stageId = studentStageId(selected);
 
+  // Whenever the selected student (and thus their stage) changes, fetch that
+  // stage's months so subscriptions can be toggled per month.
   useEffect(() => {
     let active = true;
     (async () => {
@@ -101,6 +111,7 @@ export function useAdminDashboard() {
     };
   }, [stageId]);
 
+  // Client-side search over id, name and email.
   const filteredStudents = students.filter((s) => {
     const term = search.trim();
     if (!term) return true;
@@ -111,6 +122,8 @@ export function useAdminDashboard() {
     );
   });
 
+  // Toggle a month subscription: unsubscribe when already subscribed, subscribe
+  // otherwise. Updated months are patched into both lists (table + selection).
   const applySubscription = useCallback(
     async (studentId: string, monthId: string, isSubscribed: boolean) => {
       setBusy(true);
@@ -188,6 +201,7 @@ export function useAdminDashboard() {
     [loadStudents],
   );
 
+  // Aggregates backing the dashboard stat cards.
   const activeCount = students.filter((s) => s.status === "ACTIVE").length;
   const subscriptionsCount = students.reduce(
     (total, s) => total + (s.subscribedMonths?.length ?? 0),

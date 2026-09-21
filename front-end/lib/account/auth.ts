@@ -1,3 +1,8 @@
+// ============= Account: Auth =============
+// Client-side auth API used by the login / register / forgot-password /
+// reset-password pages. Covers signup, OTP verification, login, logout and
+// password reset, and exports NotVerifiedError for not-yet-activated accounts.
+
 import {
   API_BASE_URL,
   formatApiError,
@@ -94,6 +99,8 @@ export async function loginUser(payload: LoginPayload): Promise<LoginResult> {
   const data = await safeJson(res);
 
   if (!res.ok) {
+    // A 403 (or a message mentioning activation) means the account exists
+    // but has not been activated with the verification code yet.
     if (res.status === 403 || data.message?.includes("تفعيل")) {
       throw new NotVerifiedError();
     }
@@ -105,6 +112,8 @@ export async function loginUser(payload: LoginPayload): Promise<LoginResult> {
 
 export async function logoutUser(): Promise<void> {
   const token = getAccessToken();
+  // Best-effort server-side logout: notify the backend if we have a token,
+  // but always clear the local tokens even if the request fails.
   if (token) {
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {

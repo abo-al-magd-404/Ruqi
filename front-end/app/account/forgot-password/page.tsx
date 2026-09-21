@@ -1,5 +1,7 @@
 "use client";
 
+// Forgot-password page: sends a reset code to the given email and, after a short
+// delay, forwards to the reset-password route passing the email via query params.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -42,7 +44,7 @@ export default function ForgotPasswordForm() {
       const res = await forgetPassword(email);
       setSuccessMessage(res.message);
       
-      // التوجيه إلى صفحة إعادة التعيين مع تمرير البريد الإلكتروني عبر الـ Query Params
+      // Wait a moment, then go to the reset page with the email in the query params.
       setTimeout(() => {
         router.push(`/account/reset-password?email=${encodeURIComponent(email)}`);
       }, 2000);
@@ -55,7 +57,7 @@ export default function ForgotPasswordForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden font-cairo py-12 md:py-20">
-      {/* خلفية الزخرفة الإسلامية */}
+      {/* Islamic ornament background */}
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('/path-to-islamic-pattern.svg')] bg-repeat"></div>
 
       <form
@@ -63,7 +65,7 @@ export default function ForgotPasswordForm() {
         className="relative z-10 w-full max-w-[520px] bg-surface rounded-[20px] md:rounded-[24px] border border-border shadow-[0_16px_48px_-4px_rgba(84,70,58,0.0588)] p-6 sm:p-8 md:p-12 transition-all"
         dir="rtl"
       >
-        {/* الخط الفاصل والزخرفة البصرية */}
+        {/* Decorative divider and ornate accent */}
         <div className="flex flex-col items-center justify-center mb-6 md:mb-8">
           <svg
             className="w-full max-w-[504px] h-[14px] md:h-[18px] mb-3"
@@ -89,7 +91,7 @@ export default function ForgotPasswordForm() {
           </p>
         </div>
 
-        {/* حقل البريد الإلكتروني */}
+        {/* Email input */}
         <FormField
           label="البريد الإلكتروني"
           name="email"

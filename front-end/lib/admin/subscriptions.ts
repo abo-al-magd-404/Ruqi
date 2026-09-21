@@ -1,3 +1,7 @@
+// ============= Admin: Subscriptions =============
+// Admin helpers to read, add, and remove the months a student is
+// subscribed to. All return the updated subscribedMonths list.
+
 import { API_BASE_URL, authedJson } from "../core/http";
 import type { AdminMonthRef, SubscribedMonthsResult } from "../types/admin";
 

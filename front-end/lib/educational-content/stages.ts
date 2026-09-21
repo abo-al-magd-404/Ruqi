@@ -1,3 +1,8 @@
+// ============= Educational Content: Stages =============
+// Read + CRUD helpers for educational stages. Public stage reads use
+// cachedGet (shared TTL cache, see ./content) so the list is fetched once
+// per TTL; teacher mutations call clearContentCache afterwards.
+
 import { API_BASE_URL, authedJson, authedWrite, formatApiError, safeJson } from "../core/http";
 import { cachedGet, clearContentCache } from "./content";
 import type { EducationalStage, ReorderItem, StagePayload } from "../types/educational-content";
@@ -65,6 +70,8 @@ export async function reorderStages(items: ReorderItem[]): Promise<void> {
   try {
     await authedWrite(`${API_BASE_URL}/educational-content/stages/reorder`, "PATCH", { items });
   } catch (err) {
+    // Bulk reorder rejected ("should not exist") — fall back to applying
+    // each item's order through its individual PATCH endpoint.
     if (!(err instanceof Error && /should not exist/i.test(err.message))) throw err;
     for (const item of items) {
       await authedJson(`${API_BASE_URL}/educational-content/stages/${item.id}`, "PATCH", {

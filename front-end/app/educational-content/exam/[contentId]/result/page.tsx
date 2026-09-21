@@ -1,5 +1,9 @@
 "use client";
 
+// Exam result screen.
+// Reads the outcome from the result saved in localStorage (falling back to the
+// query string) and renders a pass/fail summary with a circular progress ring.
+
 import { Suspense, useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -33,6 +37,7 @@ function ExamResultInner({ params }: { params: Promise<{ contentId: string }> })
   useEffect(() => {
     let active = true;
 
+    // Read the exam result previously stored by the take page.
     const rawResult = contentId
       ? (() => {
           try {
@@ -94,6 +99,7 @@ function ExamResultInner({ params }: { params: Promise<{ contentId: string }> })
   const wrongAnswersCount = Math.max(0, totalQuestions - correctAnswersCount);
   const totalScore = 100;
   const earnedPoints = correctAnswersCount;
+  // Pass threshold comes from the exam config and defaults to 50%.
   const passed = scorePercentage >= (typeof content?.passPercentage === "number" ? content.passPercentage : 50);
 
   return (

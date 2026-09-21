@@ -1,3 +1,10 @@
+// ============= Avatar Utilities =============
+// Generates, parses, and resolves student avatars. Most rules use a plain
+// seed string rendered as a DiceBear glyphs data-URI; avatars may also be an
+// uploaded image URL, a long DiceBear URL, or a legacy JSON config. Exports:
+// avatarDataUri, avatarUrl, parseAvatarValue, resolveAvatarSrc,
+// randomAvatarOptions, isAvatarImage/isAvatarSeed, pendingAvatarStorage.
+
 import { Style, Avatar } from "@dicebear/core";
 import glyphs from "@dicebear/styles/glyphs.json" with { type: "json" };
 
@@ -83,6 +90,7 @@ export function avatarDataUri(
       ? { seed: seedOrOptions?.trim() || AVATAR_FALLBACK_NAME }
       : seedOrOptions;
   const key = cacheKey(opts, size);
+  // Reuse previously generated data-URIs so repeated renders are cheap.
   if (DATA_URI_CACHE.has(key)) return DATA_URI_CACHE.get(key)!;
   const uri = new Avatar(AVATAR_STYLE, { ...avatarStyleOptions(opts), size }).toDataUri();
   DATA_URI_CACHE.set(key, uri);
@@ -117,11 +125,15 @@ export function randomAvatarOptions(): AvatarOptions {
 
 const DICEBEAR_URL_RE = /^https?:\/\/api\.dicebear\.com\/\d+\.x\/glyphs\/svg\?/i;
 
+// ============= Parsing & Resolving =============
+
 export function parseAvatarValue(value: string | null | undefined): AvatarOptions | null {
   if (!value) return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
 
+  // A full DiceBear URL is parsed back into its options so it can be
+  // re-rendered locally as a data-URI.
   if (DICEBEAR_URL_RE.test(trimmed)) {
     let searchParams: URLSearchParams;
     try {
@@ -176,6 +188,8 @@ export function resolveAvatarSrc(
   avatar: string | null | undefined,
   fallbackSeed = AVATAR_FALLBACK_NAME,
 ): { isImage: boolean; src: string; seed: string } {
+  // Priority: explicit options → legacy JSON config → raw image URL → seed
+  // string. Returns whether the value should be rendered as an <img>.
   const parsed = parseAvatarValue(avatar);
   if (parsed) {
     return { isImage: false, src: avatarDataUri(parsed), seed: parsed.seed };
@@ -227,6 +241,9 @@ function nearestPaletteColor(hex: string): string | undefined {
   return best;
 }
 
+// Old avatars were stored as a JSON config string (e.g. { faceColor: ... }).
+// Map them to a stable seed derived from a hash of the JSON, snapping the
+// legacy face color to the nearest brand palette color.
 function legacyAvatarOptions(avatar: string | null | undefined): AvatarOptions | null {
   if (!avatar) return null;
   const trimmed = avatar.trim();
@@ -247,6 +264,8 @@ function legacyAvatarOptions(avatar: string | null | undefined): AvatarOptions |
 
   return opts;
 }
+
+// ============= Pending Avatar (localStorage) =============
 
 export function pendingAvatarStorage() {
   const KEY = "ruqi_pending_avatar";

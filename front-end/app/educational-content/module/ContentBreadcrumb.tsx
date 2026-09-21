@@ -1,5 +1,9 @@
 "use client";
 
+// Breadcrumb for the educational-content area.
+// Infers the trail (home → stage → month → content) from the current route and
+// resolves titles by fetching each ancestor entity as needed.
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,6 +32,8 @@ export default function ContentBreadcrumb() {
         return;
       }
 
+      // The relevant route shapes are educational-content/{stage|month|content|exam}/<id>.
+    // Depending on the segment we walk up the hierarchy to build the trail.
       const [, route, id] = segments;
       const trail: BreadcrumbItem[] = [ROOT];
 

@@ -1,5 +1,8 @@
 "use client";
 
+// GuestGuard - wraps routes that only signed-out users may visit. Authenticated
+// users opening such a route are redirected to /account/profile (and render
+// nothing meanwhile).
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "@/lib/tokens/tokens";

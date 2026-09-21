@@ -1,5 +1,9 @@
 "use client";
 
+// Educational content hub page.
+// Lists all available study stages as clickable cards; each card links to the
+// stage's month listing.
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getEducationalStages } from "@/lib/educational-content/stages";

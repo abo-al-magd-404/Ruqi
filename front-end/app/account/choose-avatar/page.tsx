@@ -1,5 +1,8 @@
 "use client";
 
+// Choose Avatar page shown right after email verification. Lets the new student
+// pick (or skip) a personal glyph avatar; the chosen value is persisted and
+// applied on the first login, at which point this page hands over to login.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "../module/AvatarPicker";
@@ -18,12 +21,16 @@ function ChooseAvatar() {
   const [avatar, setAvatar] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Guard: without pending registration data this page is meaningless, so push
+  // guests back to the login page.
   useEffect(() => {
     if (!getPendingEmail()) {
       router.replace("/account/login");
     }
   }, [router]);
 
+  // Save the picked avatar (falling back to the student's name), clear the
+  // pending registration data, and route into the first login.
   const handleContinue = () => {
     setSaving(true);
     pendingAvatarStorage().set(avatar.trim() || name || AVATAR_FALLBACK_NAME);
@@ -83,6 +90,7 @@ function ChooseAvatar() {
           {saving ? "جاري الحفظ..." : "حفظ والمتابعة"}
         </button>
 
+        {/* Skip avatar selection for now: clear pending data and finish login. */}
         <button
           type="button"
           onClick={() => {

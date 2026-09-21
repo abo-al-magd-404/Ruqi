@@ -1,3 +1,6 @@
+// PasswordField - password input with a show/hide toggle and an optional live
+// strength meter (colored segment bar + requirement checklist) driven by the
+// shared evaluatePassword / getPasswordStrength helpers.
 import { evaluatePassword, getPasswordStrength, PASSWORD_STRENGTH_LABELS, PasswordStrengthLevel } from "@/lib/password";
 import { useState } from "react";
 
@@ -16,6 +19,8 @@ export default function PasswordField({
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
+  // The native input value can be string | string[] | undefined; flatten it to a
+  // plain string so the strength logic can run over it.
   const password = typeof value === "string" ? value : Array.isArray(value) ? value.join("") : String(value ?? "");
 
   const checks = evaluatePassword(password);

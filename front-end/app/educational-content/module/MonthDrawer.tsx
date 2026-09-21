@@ -1,5 +1,10 @@
 "use client";
 
+// Mobile-only drawer that lists a month's content (shown under the lg breakpoint).
+// It animates open/closed through a small state machine. Locked items render as
+// non-clickable rows with a lock icon and a "complete the previous item" hint;
+// the current lesson shows its per-stage completion chips.
+
 import { useState } from "react";
 import Link from "next/link";
 import { X, ChevronUp, Play, Check, Circle, Lock } from "lucide-react";
@@ -37,6 +42,7 @@ export default function MonthDrawer({
   lockedIds,
   currentLessonStages,
 }: MonthDrawerProps) {
+  // Animate the slide-in/out via a small open state machine.
   const [stage, setStage] = useState<"closed" | "opening" | "open" | "closing">("closed");
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
@@ -102,6 +108,8 @@ export default function MonthDrawer({
               </div>
             ) : (
               contentList.map((item, index) => {
+                // Locked items are excluded from click-through; the currently open item is
+                // never considered locked.
                 const isCurrent = item._id === currentContentId;
                 const isCompleted = currentIndex !== -1 && index < currentIndex;
                 const isLessonItem = item.type === "LESSON";
@@ -111,6 +119,9 @@ export default function MonthDrawer({
                   : `/educational-content/exam/${item._id}`;
                 const showStages = isCurrent && isLessonItem && !!currentLessonStages;
 
+                // Stage chips shown under the current lesson:
+                // الفيديو = video / الشرح = explanation / الكتاب المطلوب = required book /
+                // التدريب = training.
                 const stageChips = [
                   { label: "الفيديو", done: currentLessonStages?.video ?? false },
                   { label: "الشرح", done: currentLessonStages?.explanation ?? false },
@@ -167,6 +178,7 @@ export default function MonthDrawer({
                           </span>
                         </div>
                         {isLocked && (
+                          // "أكمل العنصر السابق" = "Complete the previous item first".
                           <span className="shrink-0 text-[11px] font-bold text-danger ml-2">
                             أكمل العنصر السابق
                           </span>
@@ -197,6 +209,7 @@ export default function MonthDrawer({
                   </>
                 );
 
+                // Locked rows render as disabled divs instead of links.
                 if (isLocked) {
                   return (
                     <div key={item._id} className={`block w-full cursor-not-allowed ${rowClass}`} aria-disabled="true" dir="rtl">
@@ -219,6 +232,7 @@ export default function MonthDrawer({
   );
 }
 
+// Floating button on small screens that re-opens the drawer.
 export function MonthDrawerButton({ onClick }: { onClick: () => void }) {
   return (
     <div className="sticky bottom-4 w-full flex justify-center pointer-events-none lg:hidden mt-auto pt-6 z-[1050] font-cairo" dir="rtl">

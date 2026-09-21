@@ -1,3 +1,7 @@
+// Edit profile modal (students) - switches between two tabs: "data" for the
+// name/phone/address (the educational stage itself is read-only, changing it
+// requires contacting platform admin) and "avatar" for the AvatarPicker. The
+// modal resets to the requested initial section every time it is opened.
 import { useState } from "react";
 import type { EducationalStage } from "@/lib/types/educational-content";
 import AvatarPicker from "../../module/AvatarPicker";
@@ -28,6 +32,7 @@ export default function EditProfileModal({
   const [section, setSection] = useState<"data" | "avatar">(initialSection);
   const [prevOpen, setPrevOpen] = useState(open);
 
+  // Re-seed the active tab whenever the modal is (re)opened.
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
@@ -37,6 +42,7 @@ export default function EditProfileModal({
 
   if (!open) return null;
 
+  // Write the picked avatar into the shared form as a synthetic change event.
   const commitAvatar = (avatar: string) => {
     onChange({
       target: { name: "avatar", value: avatar },

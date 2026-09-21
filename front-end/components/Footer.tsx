@@ -1,13 +1,18 @@
+// ============= Footer =============
+// Site-wide footer: brand blurb, explore links, social links, and the
+// copyright / legal row. Renders the current year dynamically.
+
 import Link from "next/link";
 import { TvMinimalPlay, BadgeCheck, Send, Crown } from "lucide-react";
 
+// Quick navigation links presented in the "Explore" column.
 const EXPLORE_LINKS = [
   { label: "المحتوى التعليمي", href: "/educational-content" },
   { label: "قائمة المتفوقين", href: "/leaderboard" },
   { label: "حسابك الشخصي", href: "/account" },
-  { label: "مركز الدعم والمساعدة", href: "/support" },
 ];
 
+// Social profile links rendered as circular icon buttons.
 const SOCIAL_LINKS = [
   { label: "يوتيوب", href: "#", Icon: TvMinimalPlay },
   { label: "فيسبوك", href: "#", Icon: BadgeCheck },
@@ -73,19 +78,13 @@ export default function Footer() {
         <div className="mt-12 pt-6 border-t border-footer-foreground/10 flex flex-col-reverse md:flex-row items-center justify-between gap-4 text-sm text-footer-foreground/60">
           <p>حقوق النشر محفوظة © {currentYear} زُقِيّ. صنع بشغف لخدمة الضاد.</p>
           <div className="flex gap-4">
-            <Link
-              href="/terms"
-              className="hover:text-primary transition-colors"
-            >
+            <div className="hover:text-primary transition-colors" role="text">
               شروط الخدمة
-            </Link>
+            </div>
             <span aria-hidden="true">•</span>
-            <Link
-              href="/privacy"
-              className="hover:text-primary transition-colors"
-            >
+            <div className="hover:text-primary transition-colors" role="text">
               سياسة الخصوصية
-            </Link>
+            </div>
           </div>
         </div>
       </div>

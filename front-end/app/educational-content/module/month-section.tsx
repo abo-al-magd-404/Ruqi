@@ -1,5 +1,9 @@
 "use client";
 
+// "Month (الشهر)" management section of the teacher dashboard.
+// Lists the months of the selected stage as selectable cards with reorder,
+// delete and edit actions; selecting a month drives the content section below.
+
 import { ArrowDown, ArrowUp, Loader2, Plus } from "lucide-react";
 import type { EducationalStage, Month } from "@/lib/types/educational-content";
 

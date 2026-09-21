@@ -1,5 +1,8 @@
 "use client";
 
+// Home / landing page: an animated hero, the teacher spotlight, platform feature
+// cards, how-it-works steps and live platform stats. Stats are fetched on mount
+// with a placeholder set falling back when the API is unreachable.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -87,6 +90,8 @@ const HOW_IT_WORKS_STEPS = [
   },
 ];
 
+// Fallback stats keep the layout stable while the real numbers load; an
+// "undefined" value renders no counter at all instead of flashing a bogus "0".
 const FALLBACK_STATS = [
   { icon: BookOpen, label: "مرحلة تعليمية", value: undefined as number | undefined },
   { icon: GraduationCap, label: "شهر دراسي", value: undefined as number | undefined },
@@ -94,6 +99,7 @@ const FALLBACK_STATS = [
   { icon: Trophy, label: "اختبار تفاعلي", value: undefined as number | undefined },
 ];
 
+// Derive the teacher's experience from a fixed start year so the copy stays current.
 const experienceStartYears = 2018;
 const experienceYears = new Date().getFullYear() - experienceStartYears;
 
@@ -123,6 +129,7 @@ function SectionDivider() {
   );
 }
 
+// Counts the number up from 0 to the target value once the element scrolls into view.
 function AnimatedCounter({
   value,
   prefix = "",
@@ -176,6 +183,7 @@ export default function HomePage() {
   const [heroReady, setHeroReady] = useState(false);
   const [stats, setStats] = useState<PlatformStats | null>(null);
 
+  // Fetch live platform stats once on mount; keep the placeholder when it fails.
   useEffect(() => {
     let cancelled = false;
     (async () => {
