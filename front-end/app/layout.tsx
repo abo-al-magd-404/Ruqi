@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     title: "رُقِيّ | منصة الأستاذ سمير أبو المجد",
     description:
       "منصة رُقِيّ التعليمية لتعلم اللغة العربية من خلال محتوى تعليمي منظم ودروس واختبارات تفاعلية.",
-    url: "https://YOUR-DOMAIN.com",
+    url: "https://ruqi-five.vercel.app",
   },
 };
 
