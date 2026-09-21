@@ -2,16 +2,20 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ClipboardList, Timer, Trophy, PlayCircle, Play, Check, Circle } from "lucide-react";
+import { ClipboardList, Timer, Trophy, PlayCircle } from "lucide-react";
 import { getContentById } from "@/lib/educational-content/content";
 import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
+import MonthSidebar from "@/app/educational-content/module/MonthSidebar";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 import { getExamProgress } from "@/lib/progress";
-import type { ExamProgress } from "@/lib/progress";
+import { getMonthProgress } from "@/lib/progress";
+import type { ExamProgress, MonthProgress } from "@/lib/progress";
+import { getSequenceLockedIds } from "@/lib/progress/sequence";
+import { getProfile } from "@/lib/account/profile";
 
 const EXAM_DURATION_MINUTES = 30;
 
@@ -26,6 +30,8 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [examProgress, setExamProgress] = useState<ExamProgress | null>(null);
+  const [monthProgress, setMonthProgress] = useState<MonthProgress | null>(null);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -33,7 +39,9 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
     const fetchExamDetails = async () => {
       try {
         const contentData = await getContentById(contentId);
+        const profile = await getProfile().catch(() => null);
         if (!active) return;
+        setIsStudent(profile?.role === "STUDENT");
         setContent(contentData);
 
         if (contentData?.locked) {
@@ -54,6 +62,22 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
 
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
+
+          if (profile?.role === "STUDENT") {
+            const monthProgress = await getMonthProgress(contentData.month).catch(() => null);
+            if (!active) return;
+            if (
+              monthProgress &&
+              getSequenceLockedIds(
+                [...monthContent.items].sort((a, b) => a.order - b.order),
+                monthProgress,
+              ).has(String(contentId))
+            ) {
+              setIsLocked(true);
+              return;
+            }
+            setMonthProgress(monthProgress);
+          }
         }
       } catch {
         if (active) setContent(null);
@@ -79,15 +103,15 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
         className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo"
         dir="rtl"
       >
-        <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الاختبار غير متاح</h3>
+        <h3 className="font-extrabold text-[24px] text-text-main mb-3">هذا الاختبار غير متاح حالياً</h3>
         <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
-          أنت غير مشترك في هذا الشهر. اشترك لفتح الاختبارات ومتابعة خطتك الدراسية.
+          أكمل الدروس السابقة أولاً، ثم سيفتح لك هذا الاختبار لإتمام خطتك الدراسية.
         </p>
         <Link
-          href="/account"
+          href={content?.month ? `/educational-content/month/${content.month}` : "/educational-content"}
           className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-[15px] hover:bg-primary-hover transition-colors flex items-center justify-center"
         >
-          الانتقال إلى حسابي
+          العودة إلى المحتوى
         </Link>
         <Link
           href="/educational-content"
@@ -117,6 +141,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
   }
 
   const currentIndex = monthContentList.findIndex((item) => item._id === content._id);
+  const drawerLockedIds = isStudent ? getSequenceLockedIds(monthContentList, monthProgress) : new Set<string>();
   const contentPosition = currentIndex === -1 ? content.order : currentIndex + 1;
   const totalItems = monthContentList.length || 1;
 
@@ -242,76 +267,15 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
             </div>
           </div>
 
-          <aside className="hidden lg:flex w-full lg:w-[360px] bg-surface border border-border shadow-[0_8px_24px_rgba(84,70,58,0.04)] rounded-card p-6 flex-col gap-6 lg:sticky lg:top-24 shrink-0">
-            <div className="flex flex-col items-start gap-3 pb-3 border-b border-border w-full">
-              <span className="font-bold text-[14px] text-primary">
-                الدرس {contentPosition} من {totalItems} في هذا المنهج
-              </span>
-              <h3 className="font-extrabold text-[18px] text-text-main">
-                {month ? `محتويات ${month.title}` : "محتويات الشهر"}
-              </h3>
-            </div>
-
-            <div className="flex flex-col gap-3 w-full">
-              {monthContentList.length === 0 ? (
-                <div className="text-center py-6 font-medium text-sm text-text-muted">
-                  لا توجد عناصر في هذا الشهر بعد.
-                </div>
-              ) : (
-                monthContentList.map((item, index) => {
-                  const isCurrent = item._id === content._id;
-                  const isCompleted = currentIndex !== -1 && index < currentIndex;
-                  const isLessonItem = item.type === "LESSON";
-                  const href = isLessonItem
-                    ? `/educational-content/content/${item._id}`
-                    : `/educational-content/exam/${item._id}`;
-
-                  return (
-                    <Link
-                      href={href}
-                      key={item._id}
-                      className={`flex flex-row items-center justify-between p-4 rounded-xl transition-all duration-200 w-full min-h-[58px] ${
-                        isCurrent
-                          ? "bg-primary-light border border-primary"
-                          : isCompleted
-                            ? "bg-transparent border border-primary"
-                            : "bg-transparent border border-border"
-                      }`}
-                    >
-                      <div
-                        className={`w-6 h-6 rounded-xl flex items-center justify-center shrink-0 ml-3 ${
-                          isCurrent
-                            ? "bg-primary text-surface"
-                            : isCompleted
-                              ? "bg-success-bg text-success"
-                              : "bg-surface-secondary text-text-main"
-                        }`}
-                      >
-                        {isCurrent ? (
-                          <Play size={12} fill="currentColor" className="ml-0.5" />
-                        ) : isCompleted ? (
-                          <Check size={14} strokeWidth={3} />
-                        ) : (
-                          <Circle size={8} fill="currentColor" />
-                        )}
-                      </div>
-                      <span
-                        className={`text-[14px] truncate flex-1 text-right ${
-                          isCurrent
-                            ? "font-bold text-primary-hover"
-                            : isCompleted
-                              ? "font-medium text-text-main"
-                              : "font-medium text-text-muted"
-                        }`}
-                      >
-                        {item.title}
-                      </span>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
-          </aside>
+          <MonthSidebar
+            title={month ? `محتويات ${month.title}` : "محتويات الشهر"}
+            contentList={monthContentList}
+            currentContentId={content._id}
+            currentIndex={currentIndex}
+            contentPosition={contentPosition}
+            totalItems={totalItems}
+            lockedIds={drawerLockedIds}
+          />
         </div>
       </main>
 
@@ -324,6 +288,7 @@ export default function ExamOverviewPage({ params }: { params: Promise<{ content
         currentIndex={currentIndex}
         contentPosition={contentPosition}
         totalItems={totalItems}
+        lockedIds={drawerLockedIds}
       />
       <MonthDrawerButton onClick={() => setDrawerOpen(true)} />
     </div>

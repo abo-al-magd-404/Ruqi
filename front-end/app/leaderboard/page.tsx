@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getLeaderboard, getLeaderboardStages } from "@/lib/leaderboard";
-import type { LeaderboardStage } from "@/lib/leaderboard";
+import { useState, useEffect, useRef } from "react";
+import { getLeaderboard, getLeaderboardStages, getMyLeaderboardSummary } from "@/lib/leaderboard";
+import { resolveAvatarSrc, AVATAR_FALLBACK_NAME } from "@/lib/avatar";
+import type { LeaderboardStage, MyLeaderboardSummary } from "@/lib/leaderboard";
 import type { StudentRank } from "@/lib/types/leaderboard";
 
 const ALL_STAGES_TAB = "على مستوى المنصة";
@@ -11,7 +12,9 @@ export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<string>(ALL_STAGES_TAB);
   const [stages, setStages] = useState<LeaderboardStage[]>([]);
   const [students, setStudents] = useState<StudentRank[]>([]);
+  const [mySummary, setMySummary] = useState<MyLeaderboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const summaryCache = useRef<Record<string, MyLeaderboardSummary | null>>({});
 
   const tabs = [ALL_STAGES_TAB, ...stages.map((s) => s.title)];
 
@@ -20,6 +23,31 @@ export default function LeaderboardPage() {
       .then(setStages)
       .catch(() => setStages([]));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const stage = stages.find((s) => s.title === activeTab);
+    const key = stage?._id ?? ALL_STAGES_TAB;
+    if (key in summaryCache.current) {
+      setMySummary(summaryCache.current[key]);
+      return;
+    }
+
+    getMyLeaderboardSummary(stage?._id)
+      .then((summary) => {
+        if (!active) return;
+        summaryCache.current[key] = summary;
+        setMySummary(summary);
+      })
+      .catch(() => {
+        if (active) setMySummary(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeTab, stages]);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -38,14 +66,48 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, [activeTab, stages]);
 
-  const topThree = students.filter((s) => s.rank <= 3).sort((a, b) => a.rank - b.rank);
-  const otherRanks = students.filter((s) => s.rank > 3).sort((a, b) => a.rank - b.rank);
+  const baseRows = students.map((s) => ({
+    ...s,
+    isCurrentUser: Boolean(mySummary && String(s.id) === mySummary.studentId),
+  }));
+
+  const rows =
+    mySummary && !baseRows.some((r) => r.isCurrentUser)
+      ? [
+          ...baseRows,
+          {
+            id: `current-user-${mySummary.studentId}`,
+            name: mySummary.name || "أنت",
+            stage: activeTab === ALL_STAGES_TAB ? "" : activeTab,
+            points: mySummary.points,
+            rank: baseRows.filter((r) => r.points >= mySummary.points).length + 1,
+            imageUrl: "",
+            isCurrentUser: true,
+          } satisfies StudentRank,
+        ]
+      : baseRows;
+
+  const topThree = rows.filter((s) => s.rank <= 3).sort((a, b) => a.rank - b.rank);
+  const otherRanks = rows.filter((s) => s.rank > 3).sort((a, b) => a.rank - b.rank);
 
   const getRankBadgeColor = (rank: number) => {
     if (rank === 1) return "bg-[#E6C15C]";
     if (rank === 2) return "bg-[#B8C2C7]";
     if (rank === 3) return "bg-[#CFA085]";
     return "bg-primary-light";
+  };
+
+  const rankName = (rank: number): string | number => {
+    const names: Record<number, string> = {
+      4: "الرابع",
+      5: "الخامس",
+      6: "السادس",
+      7: "السابع",
+      8: "الثامن",
+      9: "التاسع",
+      10: "العاشر",
+    };
+    return names[rank] ?? rank;
   };
 
   return (
@@ -88,19 +150,18 @@ export default function LeaderboardPage() {
           <div className="flex justify-center items-center w-full py-24">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : students.length > 0 ? (
+        ) : rows.length > 0 ? (
           <div className="flex flex-col w-full gap-14 items-center">
             {topThree.length > 0 && (
               <div className="flex flex-col md:flex-row justify-center items-center md:items-end gap-6 w-full">
                 {topThree.find((s) => s.rank === 2) && (
-                  <div className="flex flex-col items-center p-6 gap-4 w-full md:w-75.5 bg-surface border border-border shadow-lg rounded-[20px] order-2 md:order-1 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="flex flex-col items-center p-6 gap-4 w-full md:w-75.5 max-w-[300px] bg-surface border border-border shadow-lg rounded-[20px] order-2 md:order-1 hover:-translate-y-1 transition-transform duration-300">
                     <div className="relative w-18 h-18 rounded-full bg-background">
-                      <div
-                        className="w-full h-full rounded-full bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url('${topThree.find((s) => s.rank === 2)?.imageUrl}')`,
-                        }}
-                      ></div>
+                      <img
+                        src={resolveAvatarSrc(topThree.find((s) => s.rank === 2)?.imageUrl, topThree.find((s) => s.rank === 2)?.name ?? AVATAR_FALLBACK_NAME).src}
+                        alt={topThree.find((s) => s.rank === 2)?.name ?? ""}
+                        className="w-full h-full rounded-full object-cover"
+                      />
                       <div
                         className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex justify-center items-center ${getRankBadgeColor(2)} text-white font-extrabold text-[12px]`}
                       >
@@ -125,14 +186,13 @@ export default function LeaderboardPage() {
                 )}
 
                 {topThree.find((s) => s.rank === 1) && (
-                  <div className="flex flex-col items-center p-8 gap-5 w-full md:w-77 bg-[#1E1A17] shadow-[0_12px_32px_-4px_rgba(212,175,55,0.1)] rounded-3xl order-1 md:order-2 z-10 hover:-translate-y-2 transition-transform duration-300">
+                  <div className="flex flex-col items-center p-8 gap-5 w-full md:w-77 max-w-[320px] bg-[#1E1A17] shadow-[0_12px_32px_-4px_rgba(212,175,55,0.1)] rounded-3xl order-1 md:order-2 z-10 hover:-translate-y-2 transition-transform duration-300">
                     <div className="relative w-24 h-24 rounded-full bg-background border-2 border-primary">
-                      <div
-                        className="w-full h-full rounded-full bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url('${topThree.find((s) => s.rank === 1)?.imageUrl}')`,
-                        }}
-                      ></div>
+                      <img
+                        src={resolveAvatarSrc(topThree.find((s) => s.rank === 1)?.imageUrl, topThree.find((s) => s.rank === 1)?.name ?? AVATAR_FALLBACK_NAME).src}
+                        alt={topThree.find((s) => s.rank === 1)?.name ?? ""}
+                        className="w-full h-full rounded-full object-cover"
+                      />
                       <div
                         className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex justify-center items-center ${getRankBadgeColor(1)}`}
                       >
@@ -159,14 +219,13 @@ export default function LeaderboardPage() {
                 )}
 
                 {topThree.find((s) => s.rank === 3) && (
-                  <div className="flex flex-col items-center p-6 gap-4 w-full md:w-75.5 bg-surface border border-border shadow-lg rounded-[20px] order-3 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="flex flex-col items-center p-6 gap-4 w-full md:w-75.5 max-w-[300px] bg-surface border border-border shadow-lg rounded-[20px] order-3 hover:-translate-y-1 transition-transform duration-300">
                     <div className="relative w-18 h-18 rounded-full bg-background">
-                      <div
-                        className="w-full h-full rounded-full bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url('${topThree.find((s) => s.rank === 3)?.imageUrl}')`,
-                        }}
-                      ></div>
+                      <img
+                        src={resolveAvatarSrc(topThree.find((s) => s.rank === 3)?.imageUrl, topThree.find((s) => s.rank === 3)?.name ?? AVATAR_FALLBACK_NAME).src}
+                        alt={topThree.find((s) => s.rank === 3)?.name ?? ""}
+                        className="w-full h-full rounded-full object-cover"
+                      />
                       <div
                         className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex justify-center items-center ${getRankBadgeColor(3)} text-white font-extrabold text-[12px]`}
                       >
@@ -193,56 +252,146 @@ export default function LeaderboardPage() {
             )}
 
             {otherRanks.length > 0 && (
-              <div className="w-full overflow-x-auto rounded-[20px] border border-border shadow-sm bg-surface">
-                <table className="w-full min-w-175 text-center border-collapse">
-                  <thead className="bg-primary-light">
-                    <tr>
-                      <th className="py-5 px-4 font-bold text-[14px] text-text-main w-1/4">مجموع النقاط</th>
-                      <th className="py-5 px-4 font-bold text-[14px] text-text-main w-1/4">المرحلة الدراسية</th>
-                      <th className="py-5 px-4 font-bold text-[14px] text-text-main w-1/4">اسم الطالب</th>
-                      <th className="py-5 px-4 font-bold text-[14px] text-text-main w-1/4">المركز</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {otherRanks.map((student) => (
-                      <tr
-                        key={student.id}
-                        className={`border-t border-border transition-colors ${
-                          student.isCurrentUser ? "bg-primary-light" : "bg-surface hover:bg-gray-50"
+              <>
+                <div className="hidden md:block w-full rounded-[20px] border border-border shadow-sm bg-surface overflow-hidden">
+                  <table className="w-full table-fixed text-center border-collapse">
+                    <thead className="bg-primary-light">
+                      <tr>
+                        <th className="py-5 px-4 font-bold text-[14px] text-text-main w-[12%]">المركز</th>
+                        <th className="py-5 px-4 font-bold text-[14px] text-text-main w-[38%]">اسم الطالب</th>
+                        <th className="py-5 px-4 font-bold text-[14px] text-text-main w-[25%]">المرحلة الدراسية</th>
+                        <th className="py-5 px-4 font-bold text-[14px] text-text-main w-[25%]">مجموع النقاط</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {otherRanks.map((student) => (
+                        <tr
+                          key={student.id}
+                          className={`border-t border-border transition-colors ${
+                            student.isCurrentUser
+                              ? "bg-primary"
+                              : "bg-surface hover:bg-gray-50"
+                          }`}
+                        >
+                          <td
+                            className={`py-5 px-4 font-bold text-[15px] ${
+                              student.isCurrentUser ? "text-[#1E1A17]" : "text-primary"
+                            }`}
+                          >
+                            المركز {rankName(student.rank)}
+                          </td>
+                          <td className="py-5 px-4">
+                            <div className="flex items-center justify-center gap-3">
+                              <img
+                                src={resolveAvatarSrc(student.imageUrl, student.name).src}
+                                alt={student.name}
+                                className="w-10 h-10 rounded-full object-cover shrink-0 bg-primary-light"
+                              />
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span
+                                  className={`font-bold text-[15px] ${
+                                    student.isCurrentUser ? "text-[#1E1A17]" : "text-text-main"
+                                  }`}
+                                >
+                                  {student.name}
+                                </span>
+                                {student.isCurrentUser && (
+                                  <span className="px-2 py-0.5 bg-[#1E1A17] text-primary text-[11px] font-extrabold rounded-full">
+                                    أنت
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td
+                            className={`py-5 px-4 font-medium text-[14px] ${
+                              student.isCurrentUser ? "text-[#1E1A17]/75" : "text-text-muted"
+                            }`}
+                          >
+                            {student.stage}
+                          </td>
+                          <td
+                            className={`py-5 px-4 font-extrabold text-[15px] ${
+                              student.isCurrentUser ? "text-[#1E1A17]" : "text-text-main"
+                            }`}
+                          >
+                            {student.points} نقطة
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="md:hidden flex flex-col gap-3 w-full">
+                  {otherRanks.map((student) => (
+                    <div
+                      key={student.id}
+                      className={`flex items-center gap-3 p-4 rounded-[18px] border shadow-sm transition-colors ${
+                        student.isCurrentUser
+                          ? "bg-primary border-primary/60 ring-2 ring-primary/25"
+                          : "bg-surface border-border"
+                      }`}
+                    >
+                      <div
+                        className={`flex items-center justify-center shrink-0 w-10 h-10 rounded-full font-extrabold text-[14px] ${
+                          student.isCurrentUser
+                            ? "bg-[#1E1A17] text-primary"
+                            : `${getRankBadgeColor(student.rank)} ${
+                                student.rank <= 3 ? "text-white" : "text-primary"
+                              }`
                         }`}
                       >
-                        <td
-                          className={`py-5 px-4 font-extrabold text-[15px] ${student.isCurrentUser ? "text-primary" : "text-text-main"}`}
+                        {student.rank}
+                      </div>
+                      <img
+                        src={resolveAvatarSrc(student.imageUrl, student.name).src}
+                        alt={student.name}
+                        className="w-14 h-14 rounded-full object-cover shrink-0 bg-primary-light"
+                      />
+                      <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={`font-bold text-[15px] leading-tight truncate ${
+                              student.isCurrentUser ? "text-[#1E1A17]" : "text-text-main"
+                            }`}
+                          >
+                            {student.name}
+                          </span>
+                          {student.isCurrentUser && (
+                            <span className="px-2 py-0.5 bg-[#1E1A17] text-primary text-[10px] font-extrabold rounded-full shrink-0">
+                              أنت
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className={`text-[12px] truncate ${
+                            student.isCurrentUser ? "text-[#1E1A17]/70" : "text-text-muted"
+                          }`}
+                        >
+                          {student.stage}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end gap-0.5 shrink-0">
+                        <span
+                          className={`font-black text-[18px] leading-none ${
+                            student.isCurrentUser ? "text-[#1E1A17]" : "text-primary"
+                          }`}
                         >
                           {student.points}
-                        </td>
-                        <td className="py-5 px-4 font-medium text-[14px] text-text-muted">{student.stage}</td>
-                        <td className="py-5 px-4 font-bold text-[15px] text-text-main">
-                          {student.name} {student.isCurrentUser && "(أنت)"}
-                        </td>
-                        <td className="py-5 px-4 font-bold text-[15px] text-primary">
-                          المركز{" "}
-                          {student.rank === 4
-                            ? "الرابع"
-                            : student.rank === 5
-                              ? "الخامس"
-                              : student.rank === 6
-                                ? "السادس"
-                                : student.rank === 7
-                                  ? "السابع"
-                                  : student.rank === 8
-                                    ? "الثامن"
-                                    : student.rank === 9
-                                      ? "التاسع"
-                                      : student.rank === 10
-                                        ? "العاشر"
-                                        : student.rank}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </span>
+                        <span
+                          className={`text-[11px] ${
+                            student.isCurrentUser ? "text-[#1E1A17]/70" : "text-text-muted"
+                          }`}
+                        >
+                          نقطة
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         ) : (

@@ -9,8 +9,13 @@ import { getMonthContent } from "@/lib/educational-content/content";
 import { getEducationalMonthById } from "@/lib/educational-content/months";
 import type { ContentDetails, ContentItem, EducationalMonth } from "@/lib/types/educational-content";
 import { getLessonProgress, updateLessonProgress } from "@/lib/progress";
-import type { LessonProgress } from "@/lib/progress";
+import { getMonthProgress } from "@/lib/progress";
+import type { LessonProgress, MonthProgress } from "@/lib/progress";
+import { getSequenceLockedIds } from "@/lib/progress/sequence";
+import { getProfile } from "@/lib/account/profile";
+import { toEmbedVideoUrl } from "@/lib/educational-content/video";
 import MonthDrawer, { MonthDrawerButton } from "@/app/educational-content/module/MonthDrawer";
+import MonthSidebar from "@/app/educational-content/module/MonthSidebar";
 import Loading from "@/app/loading";
 import ContentBreadcrumb from "@/app/educational-content/module/ContentBreadcrumb";
 
@@ -25,8 +30,10 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [step, setStep] = useState<"video" | "explanation">("video");
+  const [step, setStep] = useState<"video" | "explanation" | "book">("video");
   const [lessonProgress, setLessonProgress] = useState<LessonProgress | null>(null);
+  const [monthProgress, setMonthProgress] = useState<MonthProgress | null>(null);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -34,7 +41,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     const fetchDetails = async () => {
       try {
         const contentData = await getContentById(contentId);
+        const profile = await getProfile().catch(() => null);
         if (!active) return;
+        setIsStudent(profile?.role === "STUDENT");
 
         if (contentData && contentData.type === "EXAM") {
           router.replace(`/educational-content/exam/${contentId}`);
@@ -60,6 +69,22 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
           if (!active) return;
           setMonthContentList([...monthContent.items].sort((a, b) => a.order - b.order));
           setMonth(monthData);
+
+          if (profile?.role === "STUDENT") {
+            const monthProgress = await getMonthProgress(contentData.month).catch(() => null);
+            if (!active) return;
+            if (
+              monthProgress &&
+              getSequenceLockedIds(
+                [...monthContent.items].sort((a, b) => a.order - b.order),
+                monthProgress,
+              ).has(String(contentId))
+            ) {
+              setIsLocked(true);
+              return;
+            }
+            setMonthProgress(monthProgress);
+          }
         }
       } catch {
         if (active) {
@@ -79,6 +104,38 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     };
   }, [contentId, router]);
 
+  useEffect(() => {
+    if (!content?.videoUrl) return;
+    const embedUrl = toEmbedVideoUrl(content.videoUrl);
+    if (!embedUrl) return;
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (
+        event.origin !== "https://www.youtube.com" &&
+        event.origin !== "https://www.youtube-nocookie.com"
+      ) {
+        return;
+      }
+      let data: { event?: string; info?: number };
+      try {
+        data = JSON.parse(String(event.data));
+      } catch {
+        return;
+      }
+      if (data.event === "onStateChange" && data.info === 0) {
+        try {
+          const updated = await updateLessonProgress(contentId, "video");
+          setLessonProgress(updated);
+        } catch {
+          // غير مصرح أو تعذر الاتصال
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [content, contentId]);
+
   if (isLoading) {
     return <Loading />;
   }
@@ -86,15 +143,15 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
   if (isLocked) {
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-screen bg-background px-4 font-cairo" dir="rtl">
-        <h3 className="font-extrabold text-2xl text-text-main mb-3">هذا الدرس غير متاح</h3>
+        <h3 className="font-extrabold text-2xl text-text-main mb-3">هذا الدرس غير متاح حالياً</h3>
         <p className="font-medium text-sm text-text-muted mb-6 text-center max-w-md">
-          أنت غير مشترك في هذا الشهر. اشترك لفتح المحتوى ومتابعة خطتك الدراسية.
+          أكمل الدروس السابقة أولاً، ثم سيفتح لك هذا الدرس لإتمام خطتك الدراسية.
         </p>
         <Link
-          href="/account"
+          href={content?.month ? `/educational-content/month/${content.month}` : "/educational-content"}
           className="h-[48px] px-8 bg-primary rounded-control text-surface font-bold text-base hover:bg-primary-hover transition-colors flex items-center justify-center"
         >
-          الانتقال إلى حسابي
+          العودة إلى المحتوى
         </Link>
         <Link
           href="/educational-content"
@@ -127,6 +184,17 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
     currentIndex < monthContentList.length - 1 && currentIndex !== -1 ? monthContentList[currentIndex + 1] : null;
 
   const articleText = content.writtenExplanation || content.description || "";
+  const embedVideoUrl = content.videoUrl ? toEmbedVideoUrl(content.videoUrl) : null;
+  const drawerLockedIds = isStudent ? getSequenceLockedIds(monthContentList, monthProgress) : new Set<string>();
+  const currentLessonStages = isStudent
+    ? {
+        video: !content.videoUrl || lessonProgress?.videoCompleted === true,
+        explanation: !content.writtenExplanation || lessonProgress?.explanationCompleted === true,
+        book: !content.note || lessonProgress?.bookCompleted === true,
+        training:
+          !content.homework || content.homework.length === 0 || lessonProgress?.homeworkCompleted === true,
+      }
+    : null;
 
   const markStep = async (type: "video" | "explanation" | "book") => {
     try {
@@ -171,12 +239,12 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 {[
                   { label: "الفيديو", done: lessonProgress.videoCompleted },
                   ...(articleText
-                    ? [{ label: "الشرح التفصيلي", done: lessonProgress.explanationCompleted }]
-                    : []),
-                  ...(content.homework && content.homework.length > 0
-                    ? [{ label: "الواجب", done: lessonProgress.homeworkCompleted }]
+                    ? [{ label: "الشرح", done: lessonProgress.explanationCompleted }]
                     : []),
                   ...(content.note ? [{ label: "الكتاب", done: lessonProgress.bookCompleted }] : []),
+                  ...(content.homework && content.homework.length > 0
+                    ? [{ label: "التدريب", done: lessonProgress.homeworkCompleted }]
+                    : [])
                 ].map((s) => (
                   <span
                     key={s.label}
@@ -199,13 +267,24 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
             {step === "video" &&
               (content.videoUrl ? (
                 <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex items-center justify-center relative">
-                  <video
-                    key={content.videoUrl}
-                    src={content.videoUrl}
-                    controls
-                    onEnded={() => markStep("video")}
-                    className="w-full h-full object-cover"
-                  />
+                  {embedVideoUrl ? (
+                    <iframe
+                      key={embedVideoUrl}
+                      src={embedVideoUrl}
+                      title={content.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  ) : (
+                    <video
+                      key={content.videoUrl}
+                      src={content.videoUrl}
+                      controls
+                      onEnded={() => markStep("video")}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="w-full aspect-video bg-footer rounded-card shadow-[0_16px_48px_-4px_rgba(84,70,58,0.12)] overflow-hidden flex flex-col items-center justify-center relative border border-border">
@@ -216,16 +295,43 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 </div>
               ))}
 
-            {step === "explanation" && articleText && (
+            {step === "video" && content.videoUrl && !embedVideoUrl && (
+              <span className="text-[12px] font-medium text-text-muted -mt-2">
+                شغّل الفيديو حتى النهاية لتسجيل إتمام المشاهدة
+              </span>
+            )}
+
+            {step === "video" && content.videoUrl && (
               <button
                 type="button"
-                onClick={() => setStep("video")}
+                onClick={() => markStep("video")}
+                className={`w-full h-[48px] ${
+                  lessonProgress?.videoCompleted
+                    ? "bg-success-bg border border-success/40 text-success"
+                    : "bg-surface border border-primary text-primary hover:bg-primary-light"
+                } font-bold text-[15px] rounded-control transition-colors flex items-center justify-center gap-2 mt-1`}
+              >
+                {lessonProgress?.videoCompleted ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Check size={17} strokeWidth={3} />
+                    تمت المشاهدة
+                  </span>
+                ) : (
+                  "أتممت مشاهدة الفيديو"
+                )}
+              </button>
+            )}
+
+            {step === "explanation" || step === "book" ? (
+              <button
+                type="button"
+                onClick={() => setStep(step === "book" ? "explanation" : "video")}
                 className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:text-primary-hover transition-colors"
               >
                 <ChevronUp size={16} strokeWidth={2.5} />
-                العودة لمشاهدة الفيديو
+                {step === "book" ? "العودة إلى الشرح التفصيلي" : "العودة لمشاهدة الفيديو"}
               </button>
-            )}
+            ) : null}
 
             {step === "video" && articleText && (
               <button
@@ -242,6 +348,17 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
                 className="w-full h-[58px] bg-surface border border-primary text-primary font-bold text-[16px] rounded-control transition-colors flex items-center justify-center gap-2 hover:bg-primary-light mt-2"
               >
                 <span>الانتقال إلى الشرح التفصيلي</span>
+                <ChevronDown size={20} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {step === "video" && !articleText && content.note && (
+              <button
+                type="button"
+                onClick={() => setStep("book")}
+                className="w-full h-[58px] bg-surface border border-primary text-primary font-bold text-[16px] rounded-control transition-colors flex items-center justify-center gap-2 hover:bg-primary-light mt-2"
+              >
+                <span>الانتقال إلى الكتاب المطلوب</span>
                 <ChevronDown size={20} strokeWidth={2.5} />
               </button>
             )}
@@ -264,8 +381,30 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </div>
             )}
 
-            {content.note && (
-              <div className="w-full bg-warning-bg border border-warning/30 rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2">
+            {step === "explanation" && content.note && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("book");
+                  markStep("book");
+                  requestAnimationFrame(() => {
+                    document
+                      .getElementById("book-section")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }}
+                className="w-full h-[58px] bg-surface border border-warning text-warning font-bold text-[16px] rounded-control transition-colors flex items-center justify-center gap-2 hover:bg-warning-bg mt-2"
+              >
+                <span>الانتقال إلى الكتاب المطلوب</span>
+                <ChevronDown size={20} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {step === "book" && content.note && (
+              <div
+                id="book-section"
+                className="w-full bg-warning-bg border border-warning/30 rounded-card p-6 md:p-8 flex flex-col gap-4 mt-2 scroll-mt-32"
+              >
                 <h3 className="font-bold text-[18px] text-warning flex items-center gap-2">
                   <span className="w-1.5 h-6 bg-warning rounded-full"></span>
                   الكتاب المطلوب
@@ -288,7 +427,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               </div>
             )}
 
-            {(step === "explanation" || !articleText) && (
+            {(step === "book" ||
+              (step === "explanation" && !content.note) ||
+              (!articleText && !content.note)) && (
               <button
                 type="button"
                 onClick={handleNextAction}
@@ -296,7 +437,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
               >
                 <span>
                   {content.homework && content.homework.length > 0
-                    ? "الانتقال إلى الواجب والتطبيقات"
+                    ? "الانتقال إلى التدريب والتطبيقات"
                     : "تمت مشاهدة الدرس المصور والانتقال للتالي"}
                 </span>
                 <Check size={20} strokeWidth={2.5} />
@@ -305,71 +446,16 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
             
           </div>
 
-          <aside className="hidden lg:flex w-full lg:w-[360px] bg-surface border border-border shadow-[0_8px_24px_rgba(84,70,58,0.04)] rounded-card p-6 flex-col gap-6 lg:sticky lg:top-24 shrink-0">
-            <div className="flex flex-col items-start gap-3 pb-3 border-b border-border w-full">
-              <span className="font-bold text-[14px] text-primary">
-                الدرس {contentPosition} من {totalItems} في هذا المنهج
-              </span>
-              <h3 className="font-extrabold text-[18px] text-text-main">
-                {month ? `محتويات ${month.title}` : "محتويات الشهر"}
-              </h3>
-            </div>
-
-            <div className="flex flex-col gap-3 w-full">
-              {monthContentList.length === 0 ? (
-                <div className="text-center py-6 font-medium text-sm text-text-muted">
-                  لا توجد عناصر في هذا الشهر بعد.
-                </div>
-              ) : (
-                monthContentList.map((item, index) => {
-                  const isCurrent = item._id === content._id;
-                  const isCompleted = currentIndex !== -1 && index < currentIndex;
-                  const isLessonItem = item.type === "LESSON";
-                  const href = isLessonItem
-                    ? `/educational-content/content/${item._id}`
-                    : `/educational-content/exam/${item._id}`;
-
-                  return (
-                    <Link
-                      href={href}
-                      key={item._id}
-                      className={`flex flex-row items-center justify-between p-4 rounded-[12px] transition-all duration-200 w-full min-h-[58px] ${
-                        isCurrent
-                          ? "bg-primary-light border border-primary"
-                          : isCompleted
-                            ? "bg-transparent border border-primary"
-                            : "bg-transparent border border-border"
-                      }`}
-                    >
-                      <div
-                        className={`w-6 h-6 rounded-[12px] flex items-center justify-center shrink-0 ml-3 ${
-                          isCurrent
-                            ? "bg-primary text-surface"
-                            : isCompleted
-                              ? "bg-success-bg text-success"
-                              : "bg-surface-secondary text-text-main"
-                        }`}
-                      >
-                        {isCurrent ? <Play size={12} fill="currentColor" className="ml-0.5" /> : isCompleted ? <Check size={14} strokeWidth={3} /> : <Circle size={8} fill="currentColor" />}
-                      </div>
-
-                      <span
-                        className={`text-[14px] truncate flex-1 text-right ${
-                          isCurrent
-                            ? "font-bold text-primary-hover"
-                            : isCompleted
-                              ? "font-medium text-text-main"
-                              : "font-medium text-text-muted"
-                        }`}
-                      >
-                        {item.title}
-                      </span>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
-          </aside>
+          <MonthSidebar
+            title={month ? `محتويات ${month.title}` : "محتويات الشهر"}
+            contentList={monthContentList}
+            currentContentId={content._id}
+            currentIndex={currentIndex}
+            contentPosition={contentPosition}
+            totalItems={totalItems}
+            lockedIds={drawerLockedIds}
+            currentLessonStages={currentLessonStages}
+          />
         </div>
       </main>
 
@@ -382,6 +468,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ conte
         currentIndex={currentIndex}
         contentPosition={contentPosition}
         totalItems={totalItems}
+        lockedIds={drawerLockedIds}
+        currentLessonStages={currentLessonStages}
       />
       <MonthDrawerButton onClick={() => setDrawerOpen(true)} />
     </div>
