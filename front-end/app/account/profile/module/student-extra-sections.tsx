@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, Trophy, Sparkles, CircleHelp } from "lucide-react";
+import { Star, Trophy, Sparkles } from "lucide-react";
 import { getMonthProgress } from "@/lib/student/dashboard";
 import { getEducationalStages } from "@/lib/educational-content/stages";
 import { getMonthsByStage } from "@/lib/educational-content/months";
@@ -357,24 +357,6 @@ export default function StudentExtraSections({ profile }: { profile: UserProfile
             </span>
           </div>
         </div>
-
-        {rank?.enoughPoints != null ? (
-          <div className="bg-[#FAF3E6] rounded-[12px] p-4 flex flex-row items-start sm:items-center gap-3">
-            <CircleHelp size={20} className="text-[#997D21] shrink-0 mt-0.5 sm:mt-0" />
-            <p className="text-[#997D21] font-semibold text-[14px] leading-relaxed">
-              {rank.enoughPoints === 0
-                ? `أنت في صدارة القائمة! حافظ على قلب وسيلتك.`
-                : `تبقت لك ${fmt(rank.enoughPoints)} نقطة فقط للانضمام إلى قائمة العشرة الأوائل!`}
-            </p>
-          </div>
-        ) : (
-          <div className="bg-[#FAF3E6] rounded-[12px] p-4 flex flex-row items-start sm:items-center gap-3">
-            <CircleHelp size={20} className="text-[#997D21] shrink-0 mt-0.5 sm:mt-0" />
-            <p className="text-[#997D21] font-semibold text-[14px] leading-relaxed">
-              لوحة الصدارة تظهر ترتيبك فور انضمامك إلى القائمة المفتوحة حالياً.
-            </p>
-          </div>
-        )}
       </section>
       )}
     </div>
