@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://ruqi-five.vercel.app/"),
 
   title: {
-    default: "رُقِيّ | منصة الأستاذ سمير أبو المجد",
-    template: "%s | رُقِيّ",
+    default: "رقي | منصة الأستاذ سمير أبو المجد",
+    template: "%s | رقي",
   },
 
   description:
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
 
   keywords: [
-    "رُقِيّ",
+    "رقي",
     "منصة رقي",
     "الأستاذ سمير أبو المجد",
     "سمير أبو المجد",
