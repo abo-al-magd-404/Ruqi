@@ -33,18 +33,18 @@ export default function ContentSection({
         {selectedMonth && (
           <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full lg:w-auto shrink-0">
             <button
-              onClick={onAddExam}
-              className="bg-text-main hover:bg-black text-primary font-bold text-[14px] px-5 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1 w-full sm:w-auto shrink-0"
-            >
-              <Plus size={16} />
-              إنشاء اختبار
-            </button>
-            <button
               onClick={onAddLesson}
               className="bg-primary hover:bg-primary-hover text-text-main font-bold text-[14px] px-5 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1 w-full sm:w-auto shrink-0"
             >
               <Plus size={16} />
               إنشاء درس
+            </button>
+            <button
+              onClick={onAddExam}
+              className="bg-text-main hover:bg-black text-primary font-bold text-[14px] px-5 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1 w-full sm:w-auto shrink-0"
+            >
+              <Plus size={16} />
+              إنشاء اختبار
             </button>
           </div>
         )}
