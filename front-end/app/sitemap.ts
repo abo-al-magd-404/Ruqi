@@ -7,9 +7,7 @@ interface EducationalStage {
   _id: string;
 }
 
-interface StagesResponse {
-  data: EducationalStage[];
-}
+type StagesResponse = EducationalStage[];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
@@ -46,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const result: StagesResponse = await response.json();
 
-    const stagePages: MetadataRoute.Sitemap = result.data.map((stage) => ({
+    const stagePages: MetadataRoute.Sitemap = result.map((stage) => ({
       url: `${BASE_URL}/educational-content/stage/${stage._id}`,
       lastModified: new Date(),
       changeFrequency: "weekly",
