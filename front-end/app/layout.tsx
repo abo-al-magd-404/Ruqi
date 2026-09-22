@@ -17,23 +17,28 @@ const arefRuqaa = Aref_Ruqaa({
   display: "swap",
 });
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "رُقِيّ",
+  alternateName: "منصة الأستاذ سمير أبو المجد",
+  url: "https://ruqi-five.vercel.app",
+  logo: "https://ruqi-five.vercel.app/logo.png",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://ruqi-five.vercel.app/"),
 
   title: {
-    default: "رقي | منصة الأستاذ سمير أبو المجد",
-    template: "%s | رقي",
+    default: "رُقِيّ | منصة الأستاذ سمير أبو المجد",
+    template: "%s | رُقِيّ",
   },
 
   description:
     "رُقِيّ منصة تعليمية متخصصة في تعليم اللغة العربية للطلاب، مع دروس واختبارات تفاعلية ومحتوى تعليمي منظم بإشراف الأستاذ سمير أبو المجد.",
 
-  verification: {
-    google: "r93MBpZ4IhPtlaF9XgNAODkpsF0tjllF3Y0ADBbmeo0",
-  },
-
   keywords: [
-    "رقي",
+    "رُقِيّ",
     "منصة رقي",
     "الأستاذ سمير أبو المجد",
     "سمير أبو المجد",
@@ -68,7 +73,7 @@ export const metadata: Metadata = {
     title: "رُقِيّ | منصة الأستاذ سمير أبو المجد",
     description:
       "منصة رُقِيّ التعليمية لتعلم اللغة العربية من خلال محتوى تعليمي منظم ودروس واختبارات تفاعلية.",
-    url: "https://ruqi-five.vercel.app",
+    url: "https://YOUR-DOMAIN.com",
   },
 };
 
@@ -84,6 +89,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
       className={`${cairo.variable} ${arefRuqaa.variable}`}
     >
       <body className="min-h-screen flex flex-col bg-background text-text-main font-cairo antialiased selection:bg-primary selection:text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
         <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
